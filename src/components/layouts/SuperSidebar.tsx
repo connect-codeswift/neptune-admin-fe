@@ -39,8 +39,13 @@ function getInitials(name: string): string {
     .join("");
 }
 
-function isItemActive(pathname: string, href: string): boolean {
+function isItemActive(
+  pathname: string,
+  href: string,
+  exact = false,
+): boolean {
   if (pathname === href) return true;
+  if (exact) return false;
   if (href === "/") return false;
   return pathname.startsWith(`${href}/`);
 }
@@ -80,19 +85,19 @@ export function DashboardSidebar({
       >
         {sections.map((section) => (
           <div key={section.label} className="mb-3 last:mb-0">
-            <p className="px-2 pt-px pb-1.5 text-[10px] font-bold tracking-[1px] text-[#8892a3] uppercase">
+            <p className="px-2 pt-px pb-1.5 text8 tracking-[1px] text-[#8892a3] uppercase">
               {section.label}
             </p>
 
             <ul className="flex flex-col">
               {section.items.map((item) => {
-                const active = isItemActive(currentHref, item.href);
+                const active = isItemActive(currentHref, item.href, item.exact);
 
                 let itemClass =
-                  "flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[13px] text-darkest transition-colors hover:bg-darkest/4";
+                  "flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text5 text-darkest transition-colors hover:bg-darkest/4";
                 if (active) {
                   itemClass =
-                    "flex w-full items-center gap-2.5 rounded-[10px] bg-blue-normal/18 px-2.5 py-2 text-[13px] font-bold text-blue-normal";
+                    "flex w-full items-center gap-2.5 rounded-[10px] bg-blue-normal/18 px-2.5 py-2 text5 font-bold text-blue-normal";
                 }
 
                 let iconClass = "shrink-0 text-darkest";
@@ -129,16 +134,16 @@ export function DashboardSidebar({
 
         <div className="flex items-center gap-2.5 border-t border-darkest/8 px-2.5 pt-3.5 pb-2.5">
           <div
-            className="flex size-7.5 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal text-[11px] font-bold tracking-[0.22px] text-white"
+            className="flex size-7.5 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal text8 tracking-[0.22px] text-white"
             aria-hidden
           >
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[12.5px] leading-[13.75px] font-bold text-darkest">
+            <p className="truncate text6 leading-[13.75px] font-bold text-darkest">
               {user.name}
             </p>
-            <p className="truncate text-[10.5px] text-[#8892a3]">{user.role}</p>
+            <p className="truncate text7 text-[#8892a3]">{user.role}</p>
           </div>
         </div>
       </div>

@@ -13,10 +13,10 @@ function InfoField({
 }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="flex min-w-0 flex-col gap-1 border-b border-darkest/12 pb-2">
-      <p className="text-[11px] font-semibold tracking-[0.5px] text-[#8892a3] uppercase">
+      <p className="text7 tracking-[0.5px] text-[#8892a3] uppercase">
         {label}
       </p>
-      <div className="text-[13px] font-semibold text-darkest">{children}</div>
+      <div className="text5 font-semibold text-darkest">{children}</div>
     </div>
   );
 }
@@ -27,7 +27,7 @@ function ModulePill({
 }: Readonly<{ label: string; active: boolean }>) {
   if (active) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-blue-normal/18 bg-blue-normal/12 px-3 py-1.5 text-xs font-semibold text-blue-normal">
+      <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-blue-normal/18 bg-blue-normal/12 px-3 py-1.5 text7 text-blue-normal">
         <span className="size-1.5 rounded-full bg-blue-normal" aria-hidden />
         {label}
       </span>
@@ -35,7 +35,7 @@ function ModulePill({
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-darkest/12 bg-darkest/5 px-3 py-1.5 text-xs font-semibold text-darkest/50">
+    <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-darkest/12 bg-darkest/5 px-3 py-1.5 text7 text-darkest/50">
       <span className="size-1.5 rounded-full bg-darkest/25" aria-hidden />
       {label}
     </span>
@@ -48,8 +48,8 @@ function ContractRow({
 }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-darkest/12 pb-2">
-      <p className="text-xs text-[#8892a3]">{label}</p>
-      <p className="text-[13px] font-semibold text-darkest">{value}</p>
+      <p className="text6 text-[#8892a3]">{label}</p>
+      <p className="text5 font-semibold text-darkest">{value}</p>
     </div>
   );
 }
@@ -110,7 +110,7 @@ export function ClientOverviewTab({
           title="Primary Contact"
           action={
             <div
-              className="flex size-8 items-center justify-center rounded-full bg-blue-normal text-[11px] font-bold text-white"
+              className="flex size-8 items-center justify-center rounded-full bg-blue-normal text8 text-white"
               aria-hidden
             >
               {client.primaryContact.initials}
@@ -119,15 +119,15 @@ export function ClientOverviewTab({
         >
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-sm font-bold text-darkest">
+              <p className="text4 text-darkest">
                 {client.primaryContact.name}
               </p>
-              <p className="mt-1 text-xs text-[#8892a3]">
+              <p className="mt-1 text6 text-[#8892a3]">
                 {client.primaryContact.title}
               </p>
             </div>
             <div className="flex flex-col gap-2 border-t border-darkest/12 pt-3">
-              <div className="flex items-center gap-2 text-xs text-darkest/50">
+              <div className="flex items-center gap-2 text6 text-darkest/50">
                 <Icon
                   icon="lucide:mail"
                   width={14}
@@ -137,7 +137,7 @@ export function ClientOverviewTab({
                 />
                 <span className="truncate">{client.primaryContact.email}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-darkest/50">
+              <div className="flex items-center gap-2 text6 text-darkest/50">
                 <Icon
                   icon="lucide:phone"
                   width={14}
@@ -184,16 +184,16 @@ export function ClientOverviewTab({
                   className="shrink-0 text-darkest"
                   aria-hidden
                 />
-                <p className="truncate text-[13px] font-semibold text-darkest">
+                <p className="truncate text5 font-semibold text-darkest">
                   {client.employeeData.fileName}
                 </p>
               </div>
-              <span className="shrink-0 rounded-[20px] bg-green/12 px-2 py-0.5 text-[10px] font-semibold text-green">
+              <span className="shrink-0 rounded-[20px] bg-green/12 px-2 py-0.5 text7 text-green">
                 {client.employeeData.status}
               </span>
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-darkest/12 pt-3">
-              <p className="text-[11px] text-[#8892a3]">
+              <p className="text7 text-[#8892a3]">
                 Last Updated: {client.employeeData.lastUpdated}
               </p>
               <TextButton

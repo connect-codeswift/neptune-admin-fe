@@ -48,11 +48,11 @@ export function ClientModulesTab({
     >
       <div className="flex flex-col gap-6">
         <section>
-          <p className="mb-3 text-[11px] font-bold tracking-[0.5px] text-blue-normal uppercase">
+          <p className="mb-3 text8 tracking-[0.5px] text-blue-normal uppercase">
             Active Modules ({activeModules.length})
           </p>
           {activeModules.length === 0 ? (
-            <p className="text-sm text-gray">No active modules.</p>
+            <p className="text5 text-gray">No active modules.</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {activeModules.map((module) => (
@@ -67,11 +67,11 @@ export function ClientModulesTab({
         </section>
 
         <section>
-          <p className="mb-3 text-[11px] font-bold tracking-[0.5px] text-[#8892a3] uppercase">
+          <p className="mb-3 text8 tracking-[0.5px] text-[#8892a3] uppercase">
             Inactive Modules ({inactiveModules.length})
           </p>
           {inactiveModules.length === 0 ? (
-            <p className="text-sm text-gray">No inactive modules.</p>
+            <p className="text5 text-gray">No inactive modules.</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {inactiveModules.map((module) => (

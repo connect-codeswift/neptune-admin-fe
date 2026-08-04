@@ -1,13 +1,10 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { EditUserPage } from "@/components/features/user-management/EditUserPage";
 
-type Props = { params: Promise<{ id: string }> };
-
-export default async function EditUserPage({ params }: Props) {
+export default async function OrgSiteEditUserRoute({
+  params,
+}: Readonly<{
+  params: Promise<{ id: string }>;
+}>) {
   const { id } = await params;
-  return (
-    <PlaceholderPage
-      title="Edit User"
-      description={`Placeholder for editing user ${id}.`}
-    />
-  );
+  return <EditUserPage userId={id} />;
 }

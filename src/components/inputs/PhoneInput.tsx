@@ -94,14 +94,14 @@ function FieldMessage({
 }>): ReactNode {
   if (error) {
     return (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   }
   if (helperText) {
     return (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -187,7 +187,7 @@ function CountryPickerPanel({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search country…"
-          className="h-9 w-full rounded-lg border border-darkest/10 bg-lightgray px-3 text-sm text-darkest outline-none focus:border-blue-normal"
+          className="h-9 w-full rounded-lg border border-darkest/10 bg-lightgray px-3 text5 text-darkest outline-none focus:border-blue-normal"
         />
       </div>
       <div className="max-h-56 overflow-auto p-1">
@@ -197,7 +197,7 @@ function CountryPickerPanel({
             type="button"
             aria-pressed={item.code === country}
             onClick={() => onSelect(item.code)}
-            className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+            className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text5 transition-colors ${
               item.code === country
                 ? "bg-blue-lightest text-blue-deep"
                 : "text-darkest hover:bg-lightgray"
@@ -271,7 +271,7 @@ export function PhoneInput({
       className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
     >
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-semibold text-darkest">
+        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
           {label}
         </label>
       ) : null}
@@ -287,7 +287,7 @@ export function PhoneInput({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((current) => !current)}
-          className="flex shrink-0 cursor-pointer items-center gap-1 border-r border-darkest/10 px-3 text-sm font-medium text-darkest disabled:cursor-not-allowed"
+          className="flex shrink-0 cursor-pointer items-center gap-1 border-r border-darkest/10 px-3 text5 text-darkest disabled:cursor-not-allowed"
         >
           <span>{selectedCountry.dial}</span>
           <Icon
@@ -308,7 +308,7 @@ export function PhoneInput({
           aria-describedby={describedBy}
           aria-invalid={Boolean(error) || undefined}
           onChange={(event) => emitChange(country, event.target.value)}
-          className="min-w-0 flex-1 bg-transparent px-3.5 text-base text-darkest outline-none placeholder:text-darkest/50 disabled:cursor-not-allowed"
+          className="min-w-0 flex-1 bg-transparent px-3.5 text5 text-darkest outline-none placeholder:text-darkest/50 disabled:cursor-not-allowed"
         />
       </div>
       {open ? (

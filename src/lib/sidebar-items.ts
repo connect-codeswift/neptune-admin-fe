@@ -2,6 +2,8 @@ export type SidebarNavItem = {
   label: string;
   href: string;
   icon: string;
+  /** When true, only highlight on an exact pathname match (e.g. dashboard root). */
+  exact?: boolean;
 };
 
 export type SidebarNavSection = {
@@ -27,6 +29,7 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: "lucide:layout-dashboard",
+    exact: true,
   },
   {
     label: "User Management",
@@ -115,6 +118,7 @@ function prefixNavItems(
   return items.map((item) => ({
     ...item,
     href: item.href === "/dashboard" ? basePath : `${basePath}${item.href}`,
+    exact: item.exact ?? item.href === "/dashboard",
   }));
 }
 

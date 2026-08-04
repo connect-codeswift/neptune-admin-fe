@@ -25,9 +25,9 @@ const VARIANT_CLASS: Record<TextButtonVariant, string> = {
 };
 
 const SIZE_CLASS: Record<TextButtonSize, string> = {
-  sm: "text-xs",
-  md: "text-sm",
-  lg: "text-base",
+  sm: "text6",
+  md: "text5",
+  lg: "text5",
 };
 
 const UNDERLINE_CLASS = {

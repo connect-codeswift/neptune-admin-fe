@@ -63,7 +63,7 @@ export function AdminDashboardPage({
         <DetailCard
           title="Module Statistics"
           action={
-            <p className="text-sm text-gray">All active compliance modules</p>
+            <p className="text5 text-gray">All active compliance modules</p>
           }
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

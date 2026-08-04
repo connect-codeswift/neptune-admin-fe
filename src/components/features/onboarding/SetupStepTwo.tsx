@@ -98,8 +98,8 @@ export function SetupStepTwo({
         <ul className="mt-5 divide-y divide-darkest/8 border-t border-darkest/8">
           {sites.map((site) => (
             <li key={site.id} className="py-3">
-              <p className="text-sm font-semibold text-darkest">{site.name}</p>
-              <p className="text-xs text-gray">
+              <p className="text5 font-semibold text-darkest">{site.name}</p>
+              <p className="text6 text-gray">
                 {[site.region, site.industryType, site.companySize]
                   .filter(Boolean)
                   .join(" • ")}

@@ -1,13 +1,10 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { UserDetailPage } from "@/components/features/user-management/UserDetailPage";
 
-type Props = { params: Promise<{ id: string }> };
-
-export default async function UserDetailPage({ params }: Props) {
+export default async function OrgSiteUserDetailRoute({
+  params,
+}: Readonly<{
+  params: Promise<{ id: string }>;
+}>) {
   const { id } = await params;
-  return (
-    <PlaceholderPage
-      title="User Details"
-      description={`Placeholder for user ${id}.`}
-    />
-  );
+  return <UserDetailPage userId={id} />;
 }

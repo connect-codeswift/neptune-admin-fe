@@ -53,13 +53,13 @@ export function DateTimeInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${groupId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${groupId}-helper`} className="text-xs text-gray">
+      <p id={`${groupId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -68,7 +68,7 @@ export function DateTimeInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`.trim()}>
       {label ? (
-        <p className="text-sm font-semibold text-darkest">{label}</p>
+        <p className="text5 font-semibold text-darkest">{label}</p>
       ) : null}
       <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${className}`.trim()}>
         <DateInput

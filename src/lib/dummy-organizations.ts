@@ -55,6 +55,10 @@ export type DummyOrganization = {
     trialEndDate: string;
     daysRemaining: number;
     billingContact: string;
+    seats: {
+      used: number;
+      total: number;
+    };
     history: {
       id: string;
       action: string;
@@ -128,7 +132,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     contract: {
       planType: "Enterprise Tier",
       period: "Mar 2026 — Feb 2027",
-      licenseSeats: "38 / 50 used",
+      licenseSeats: "50 / 50 used",
       assignedCsm: "Rachel Torres",
       monthlyValue: "$3,750",
     },
@@ -144,6 +148,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
       trialEndDate: "2026-04-01",
       daysRemaining: 12,
       billingContact: "Sarah Mitchell",
+      seats: { used: 50, total: 50 },
       history: [
         {
           id: "h1",
@@ -223,6 +228,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
       trialEndDate: "2025-12-15",
       daysRemaining: 0,
       billingContact: "David Chen",
+      seats: { used: 62, total: 80 },
       history: [
         {
           id: "h1",
@@ -293,7 +299,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     contract: {
       planType: "Standard Tier",
       period: "May 2026 — Apr 2027",
-      licenseSeats: "18 / 25 used",
+      licenseSeats: "25 / 25 used",
       assignedCsm: "Rachel Torres",
       monthlyValue: "$1,890",
     },
@@ -309,6 +315,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
       trialEndDate: "2026-02-10",
       daysRemaining: 0,
       billingContact: "Maria Lopez",
+      seats: { used: 25, total: 25 },
       history: [
         {
           id: "h1",

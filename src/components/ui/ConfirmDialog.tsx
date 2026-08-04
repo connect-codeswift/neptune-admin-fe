@@ -93,14 +93,14 @@ export function ConfirmDialog({
       aria-describedby={description ? descriptionId : undefined}
       className={`fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border-0 bg-white p-6 shadow-xl backdrop:bg-darkest/50 open:flex open:flex-col ${className}`.trim()}
     >
-      <h2 id={titleId} className="text-xl font-bold text-darkest">
+      <h2 id={titleId} className="text2 text-darkest">
         {title}
       </h2>
 
       {description ? (
         <div
           id={descriptionId}
-          className="mt-3 text-sm leading-6 text-gray [&_strong]:font-bold [&_strong]:text-darkest"
+          className="mt-3 text5 leading-6 text-gray [&_strong]:font-bold [&_strong]:text-darkest"
         >
           {description}
         </div>

@@ -79,10 +79,10 @@ export function DashboardHeader({
           className="shrink-0 text-darkest/40"
           aria-hidden
         />
-        <span className="min-w-0 flex-1 truncate text-sm text-darkest/45">
+        <span className="min-w-0 flex-1 truncate text5 text-darkest/45">
           {searchPlaceholder}
         </span>
-        <kbd className="hidden shrink-0 rounded-md border border-darkest/10 bg-lightgray px-1.5 py-0.5 font-sans text-[11px] font-medium text-darkest/45 sm:inline-block">
+        <kbd className="hidden shrink-0 rounded-md border border-darkest/10 bg-lightgray px-1.5 py-0.5 font-sans text7 text-darkest/45 sm:inline-block">
           ⌘K
         </kbd>
       </button>
@@ -91,7 +91,7 @@ export function DashboardHeader({
         <button
           type="button"
           onClick={onDateRangeClick}
-          className="inline-flex h-11 items-center gap-2 rounded-xl border border-darkest/10 bg-white px-3.5 text-sm font-medium text-darkest shadow-xl outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-darkest/10 bg-white px-3.5 text5 text-darkest shadow-xl outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
         >
           <Icon
             icon="mdi:calendar-month-outline"

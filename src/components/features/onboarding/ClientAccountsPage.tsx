@@ -101,10 +101,10 @@ type ClientRowActionHandlers = {
 function ClientNameCell({ row }: Readonly<{ row: ClientAccount }>) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[13.5px] font-semibold text-darkest">
+      <p className="truncate text5 font-semibold text-darkest">
         {row.name}
       </p>
-      <p className="truncate text-[11px] text-[#b3bbc8]">{row.code}</p>
+      <p className="truncate text7 text-[#b3bbc8]">{row.code}</p>
     </div>
   );
 }

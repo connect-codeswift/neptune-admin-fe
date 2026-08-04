@@ -31,10 +31,10 @@ export function TabBar({
         const active = index === activeIndex;
 
         let tabClass =
-          "cursor-pointer px-4 pt-2 pb-3 text-sm font-medium text-[#8892a3] transition-colors hover:text-darkest";
+          "cursor-pointer px-4 pt-2 pb-3 text5 text-[#8892a3] transition-colors hover:text-darkest";
         if (active) {
           tabClass =
-            "cursor-pointer border-b-[3px] border-blue-normal px-4 pt-2 pb-3 text-sm font-bold text-blue-normal";
+            "cursor-pointer border-b-[3px] border-blue-normal px-4 pt-2 pb-3 text4 text-blue-normal";
         }
 
         return (

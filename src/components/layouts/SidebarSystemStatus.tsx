@@ -36,12 +36,12 @@ export function SidebarSystemStatus({
       className={`flex w-full flex-col gap-2.5 rounded-xl border border-blue-normal/8 bg-blue-normal/5 p-3 ${className}`.trim()}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-bold tracking-[0.5px] text-[#8892a3] uppercase">
+        <p className="text8 tracking-[0.5px] text-[#8892a3] uppercase">
           System Status
         </p>
         <div className="flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-green" aria-hidden />
-          <span className="text-[10px] font-bold text-green">{overallLabel}</span>
+          <span className="text8 text-green">{overallLabel}</span>
         </div>
       </div>
 
@@ -53,9 +53,9 @@ export function SidebarSystemStatus({
                 className={`size-1 shrink-0 rounded-full ${TONE_DOT[item.tone]}`}
                 aria-hidden
               />
-              <span className="truncate text-[11px] text-gray">{item.label}</span>
+              <span className="truncate text7 text-gray">{item.label}</span>
             </div>
-            <span className="shrink-0 text-[11px] font-semibold text-darkest">
+            <span className="shrink-0 text7 text-darkest">
               {item.value}
             </span>
           </li>

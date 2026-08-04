@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { UserManagementPage } from "@/components/features/user-management/UserManagementPage";
 
-export default function UsersManagementPage() {
-  return <PlaceholderPage title="User Management" />;
+export default function OrgSiteUserManagementRoute() {
+  return <UserManagementPage />;
 }

@@ -62,7 +62,7 @@ export function SetupTabBar({
                   <Icon icon={iconName} width={17} height={17} aria-hidden />
                 </div>
                 <span
-                  className={`absolute top-11 text-[11px] whitespace-nowrap ${labelClass}`}
+                  className={`absolute top-11 text7 whitespace-nowrap ${labelClass}`}
                 >
                   {step.label}
                 </span>

@@ -95,14 +95,14 @@ export function SetupStepFour({
 
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-[11px] font-bold tracking-[0.66px] text-gray uppercase">
+          <p className="text8 tracking-[0.66px] text-gray uppercase">
             Invited Team Members
           </p>
-          <p className="text-xs text-gray">{invites.length} invited</p>
+          <p className="text6 text-gray">{invites.length} invited</p>
         </div>
 
         {invites.length === 0 ? (
-          <p className="border-t border-darkest/8 py-6 text-sm text-gray">
+          <p className="border-t border-darkest/8 py-6 text5 text-gray">
             No team members invited yet.
           </p>
         ) : (
@@ -113,10 +113,10 @@ export function SetupStepFour({
                 className="flex items-center justify-between gap-4 py-3.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-darkest">
+                  <p className="truncate text5 font-semibold text-darkest">
                     {invite.email}
                   </p>
-                  <p className="truncate text-xs text-gray">
+                  <p className="truncate text6 text-gray">
                     {roleLabel(invite.role)} • {siteLabel(invite.siteId)}
                   </p>
                 </div>

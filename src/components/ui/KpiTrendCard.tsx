@@ -89,13 +89,13 @@ export function KpiTrendCard({
       </div>
 
       <div className="mt-1">
-        <p className="text-[26px] font-bold tracking-tight text-darkest">
+        <p className="text1 text-darkest">
           {value}
         </p>
         <div className="mt-2 flex items-center justify-between gap-3">
-          <p className="text-xs text-gray">{label}</p>
+          <p className="text6 text-gray">{label}</p>
           <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${
+            className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text7 ${
               isUp ? "bg-green/10 text-green" : "bg-red/10 text-red"
             }`}
           >

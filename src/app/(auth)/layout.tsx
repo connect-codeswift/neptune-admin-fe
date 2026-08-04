@@ -28,10 +28,10 @@ export default function AuthLayout({
           />
 
           <div className="mt-16 max-w-xl">
-            <p className="text-[13px] font-semibold tracking-[1px] text-[#8892a3] uppercase">
+            <p className="text5 font-semibold tracking-[1px] text-[#8892a3] uppercase">
               Neptune EHSS Admin Portal
             </p>
-            <h2 className="mt-3 text-[56px] leading-15 font-semibold tracking-[-3px] text-white">
+            <h2 className="mt-3 text1 tracking-[-3px] text-white">
               Neptune Admin Portal
             </h2>
           </div>
