@@ -5,11 +5,10 @@ alwaysApply: true
 
 # neptune-admin-fe
 
-Next 16 App Router `src/`, React 19, TS strict, Tailwind v4 (`globals.css` `@theme`), RQ + axios, Iconify/sonner/recharts/libphonenumber-js. Alias `@/*`→`./src/*`. React Compiler: skip gratuitous memo.
+Next 16 App Router `src/`, React 19, TS strict, TW v4 (`globals.css` `@theme`), RQ + axios, Iconify/sonner/recharts/libphonenumber-js. `@/*`→`./src/*`. React Compiler on — no gratuitous memo.
 
-- `components/inputs/` form controls
-- `components/ui/` Button, Table, Modal, ConfirmDialog, cards, menus
-- `components/layouts/` PageHeader, DashboardHeader, DashboardSidebar
-- `utils/` `lib/` `providers/` `types/` · `public/sidebar/` Figma assets
+Dirs: `inputs/` forms · `ui/` chrome (Button/Table/Modal/…) · `layouts/` shells · `utils/` `lib/` `providers/` `types/` · `public/sidebar/` Figma assets.
 
-Named exports; barrel `index.ts`. `"use client"` only if needed. Tokens: `blue-normal`, `darkest`, `gray`, `lightgray`, `green`/`red`/`yellow`. Glass: `bg-white/62`, `rounded-[20px]`, existing dual shadows. Read `node_modules/next/dist/docs/` before new Next APIs.
+Named exports. Barrel `components/*/index.ts`. `"use client"` only when needed. Tokens: `blue-normal` `#0891a6`, `darkest`, `gray`, `lightgray`, `green`/`red`/`yellow`. Glass: `bg-white/62`, `rounded-[20px]`, soft dual shadow.
+
+Read `node_modules/next/dist/docs/` before new Next APIs.

@@ -6,9 +6,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # neptune-admin-fe
 
-Neptune EHSS admin. Details: `.cursor/rules/*.mdc`.
+Admin FE. Details in `.cursor/rules/*.mdc`.
 
-- Stack: Next 16 `src/`, React 19, TW v4, RQ, axios, Iconify. Alias `@/*`.
-- `components/{inputs,ui,layouts}` · `utils` · `lib` · `providers` · `public/sidebar`
-- Scripts: `dev` / `build` / `lint`. No automated tests.
-- Figma→code: reuse tokens/components; logos in `public/`; else Iconify.
+Next 16 `src/`, React 19, TW v4, RQ, axios, Iconify. `@/*`→`./src/*`.
+Dirs: `inputs/` forms · `ui/` chrome · `layouts/` shells · `utils/` `lib/` `providers/` `types/` · `public/sidebar/` assets.
+Scripts: `dev` / `build` / `lint`. No tests.
+Figma→code: reuse tokens/components; logos→`public/`; else Iconify.

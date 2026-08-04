@@ -10,3 +10,7 @@ export {
   type DashboardSidebarItem,
   type DashboardSidebarUser,
 } from "./DashboardSidebar";
+export {
+  PlaceholderPage,
+  type PlaceholderPageProps,
+} from "./PlaceholderPage";
