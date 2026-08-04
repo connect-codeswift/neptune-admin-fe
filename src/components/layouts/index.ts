@@ -5,11 +5,16 @@ export {
 } from "./DashboardHeader";
 export {
   DashboardSidebar,
-  DEFAULT_ADMIN_NAV_ITEMS,
   type DashboardSidebarProps,
-  type DashboardSidebarItem,
   type DashboardSidebarUser,
 } from "./DashboardSidebar";
+export {
+  DEFAULT_ADMIN_NAV_SECTIONS,
+  CLIENT_ONBOARDING_NAV_ITEMS,
+  SUPER_ADMIN_NAV_ITEMS,
+  type SidebarNavItem,
+  type SidebarNavSection,
+} from "@/lib/sidebar-items";
 export {
   PlaceholderPage,
   type PlaceholderPageProps,

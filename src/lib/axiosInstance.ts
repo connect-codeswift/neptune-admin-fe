@@ -1,11 +1,27 @@
 import axios from "axios";
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: `${backendUrl.replace(/\/$/, "")}/api`,
   headers: {
     "Content-Type": "application/json",
   },
   timeout: 30_000,
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  if (typeof window === "undefined") return config;
+
+  const orgToken = window.localStorage.getItem("neptune_admin_org_token");
+  const authToken = window.localStorage.getItem("neptune_admin_auth_token");
+  const token = orgToken || authToken;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 axiosInstance.interceptors.response.use(
@@ -23,7 +39,9 @@ axiosInstance.interceptors.response.use(
 
     return Promise.reject(
       new Error(
-        status ? `Request failed (${status}): ${detail}` : `Request failed: ${detail}`,
+        status
+          ? `Request failed (${status}): ${detail}`
+          : `Request failed: ${detail}`,
       ),
     );
   },
