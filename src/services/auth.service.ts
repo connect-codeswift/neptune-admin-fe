@@ -1,7 +1,20 @@
+import type {
+  SuperAdminLoginPayload,
+  SuperAdminMfaSetupPayload,
+  SuperAdminSelectCompanyPayload,
+  VerifyMfaPayload,
+} from "@/dtos/req/auth.req";
 import type { RegisterPayload } from "@/dtos/req/onboarding.req";
+import type {
+  MfaEnableResponse,
+  MfaSetupResponse,
+  SelectCompanyResponse,
+  SuperAdminLoginResponse,
+  VerifyMfaResponse,
+} from "@/dtos/res/auth.res";
 import type { RegisterResponse } from "@/dtos/res/onboarding.res";
 import axiosInstance from "@/lib/axiosInstance";
-import type { ApiPayload, ApiResponse } from "@/types/api.types";
+import type { ApiResponse } from "@/types/api.types";
 
 const AUTH_TOKEN_KEY = "neptune_admin_auth_token";
 const ORG_TOKEN_KEY = "neptune_admin_org_token";
@@ -32,6 +45,44 @@ export function clearAuthTokens() {
   window.localStorage.removeItem(ORG_TOKEN_KEY);
 }
 
+/** POST /SuperAdminAuth/login */
+export async function login(payload: SuperAdminLoginPayload) {
+  const { data } = await axiosInstance.post<SuperAdminLoginResponse>(
+    "/SuperAdminAuth/login",
+    payload,
+  );
+  return data;
+}
+
+/** POST /SuperAdminAuth/verify-mfa */
+export async function verifyMfa(payload: VerifyMfaPayload) {
+  const { data } = await axiosInstance.post<VerifyMfaResponse>(
+    "/SuperAdminAuth/verify-mfa",
+    payload,
+  );
+  setAuthToken(data.accessToken);
+  return data;
+}
+
+/** POST /SuperAdminAuth/mfa/setup */
+export async function mfaSetup(payload: SuperAdminMfaSetupPayload) {
+  const { data } = await axiosInstance.post<MfaSetupResponse>(
+    "/SuperAdminAuth/mfa/setup",
+    payload,
+  );
+  return data;
+}
+
+/** POST /SuperAdminAuth/mfa/enable */
+export async function mfaEnable(payload: VerifyMfaPayload) {
+  const { data } = await axiosInstance.post<MfaEnableResponse>(
+    "/SuperAdminAuth/mfa/enable",
+    payload,
+  );
+  setAuthToken(data.accessToken);
+  return data;
+}
+
 /** POST /Auth/register */
 export async function register(payload: RegisterPayload) {
   const { data } = await axiosInstance.post<ApiResponse<RegisterResponse>>(
@@ -41,20 +92,9 @@ export async function register(payload: RegisterPayload) {
   return data;
 }
 
-/** POST /SuperAdminAuth/login */
-export async function login(payload: ApiPayload) {
-  const { data } = await axiosInstance.post<ApiResponse>(
-    "/SuperAdminAuth/login",
-    payload,
-  );
-  return data;
-}
-
 /** GET /SuperAdminCompanies */
 export async function getCompanies() {
-  const { data } = await axiosInstance.get<ApiResponse>(
-    "/SuperAdminCompanies",
-  );
+  const { data } = await axiosInstance.get<ApiResponse>("/SuperAdminCompanies");
   return data;
 }
 
@@ -66,26 +106,15 @@ export async function getCompanySites(orgId: string | number) {
   return data;
 }
 
-/**
- * POST /SuperAdminAuth/select-company
- * Stores returned org token when `token` / `accessToken` / `dataModel` string is present.
- */
-export async function selectCompany(payload: ApiPayload) {
-  const { data } = await axiosInstance.post<ApiResponse>(
-    "/SuperAdminAuth/select-company",
-    payload,
-  );
+/** POST /SuperAdminAuth/select-company */
+export async function selectCompany(payload: SuperAdminSelectCompanyPayload) {
+  const { data } = await axiosInstance.post<
+    ApiResponse<SelectCompanyResponse>
+  >("/SuperAdminAuth/select-company", payload);
 
-  const model = data.dataModel;
-  if (typeof model === "string" && model.length > 0) {
-    setOrgToken(model);
-  } else if (model && typeof model === "object") {
-    const record = model as Record<string, unknown>;
-    const token =
-      record.token ?? record.accessToken ?? record.orgToken ?? record.Token;
-    if (typeof token === "string" && token.length > 0) {
-      setOrgToken(token);
-    }
+  const token = data.dataModel?.accessToken;
+  if (token) {
+    setOrgToken(token);
   }
 
   return data;

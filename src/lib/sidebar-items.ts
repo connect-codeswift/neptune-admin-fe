@@ -11,7 +11,14 @@ export type SidebarNavSection = {
   items: SidebarNavItem[];
 };
 
-export const CLIENT_ONBOARDING_NAV_ITEMS: SidebarNavItem[] = [
+/** Super-admin shell: dashboard + client onboarding only. */
+export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: "lucide:layout-dashboard",
+    exact: true,
+  },
   {
     label: "Add a Company",
     href: "/add-a-company",
@@ -24,7 +31,8 @@ export const CLIENT_ONBOARDING_NAV_ITEMS: SidebarNavItem[] = [
   },
 ];
 
-export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
+/** Org/site admin nav — lives under /{company}/{site}/… */
+export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -73,19 +81,6 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   },
 ];
 
-export const DEFAULT_ADMIN_NAV_SECTIONS: SidebarNavSection[] = [
-  {
-    label: "Client Onboarding",
-    items: CLIENT_ONBOARDING_NAV_ITEMS,
-  },
-  {
-    label: "Admin",
-    items: SUPER_ADMIN_NAV_ITEMS,
-  },
-];
-
-const CLIENT_ONBOARDING_PATHS = ["/add-a-company", "/client-accounts"] as const;
-
 const STATIC_ROOT_SEGMENTS = new Set([
   "login",
   "forgot-password",
@@ -122,12 +117,6 @@ function prefixNavItems(
   }));
 }
 
-function isClientOnboardingPath(pathname: string): boolean {
-  return CLIENT_ONBOARDING_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
-}
-
 export function getAdminNavSections(pathname: string): SidebarNavSection[] {
   const orgSite = parseOrgSitePath(pathname);
   if (orgSite) {
@@ -135,18 +124,15 @@ export function getAdminNavSections(pathname: string): SidebarNavSection[] {
     return [
       {
         label: "Admin",
-        items: prefixNavItems(basePath, SUPER_ADMIN_NAV_ITEMS),
+        items: prefixNavItems(basePath, ORG_ADMIN_NAV_ITEMS),
       },
     ];
   }
 
-  if (isClientOnboardingPath(pathname)) {
-    return DEFAULT_ADMIN_NAV_SECTIONS.filter(
-      (section) => section.label === "Client Onboarding",
-    );
-  }
-
-  return DEFAULT_ADMIN_NAV_SECTIONS.filter(
-    (section) => section.label !== "Client Onboarding",
-  );
+  return [
+    {
+      label: "Super Admin",
+      items: SUPER_ADMIN_NAV_ITEMS,
+    },
+  ];
 }
