@@ -4,10 +4,15 @@ export {
   type DashboardHeaderProps,
 } from "./DashboardHeader";
 export {
-  DashboardSidebar,
-  type DashboardSidebarProps,
-  type DashboardSidebarUser,
-} from "./DashboardSidebar";
+  AdminDashboardSidebar,
+  type AdminDashboardSidebarProps,
+  type AdminDashboardSidebarUser,
+} from "./AdminDashboardSidebar";
+export {
+  SuperAdminDashboardSidebar,
+  type SuperAdminDashboardSidebarProps,
+  type SuperAdminDashboardSidebarUser,
+} from "./SuperAdminDashboardSidebar";
 export {
   SidebarSystemStatus,
   type SidebarSystemStatusProps,

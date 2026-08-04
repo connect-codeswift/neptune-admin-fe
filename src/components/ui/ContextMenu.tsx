@@ -6,13 +6,14 @@ import {
   isValidElement,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
-  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { IconButton } from "./IconButton";
 
 export type ContextMenuAction = {
@@ -43,8 +44,64 @@ export type ContextMenuProps = {
   label?: string;
 };
 
+type MenuCoords = {
+  top: number;
+  left: number;
+  placement: "above" | "below";
+};
+
 function isSeparator(item: ContextMenuItem): item is ContextMenuSeparator {
   return item.separator === true;
+}
+
+function measureMenu(menu: HTMLElement): { width: number; height: number } {
+  const rect = menu.getBoundingClientRect();
+  return {
+    width: rect.width || menu.offsetWidth,
+    height: rect.height || menu.offsetHeight,
+  };
+}
+
+function computeMenuCoords(
+  triggerRect: DOMRect,
+  menuWidth: number,
+  menuHeight: number,
+  align: "start" | "end",
+): MenuCoords {
+  const gap = 4;
+  const viewportPadding = 8;
+
+  const spaceBelow =
+    window.innerHeight - triggerRect.bottom - viewportPadding;
+  const spaceAbove = triggerRect.top - viewportPadding;
+  const requiredHeight = menuHeight + gap;
+
+  const fitsBelow = requiredHeight <= spaceBelow;
+  const fitsAbove = requiredHeight <= spaceAbove;
+
+  let placement: MenuCoords["placement"] = "below";
+  if (!fitsBelow && (fitsAbove || spaceAbove > spaceBelow)) {
+    placement = "above";
+  }
+
+  let top =
+    placement === "above"
+      ? triggerRect.top - menuHeight - gap
+      : triggerRect.bottom + gap;
+
+  let left = align === "end" ? triggerRect.right - menuWidth : triggerRect.left;
+
+  left = Math.max(
+    viewportPadding,
+    Math.min(left, window.innerWidth - menuWidth - viewportPadding),
+  );
+
+  top = Math.max(
+    viewportPadding,
+    Math.min(top, window.innerHeight - menuHeight - viewportPadding),
+  );
+
+  return { top, left, placement };
 }
 
 export function ContextMenu({
@@ -59,13 +116,51 @@ export function ContextMenu({
   const generatedId = useId();
   const menuId = `${generatedId}-menu`;
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<MenuCoords | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !rootRef.current || !menuRef.current) return;
+
+    const updatePosition = () => {
+      const trigger = rootRef.current;
+      const menu = menuRef.current;
+      if (!trigger || !menu) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const { width, height } = measureMenu(menu);
+      if (height <= 0) return;
+
+      setCoords(
+        computeMenuCoords(triggerRect, width, height, align),
+      );
+    };
+
+    updatePosition();
+    const frame = requestAnimationFrame(updatePosition);
+
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, align, items]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setCoords(null);
+      return;
+    }
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
@@ -83,9 +178,6 @@ export function ContextMenu({
     if (disabled) return;
     setOpen((current) => !current);
   };
-
-  const menuStyle: CSSProperties =
-    align === "end" ? { right: 0 } : { left: 0 };
 
   let trigger: ReactNode;
   if (children && isValidElement(children)) {
@@ -137,61 +229,67 @@ export function ContextMenu({
     );
   }
 
-  return (
-    <div
-      ref={rootRef}
-      className={`relative inline-flex ${className}`.trim()}
-    >
-      {trigger}
-      {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          style={menuStyle}
-          className={`absolute top-[calc(100%+0.25rem)] z-30 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-xl ${menuClassName}`.trim()}
-        >
-          {items.map((item) => {
-            if (isSeparator(item)) {
-              return (
-                <hr
-                  key={item.id}
-                  className="my-1 border-0 border-t border-darkest/10"
-                />
-              );
-            }
-
+  const menu =
+    open && typeof document !== "undefined" ? (
+      <div
+        ref={menuRef}
+        id={menuId}
+        role="menu"
+        style={{
+          position: "fixed",
+          top: coords?.top ?? 0,
+          left: coords?.left ?? 0,
+          visibility: coords ? "visible" : "hidden",
+        }}
+        className={`z-50 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-xl ${menuClassName}`.trim()}
+      >
+        {items.map((item) => {
+          if (isSeparator(item)) {
             return (
-              <button
+              <hr
                 key={item.id}
-                type="button"
-                role="menuitem"
-                disabled={item.disabled}
-                onClick={() => {
-                  if (item.disabled) return;
-                  item.onSelect?.();
-                  setOpen(false);
-                }}
-                className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                  item.danger
-                    ? "text-red hover:bg-red/5"
-                    : "text-darkest hover:bg-lightgray"
-                }`}
-              >
-                {item.icon ? (
-                  <Icon
-                    icon={item.icon}
-                    width={16}
-                    height={16}
-                    className="shrink-0"
-                    aria-hidden
-                  />
-                ) : null}
-                <span className="truncate">{item.label}</span>
-              </button>
+                className="my-1 border-0 border-t border-darkest/10"
+              />
             );
-          })}
-        </div>
-      ) : null}
+          }
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="menuitem"
+              disabled={item.disabled}
+              onClick={() => {
+                if (item.disabled) return;
+                item.onSelect?.();
+                setOpen(false);
+              }}
+              className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                item.danger
+                  ? "text-red hover:bg-red/5"
+                  : "text-darkest hover:bg-lightgray"
+              }`}
+            >
+              {item.icon ? (
+                <Icon
+                  icon={item.icon}
+                  width={16}
+                  height={16}
+                  className="shrink-0"
+                  aria-hidden
+                />
+              ) : null}
+              <span className="truncate">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    ) : null;
+
+  return (
+    <div ref={rootRef} className={`inline-flex ${className}`.trim()}>
+      {trigger}
+      {menu ? createPortal(menu, document.body) : null}
     </div>
   );
 }

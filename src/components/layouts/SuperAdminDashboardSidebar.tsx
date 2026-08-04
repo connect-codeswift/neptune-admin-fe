@@ -5,26 +5,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DEFAULT_ADMIN_NAV_SECTIONS,
+  getAdminNavSections,
   type SidebarNavSection,
 } from "@/lib/sidebar-items";
 import { SidebarSystemStatus } from "./SidebarSystemStatus";
 
-export type DashboardSidebarUser = {
+export type SuperAdminDashboardSidebarUser = {
   name: string;
   role: string;
   initials?: string;
 };
 
-export type DashboardSidebarProps = {
+export type SuperAdminDashboardSidebarProps = {
   sections?: SidebarNavSection[];
-  user?: DashboardSidebarUser;
+  user?: SuperAdminDashboardSidebarUser;
   activeHref?: string;
   logoHref?: string;
   className?: string;
 };
 
-const DEFAULT_USER: DashboardSidebarUser = {
+const DEFAULT_USER: SuperAdminDashboardSidebarUser = {
   name: "Ahmed Alsakkaf",
   role: "Neptune Admin",
 };
@@ -50,15 +50,16 @@ function isItemActive(
   return pathname.startsWith(`${href}/`);
 }
 
-export function DashboardSidebar({
-  sections = DEFAULT_ADMIN_NAV_SECTIONS,
+export function SuperAdminDashboardSidebar({
+  sections,
   user = DEFAULT_USER,
   activeHref,
   logoHref = "/dashboard",
   className = "",
-}: Readonly<DashboardSidebarProps>) {
+}: Readonly<SuperAdminDashboardSidebarProps>) {
   const pathname = usePathname();
   const currentHref = activeHref ?? pathname;
+  const navSections = sections ?? getAdminNavSections(pathname);
   const initials = user.initials ?? getInitials(user.name);
 
   return (
@@ -83,7 +84,7 @@ export function DashboardSidebar({
         className="min-h-0 scrollbar-none flex-1 overflow-y-auto overscroll-contain pr-1 max-h-[calc(100vh-22rem)]"
         aria-label="Admin"
       >
-        {sections.map((section) => (
+        {navSections.map((section) => (
           <div key={section.label} className="mb-3 last:mb-0">
             <p className="px-2 pt-px pb-1.5 text8 tracking-[1px] text-[#8892a3] uppercase">
               {section.label}

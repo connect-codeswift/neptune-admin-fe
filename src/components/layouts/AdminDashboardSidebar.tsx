@@ -10,23 +10,22 @@ import {
   parseOrgSitePath,
   type SidebarNavSection,
 } from "@/lib/sidebar-items";
-import { SidebarSystemStatus } from "./SidebarSystemStatus";
 
-export type DashboardSidebarUser = {
+export type AdminDashboardSidebarUser = {
   name: string;
   role: string;
   initials?: string;
 };
 
-export type DashboardSidebarProps = {
+export type AdminDashboardSidebarProps = {
   sections?: SidebarNavSection[];
-  user?: DashboardSidebarUser;
+  user?: AdminDashboardSidebarUser;
   activeHref?: string;
   logoHref?: string;
   className?: string;
 };
 
-const DEFAULT_USER: DashboardSidebarUser = {
+const DEFAULT_USER: AdminDashboardSidebarUser = {
   name: "Ahmed Alsakkaf",
   role: "Neptune Admin",
 };
@@ -52,13 +51,13 @@ function isItemActive(
   return pathname.startsWith(`${href}/`);
 }
 
-export function DashboardSidebar({
+export function AdminDashboardSidebar({
   sections,
   user = DEFAULT_USER,
   activeHref,
   logoHref,
   className = "",
-}: Readonly<DashboardSidebarProps>) {
+}: Readonly<AdminDashboardSidebarProps>) {
   const pathname = usePathname();
   const currentHref = activeHref ?? pathname;
   const orgSite = parseOrgSitePath(pathname);
@@ -139,8 +138,6 @@ export function DashboardSidebar({
       </nav>
 
       <div className="flex shrink-0 flex-col gap-3.5">
-        <SidebarSystemStatus />
-
         <div className="flex items-center gap-2.5 border-t border-darkest/8 px-2.5 pt-3.5 pb-2.5">
           <div
             className="flex size-7.5 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal text8 tracking-[0.22px] text-white"

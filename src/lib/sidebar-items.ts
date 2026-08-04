@@ -37,7 +37,7 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     icon: "tabler:user",
   },
   {
-    label: "Roles & Permissions",
+    label: "Roles & Rights",
     href: "/roles-and-rights",
     icon: "lucide:shield-check",
   },
