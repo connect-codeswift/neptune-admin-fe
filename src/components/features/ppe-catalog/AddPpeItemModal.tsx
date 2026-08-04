@@ -11,7 +11,6 @@ import { Button, Modal } from "@/components/ui";
 import {
   getCategoryLabel,
   PPE_CATEGORY_OPTIONS,
-  type DummyPpeItem,
   type PpeCategoryId,
 } from "@/lib/dummy-ppe-catalog";
 
@@ -35,13 +34,18 @@ const EMPTY_DRAFT: AddPpeItemDraft = {
 
 type AddPpeItemModalProps = Readonly<{
   open: boolean;
+  loading?: boolean;
   onClose: () => void;
-  onAdd: (item: DummyPpeItem) => void;
+  onAdd: (draft: AddPpeItemDraft, categoryLabel: string) => void | Promise<void>;
 }>;
 
-export function AddPpeItemModal({ open, onClose, onAdd }: AddPpeItemModalProps) {
+export function AddPpeItemModal({
+  open,
+  loading = false,
+  onClose,
+  onAdd,
+}: AddPpeItemModalProps) {
   const [draft, setDraft] = useState<AddPpeItemDraft>(EMPTY_DRAFT);
-  const [loading, setLoading] = useState(false);
 
   const categoryLabel = useMemo(
     () => getCategoryLabel(draft.categoryId),
@@ -53,34 +57,14 @@ export function AddPpeItemModal({ open, onClose, onAdd }: AddPpeItemModalProps) 
     onClose();
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!draft.name.trim()) {
       toast.error("Item name is required.");
       return;
     }
 
-    setLoading(true);
-
-    const newItem: DummyPpeItem = {
-      id: `ppe-${crypto.randomUUID()}`,
-      name: draft.name.trim(),
-      modelNumber: draft.modelNumber.trim() || "—",
-      manufacturer: draft.manufacturer.trim() || "—",
-      categoryId: draft.categoryId,
-      categoryLabel,
-      safetyStandard: draft.safetyStandard.trim() || "—",
-      stock: draft.minStockLevel,
-      minStockLevel: draft.minStockLevel,
-      inspectInterval: "Monthly",
-      lifespan: "—",
-      hazardTypes: [],
-      trainingRequired: false,
-    };
-
-    onAdd(newItem);
-    toast.success("PPE item added to catalog.");
-    setLoading(false);
-    resetAndClose();
+    await onAdd(draft, categoryLabel);
+    setDraft(EMPTY_DRAFT);
   };
 
   return (

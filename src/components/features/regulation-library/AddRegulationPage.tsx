@@ -4,7 +4,6 @@ import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { toast } from "sonner";
-import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import {
   CheckBoxInput,
   DateInput,
@@ -14,6 +13,11 @@ import {
 } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button, IconButton } from "@/components/ui";
+import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import {
+  useCreateRegulation,
+} from "@/hooks/useRegulationLibrary";
+import { mapRegulationFormToCreatePayload } from "@/lib/mappers/compliance.mapper";
 import {
   ORDINANCE_REQUIREMENT_EXAMPLE,
   REGULATION_CATEGORY_OPTIONS,
@@ -38,6 +42,7 @@ export function AddRegulationPage() {
   const router = useRouter();
   const formId = useId();
   const { adminHref, basePath } = useRegulationLibraryPaths();
+  const createRegulation = useCreateRegulation();
 
   const [citationCode, setCitationCode] = useState("");
   const [title, setTitle] = useState("");
@@ -71,14 +76,31 @@ export function AddRegulationPage() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!citationCode.trim() || !title.trim() || !regulatoryOverview.trim()) {
       toast.error("Citation code, regulation title, and regulatory overview are required.");
       return;
     }
 
-    toast.success("Regulation saved.");
-    router.push(basePath);
+    try {
+      await createRegulation.mutateAsync(
+        mapRegulationFormToCreatePayload({
+          citationCode,
+          title,
+          issuingAgency: issuingAgency.trim() || regulatoryOverview.trim(),
+          jurisdiction,
+          category,
+          effectiveDate,
+          reviewCycle,
+        }),
+      );
+      toast.success("Regulation saved.");
+      router.push(basePath);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save regulation.",
+      );
+    }
   };
 
   const quickReferenceCode = citationCode.trim() || "—";
@@ -101,6 +123,8 @@ export function AddRegulationPage() {
             <Button
               size="sm"
               leftIcon="lucide:save"
+              loading={createRegulation.isPending}
+              loadingText="Saving…"
               onClick={handleSave}
             >
               Save Regulation

@@ -1,7 +1,5 @@
-import {
-  DUMMY_REGULATIONS,
-  getRegulationStats,
-} from "@/lib/dummy-regulations";
+import type { DummyRegulation } from "@/lib/dummy-regulations";
+import { getRegulationStatsFromList } from "@/lib/mappers/compliance.mapper";
 
 function StatCard({
   value,
@@ -15,8 +13,14 @@ function StatCard({
   );
 }
 
-export function RegulationStatsRow() {
-  const stats = getRegulationStats(DUMMY_REGULATIONS);
+type RegulationStatsRowProps = Readonly<{
+  regulations?: DummyRegulation[];
+}>;
+
+export function RegulationStatsRow({
+  regulations = [],
+}: RegulationStatsRowProps) {
+  const stats = getRegulationStatsFromList(regulations);
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
