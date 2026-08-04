@@ -58,3 +58,13 @@ export {
   type TableIconActionProps,
   type TableRowActionsProps,
 } from "./Table";
+export {
+  SetupTabBar,
+  type SetupTabBarProps,
+  type SetupTabBarStep,
+} from "./SetupTabBar";
+export {
+  TabBar,
+  type TabBarProps,
+  type TabBarTab,
+} from "./TabBar";

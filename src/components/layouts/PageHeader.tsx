@@ -18,7 +18,7 @@ export function PageHeader({
 }: Readonly<PageHeaderProps>) {
   return (
     <header
-      className={`flex flex-col gap-4 rounded-2xl border border-darkest/8 bg-white px-6 py-5 shadow-[0_1px_3px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between ${className}`.trim()}
+      className={`flex flex-col gap-4 rounded-2xl border border-darkest/8 bg-white px-6 py-5 shadow-xl sm:flex-row sm:items-center sm:justify-between ${className}`.trim()}
     >
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 ? (

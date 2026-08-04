@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { AddCompanyWizard } from "@/components/features/onboarding/AddCompanyWizard";
 
 export default function AddACompanyPage() {
-  return <PlaceholderPage title="Add a Company" />;
+  return <AddCompanyWizard />;
 }

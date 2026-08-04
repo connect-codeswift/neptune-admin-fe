@@ -159,7 +159,7 @@ export function OtpInput({
             onChange={(event) => handleChange(index, event)}
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPaste={handlePaste}
-            className={`h-12 w-11 rounded-[10px] border bg-white text-center text-lg font-semibold text-darkest shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+            className={`h-12 w-11 rounded-[10px] border bg-white text-center text-lg font-semibold text-darkest shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
               error
                 ? "border-red focus:border-red focus-visible:ring-red/30"
                 : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"

@@ -1,3 +1,5 @@
+import type { RegisterPayload } from "@/dtos/req/onboarding.req";
+import type { RegisterResponse } from "@/dtos/res/onboarding.res";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiPayload, ApiResponse } from "@/types/api.types";
 
@@ -28,6 +30,15 @@ export function clearAuthTokens() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(ORG_TOKEN_KEY);
+}
+
+/** POST /Auth/register */
+export async function register(payload: RegisterPayload) {
+  const { data } = await axiosInstance.post<ApiResponse<RegisterResponse>>(
+    "/Auth/register",
+    payload,
+  );
+  return data;
 }
 
 /** POST /SuperAdminAuth/login */

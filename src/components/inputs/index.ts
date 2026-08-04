@@ -26,6 +26,7 @@ export {
   ToggleBadges,
   type ToggleBadgesProps,
   type ToggleBadgeOption,
+  type ToggleBadgesVariant,
 } from "./ToggleBadges";
 export { CheckBoxInput, type CheckBoxInputProps } from "./CheckBoxInput";
 export { RadioInput, type RadioInputProps } from "./RadioInput";

@@ -179,7 +179,7 @@ function CountryPickerPanel({
   return (
     <div
       id={panelId}
-      className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 overflow-hidden rounded-[10px] border border-darkest/12 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
+      className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 overflow-hidden rounded-[10px] border border-darkest/12 bg-white shadow-xl"
     >
       <div className="border-b border-darkest/10 p-2">
         <input
@@ -276,7 +276,7 @@ export function PhoneInput({
         </label>
       ) : null}
       <div
-        className={`flex h-12 overflow-hidden rounded-[10px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors focus-within:ring-2 ${fieldBorderClass} ${
+        className={`flex h-12 overflow-hidden rounded-[10px] border bg-white shadow-xl transition-colors focus-within:ring-2 ${fieldBorderClass} ${
           disabled ? "bg-lightgray opacity-60" : ""
         } ${className}`.trim()}
       >

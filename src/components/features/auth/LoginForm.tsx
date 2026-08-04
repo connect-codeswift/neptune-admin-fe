@@ -58,7 +58,7 @@ export function LoginForm() {
           fullWidth
           size="lg"
           rightIcon="lucide:arrow-right"
-          className="mt-4 shadow-[0_4px_16px_rgba(8,145,166,0.28)]"
+          className="mt-4 shadow-xl"
         >
           Sign in
         </Button>

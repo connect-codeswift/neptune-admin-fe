@@ -8,6 +8,7 @@ import {
   DEFAULT_ADMIN_NAV_SECTIONS,
   type SidebarNavSection,
 } from "@/lib/sidebar-items";
+import { SidebarSystemStatus } from "./SidebarSystemStatus";
 
 export type DashboardSidebarUser = {
   name: string;
@@ -26,7 +27,6 @@ export type DashboardSidebarProps = {
 const DEFAULT_USER: DashboardSidebarUser = {
   name: "Ahmed Alsakkaf",
   role: "Neptune Super Admin",
-  initials: "S",
 };
 
 function getInitials(name: string): string {
@@ -58,9 +58,9 @@ export function DashboardSidebar({
 
   return (
     <aside
-      className={`flex h-full w-59 flex-col gap-3.5 rounded-[20px] border border-white/90 bg-white/62 px-3.75 py-4.75 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
+      className={`flex h-full min-h-0 max-h-full w-59 flex-col gap-3.5 overflow-hidden rounded-[20px] border border-white/90 bg-white/62 px-3.75 py-4.75 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
     >
-      <div className="flex items-end justify-center border-b border-darkest/8 px-2 pt-2 pb-6">
+      <div className="flex shrink-0 items-end justify-center border-b border-darkest/8 px-2 pt-2 pb-6">
         <Link href={logoHref} className="flex items-center justify-center">
           <Image
             src="/sidebar/neptune-wordmark.svg"
@@ -74,7 +74,10 @@ export function DashboardSidebar({
         </Link>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto pr-1" aria-label="Admin">
+      <nav
+        className="min-h-0 scrollbar-none flex-1 overflow-y-auto overscroll-contain pr-1 max-h-[calc(100vh-22rem)]"
+        aria-label="Admin"
+      >
         {sections.map((section) => (
           <div key={section.label} className="mb-3 last:mb-0">
             <p className="px-2 pt-px pb-1.5 text-[10px] font-bold tracking-[1px] text-[#8892a3] uppercase">
@@ -121,18 +124,22 @@ export function DashboardSidebar({
         ))}
       </nav>
 
-      <div className="flex items-center gap-2.5 border-t border-darkest/8 px-2.5 pt-3.5 pb-2.5">
-        <div
-          className="flex size-7.5 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal text-[11px] font-bold tracking-[0.22px] text-white"
-          aria-hidden
-        >
-          {initials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[12.5px] leading-[13.75px] font-bold text-darkest">
-            {user.name}
-          </p>
-          <p className="truncate text-[10.5px] text-[#8892a3]">{user.role}</p>
+      <div className="flex shrink-0 flex-col gap-3.5">
+        <SidebarSystemStatus />
+
+        <div className="flex items-center gap-2.5 border-t border-darkest/8 px-2.5 pt-3.5 pb-2.5">
+          <div
+            className="flex size-7.5 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal text-[11px] font-bold tracking-[0.22px] text-white"
+            aria-hidden
+          >
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12.5px] leading-[13.75px] font-bold text-darkest">
+              {user.name}
+            </p>
+            <p className="truncate text-[10.5px] text-[#8892a3]">{user.role}</p>
+          </div>
         </div>
       </div>
     </aside>

@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { ClientAccountsPage } from "@/components/features/onboarding/ClientAccountsPage";
 
-export default function ClientAccountsPage() {
-  return <PlaceholderPage title="Client Accounts" />;
+export default function ClientAccountsRoute() {
+  return <ClientAccountsPage />;
 }

@@ -73,7 +73,7 @@ export function SearchInput({
           placeholder={placeholder}
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={describedBy}
-          className={`h-12 w-full rounded-[10px] border bg-white py-0 pr-3.5 pl-10 text-base text-darkest shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-colors placeholder:text-darkest/50 focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 [&::-webkit-search-cancel-button]:appearance-none ${
+          className={`h-12 w-full rounded-[10px] border bg-white py-0 pr-3.5 pl-10 text-base text-darkest shadow-xl outline-none transition-colors placeholder:text-darkest/50 focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 [&::-webkit-search-cancel-button]:appearance-none ${
             error
               ? "border-red focus:border-red focus-visible:ring-red/30"
               : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"

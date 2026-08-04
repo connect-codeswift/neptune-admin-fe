@@ -82,33 +82,32 @@ export function KpiTrendCard({
 
   return (
     <article
-      className={`flex min-h-36 flex-col justify-between rounded-2xl border border-darkest/8 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.04)] ${className}`.trim()}
+      className={`flex min-h-34 flex-col justify-between rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="flex justify-end">
         <Sparkline data={data} trend={direction} gradientId={gradientId} />
       </div>
 
-      <div className="mt-2 flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-3xl font-bold tracking-tight text-darkest">
-            {value}
-          </p>
-          <p className="mt-1 text-sm text-gray">{label}</p>
+      <div className="mt-1">
+        <p className="text-[26px] font-bold tracking-tight text-darkest">
+          {value}
+        </p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="text-xs text-gray">{label}</p>
+          <span
+            className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${
+              isUp ? "bg-green/10 text-green" : "bg-red/10 text-red"
+            }`}
+          >
+            <Icon
+              icon={isUp ? "mdi:arrow-up" : "mdi:arrow-down"}
+              width={10}
+              height={10}
+              aria-hidden
+            />
+            {trendLabel}
+          </span>
         </div>
-
-        <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-            isUp ? "bg-green/10 text-green" : "bg-red/10 text-red"
-          }`}
-        >
-          <Icon
-            icon={isUp ? "mdi:arrow-up" : "mdi:arrow-down"}
-            width={14}
-            height={14}
-            aria-hidden
-          />
-          {trendLabel}
-        </span>
       </div>
     </article>
   );

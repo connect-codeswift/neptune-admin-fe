@@ -148,7 +148,7 @@ export function ContextMenu({
           id={menuId}
           role="menu"
           style={menuStyle}
-          className={`absolute top-[calc(100%+0.25rem)] z-30 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-[0_8px_24px_rgba(15,23,42,0.12)] ${menuClassName}`.trim()}
+          className={`absolute top-[calc(100%+0.25rem)] z-30 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-xl ${menuClassName}`.trim()}
         >
           {items.map((item) => {
             if (isSeparator(item)) {

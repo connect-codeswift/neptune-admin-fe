@@ -30,7 +30,7 @@ export function Table<T>({
 }: Readonly<TableProps<T>>) {
   return (
     <div
-      className={`overflow-hidden rounded-[20px] border border-white/90 bg-white/62 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-12px_rgba(15,23,42,0.14)] backdrop-blur-[10px] ${className}`.trim()}
+      className={`overflow-hidden rounded-[20px] border border-white/90 bg-white/62 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-240 border-collapse text-left">
@@ -173,9 +173,9 @@ const STATUS_LABEL: Record<TableStatus, string> = {
 };
 
 const STATUS_CLASS: Record<TableStatus, string> = {
-  active: "bg-green/8 text-green",
+  active: "bg-green/12 text-green",
   pending: "bg-yellow/10 text-yellow",
-  inactive: "bg-darkest/5 text-[#8892a3]",
+  inactive: "bg-red/12 text-red",
   suspended: "bg-red/8 text-red",
 };
 
@@ -185,7 +185,7 @@ export function TableStatusBadge({
 }: Readonly<TableStatusBadgeProps>) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[status]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[status]}`}
     >
       {label ?? STATUS_LABEL[status]}
     </span>

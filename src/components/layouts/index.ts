@@ -9,6 +9,10 @@ export {
   type DashboardSidebarUser,
 } from "./DashboardSidebar";
 export {
+  SidebarSystemStatus,
+  type SidebarSystemStatusProps,
+} from "./SidebarSystemStatus";
+export {
   DEFAULT_ADMIN_NAV_SECTIONS,
   CLIENT_ONBOARDING_NAV_ITEMS,
   SUPER_ADMIN_NAV_ITEMS,

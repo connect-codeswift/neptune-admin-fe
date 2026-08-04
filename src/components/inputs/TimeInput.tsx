@@ -121,7 +121,7 @@ export function TimeInput({
         aria-controls={panelId}
         aria-describedby={describedBy}
         onClick={handleToggle}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text-base shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text-base shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
           error
             ? "border-red focus:border-red focus-visible:ring-red/30"
             : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
@@ -141,7 +141,7 @@ export function TimeInput({
       {open ? (
         <div
           id={panelId}
-          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-56 rounded-[10px] border border-darkest/12 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
+          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-56 rounded-[10px] border border-darkest/12 bg-white p-3 shadow-xl"
         >
           <div className="grid grid-cols-2 gap-3">
             <div>
