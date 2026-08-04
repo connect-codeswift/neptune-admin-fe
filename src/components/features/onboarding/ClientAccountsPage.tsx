@@ -15,6 +15,7 @@ import {
   type TableColumn,
   type TableStatus,
 } from "@/components/ui";
+import { DUMMY_ORGANIZATIONS } from "@/lib/dummy-organizations";
 import {
   TrialDaysModal,
   type TrialDaysModalMode,
@@ -31,87 +32,53 @@ type ClientAccount = {
   csm: string;
 };
 
+const CLIENT_ACCOUNTS: ClientAccount[] = DUMMY_ORGANIZATIONS.map((org) => ({
+  id: org.id,
+  name: org.name,
+  code: org.code,
+  industry: org.industry,
+  contractStart: org.contractStart,
+  status: org.status,
+  sites: org.siteCount,
+  csm: org.assignedCsm,
+}));
+
+const activeCount = DUMMY_ORGANIZATIONS.filter((o) => o.status === "active").length;
+const inactiveCount = DUMMY_ORGANIZATIONS.filter(
+  (o) => o.status === "inactive",
+).length;
+const onboardingCount = DUMMY_ORGANIZATIONS.filter((o) =>
+  o.subscription.statusLabel.toLowerCase().includes("trial"),
+).length;
+
 const KPI_CARDS = [
   {
-    value: 5,
+    value: DUMMY_ORGANIZATIONS.length,
     label: "Total Clients",
-    trendLabel: "+5",
+    trendLabel: "+3",
     trend: "up" as const,
-    data: [2, 3, 3, 4, 4, 5, 5],
+    data: [1, 1, 2, 2, 2, 3, 3],
   },
   {
-    value: 2,
+    value: onboardingCount,
     label: "Onboarding",
-    trendLabel: "+5",
+    trendLabel: "+1",
     trend: "up" as const,
-    data: [1, 1, 2, 2, 1, 2, 2],
+    data: [0, 0, 1, 1, 1, 1, onboardingCount],
   },
   {
-    value: 2,
+    value: inactiveCount,
     label: "Inactive",
-    trendLabel: "-2",
+    trendLabel: "-1",
     trend: "down" as const,
-    data: [4, 4, 3, 3, 3, 2, 2],
+    data: [2, 2, 2, 1, 1, 1, inactiveCount],
   },
   {
-    value: 4,
+    value: activeCount,
     label: "Active Clients",
     trendLabel: "30d",
     trend: "up" as const,
-    data: [2, 2, 3, 3, 3, 4, 4],
-  },
-];
-
-const CLIENT_ACCOUNTS: ClientAccount[] = [
-  {
-    id: "1",
-    name: "Meridian Chemical Co.",
-    code: "CL-001",
-    industry: "Chemical Manufacturing",
-    contractStart: "2026-03-01",
-    status: "active",
-    sites: 3,
-    csm: "Rachel Torres",
-  },
-  {
-    id: "2",
-    name: "1X Technologies",
-    code: "CL-002",
-    industry: "Oil & Gas",
-    contractStart: "2025-11-15",
-    status: "active",
-    sites: 7,
-    csm: "James Okafor",
-  },
-  {
-    id: "3",
-    name: "Harrington Logistics",
-    code: "CL-003",
-    industry: "Transportation & Warehousing",
-    contractStart: "2026-05-20",
-    status: "inactive",
-    sites: 2,
-    csm: "Rachel Torres",
-  },
-  {
-    id: "4",
-    name: "Vantage Construction LLC",
-    code: "CL-004",
-    industry: "Construction",
-    contractStart: "2026-01-10",
-    status: "active",
-    sites: 4,
-    csm: "Marcus Webb",
-  },
-  {
-    id: "5",
-    name: "BlueCrest Pharma",
-    code: "CL-005",
-    industry: "Pharmaceutical",
-    contractStart: "2026-06-01",
-    status: "inactive",
-    sites: 1,
-    csm: "Priya Mehta",
+    data: [1, 1, 1, 2, 2, 2, activeCount],
   },
 ];
 
