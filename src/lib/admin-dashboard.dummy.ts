@@ -56,7 +56,6 @@ export const ADMIN_MODULE_STATS: AdminModuleStat[] = [
   { title: "Document Categories", value: 92, activeCount: 14 },
   { title: "CAPA Items", value: 156, activeCount: 89 },
   { title: "PPE Catalog Items", value: 68, activeCount: 68 },
-  { title: "LOTO Procedures", value: 34, activeCount: 12 },
   { title: "Regulations", value: 127, activeCount: 127 },
 ];
 

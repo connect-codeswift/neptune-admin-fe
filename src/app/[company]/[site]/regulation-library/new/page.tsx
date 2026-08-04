@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { AddRegulationPage } from "@/components/features/regulation-library/AddRegulationPage";
 
-export default function NewRegulationPage() {
-  return <PlaceholderPage title="New Regulation" />;
+export default function OrgSiteNewRegulationRoute() {
+  return <AddRegulationPage />;
 }

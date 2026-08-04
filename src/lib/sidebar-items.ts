@@ -69,16 +69,6 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/ppe-catalog",
     icon: "lucide:hard-hat",
   },
-  {
-    label: "LOTO Procedures",
-    href: "/loto-procedures",
-    icon: "lucide:lock",
-  },
-  {
-    label: "Permit Templates",
-    href: "/permit-templates",
-    icon: "lucide:clipboard-clock",
-  },
 ];
 
 const STATIC_ROOT_SEGMENTS = new Set([
