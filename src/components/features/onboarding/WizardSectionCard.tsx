@@ -11,9 +11,9 @@ export function WizardSectionCard({
 }>) {
   return (
     <section className="rounded-2xl border border-darkest/8 bg-white p-6 shadow-xl">
-      <h2 className="text-lg font-bold text-darkest">{title}</h2>
+      <h2 className="text3 text-darkest">{title}</h2>
       {description ? (
-        <p className="mt-1 text-sm text-gray">{description}</p>
+        <p className="mt-1 text5 text-gray">{description}</p>
       ) : null}
       <div className="mt-5">{children}</div>
     </section>

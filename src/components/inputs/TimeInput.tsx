@@ -54,13 +54,13 @@ export function TimeInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -108,7 +108,7 @@ export function TimeInput({
       className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
     >
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-semibold text-darkest">
+        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
           {label}
         </label>
       ) : null}
@@ -121,7 +121,7 @@ export function TimeInput({
         aria-controls={panelId}
         aria-describedby={describedBy}
         onClick={handleToggle}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text-base shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
           error
             ? "border-red focus:border-red focus-visible:ring-red/30"
             : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
@@ -145,7 +145,7 @@ export function TimeInput({
         >
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="mb-1.5 text-xs font-semibold text-gray">Hour</p>
+              <p className="mb-1.5 text7 text-gray">Hour</p>
               <div className="max-h-40 space-y-1 overflow-auto">
                 {hourOptions.map((hour) => (
                   <button
@@ -153,7 +153,7 @@ export function TimeInput({
                     type="button"
                     aria-pressed={hours === hour}
                     onClick={() => applyTime(hour, minutes)}
-                    className={`flex w-full cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                    className={`flex w-full cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text5 transition-colors ${
                       hours === hour
                         ? "bg-blue-normal font-semibold text-white"
                         : "text-darkest hover:bg-lightgray"
@@ -165,7 +165,7 @@ export function TimeInput({
               </div>
             </div>
             <div>
-              <p className="mb-1.5 text-xs font-semibold text-gray">Minute</p>
+              <p className="mb-1.5 text7 text-gray">Minute</p>
               <div className="max-h-40 space-y-1 overflow-auto">
                 {minuteOptions.map((minute) => (
                   <button
@@ -173,7 +173,7 @@ export function TimeInput({
                     type="button"
                     aria-pressed={minutes === minute}
                     onClick={() => applyTime(hours, minute)}
-                    className={`flex w-full cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                    className={`flex w-full cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text5 transition-colors ${
                       minutes === minute
                         ? "bg-blue-normal font-semibold text-white"
                         : "text-darkest hover:bg-lightgray"
@@ -188,7 +188,7 @@ export function TimeInput({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="mt-3 w-full cursor-pointer rounded-lg bg-blue-lightest px-3 py-2 text-sm font-semibold text-blue-deep transition-colors hover:bg-blue-light"
+            className="mt-3 w-full cursor-pointer rounded-lg bg-blue-lightest px-3 py-2 text5 font-semibold text-blue-deep transition-colors hover:bg-blue-light"
           >
             Done
           </button>

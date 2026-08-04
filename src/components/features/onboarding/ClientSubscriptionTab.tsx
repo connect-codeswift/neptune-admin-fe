@@ -28,11 +28,11 @@ function DetailMetric({
 }: Readonly<{ label: string; value: string; accent?: boolean }>) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold tracking-[0.5px] text-[#8892a3] uppercase">
+      <p className="text7 tracking-[0.5px] text-[#8892a3] uppercase">
         {label}
       </p>
       <p
-        className={`mt-1 text-[13px] font-semibold ${
+        className={`mt-1 text5 font-semibold ${
           accent ? "text-blue-normal" : "text-darkest"
         }`}
       >
@@ -57,7 +57,7 @@ function HistoryStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text7 ${className}`}
     >
       {label}
     </span>
@@ -79,7 +79,7 @@ const HISTORY_COLUMNS: TableColumn<ClientTrialHistoryItem>[] = [
     id: "action",
     header: "Action",
     cell: (row) => (
-      <span className="text-[13px] font-semibold text-darkest">{row.action}</span>
+      <span className="text5 font-semibold text-darkest">{row.action}</span>
     ),
   },
   {
@@ -127,7 +127,7 @@ export function ClientSubscriptionTab({
       <DetailCard
         title="Subscription Details"
         action={
-          <span className="rounded-full bg-blue-normal/12 px-2.5 py-1 text-[11px] font-semibold text-blue-normal">
+          <span className="rounded-full bg-blue-normal/12 px-2.5 py-1 text7 text-blue-normal">
             {subscription.statusLabel}
           </span>
         }
@@ -200,7 +200,7 @@ export function ClientSubscriptionTab({
                 value={additionalDays}
                 onChange={(event) => setAdditionalDays(event.target.value)}
               />
-              <div className="pb-1 text-[11px] text-[#8892a3]">
+              <div className="pb-1 text7 text-[#8892a3]">
                 <p>
                   Current End:{" "}
                   <span className="font-semibold text-darkest">

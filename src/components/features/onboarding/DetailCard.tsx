@@ -19,9 +19,9 @@ export function DetailCard({
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-bold text-darkest">{title}</h2>
+          <h2 className="text4 text-darkest">{title}</h2>
           {description ? (
-            <p className="mt-1 text-sm text-gray">{description}</p>
+            <p className="mt-1 text5 text-gray">{description}</p>
           ) : null}
         </div>
         {action}

@@ -313,7 +313,7 @@ export function AddCompanyWizard() {
         </Button>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray">
+          <span className="text5 text-gray">
             Step {stepIndex + 1} of {SETUP_STEPS.length}
           </span>
           <Button

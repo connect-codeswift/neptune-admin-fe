@@ -69,13 +69,13 @@ export function DropzoneInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -126,7 +126,7 @@ export function DropzoneInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`.trim()}>
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-semibold text-darkest">
+        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
           {label}
         </label>
       ) : null}
@@ -145,12 +145,12 @@ export function DropzoneInput({
           className="mx-auto text-blue-normal"
           aria-hidden
         />
-        <p className="mt-2 text-sm text-darkest">{placeholder}</p>
+        <p className="mt-2 text5 text-darkest">{placeholder}</p>
         <button
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
-          className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-lightest px-3 py-1.5 text-sm font-semibold text-blue-deep transition-colors hover:bg-blue-light disabled:cursor-not-allowed"
+          className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-lightest px-3 py-1.5 text5 font-semibold text-blue-deep transition-colors hover:bg-blue-light disabled:cursor-not-allowed"
         >
           Browse files
         </button>
@@ -174,7 +174,7 @@ export function DropzoneInput({
           {value.map((file) => (
             <li
               key={`${file.name}-${file.size}-${file.lastModified}`}
-              className="flex items-center justify-between gap-2 rounded-lg border border-darkest/10 bg-lightgray px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-2 rounded-lg border border-darkest/10 bg-lightgray px-3 py-2 text5"
             >
               <span className="min-w-0 truncate text-darkest">
                 {file.name}{" "}

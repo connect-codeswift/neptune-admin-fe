@@ -24,11 +24,11 @@ export function PageHeader({
         {breadcrumbs && breadcrumbs.length > 0 ? (
           <BreadCrumb items={breadcrumbs} className="mb-2" />
         ) : null}
-        <h1 className="text-2xl font-bold tracking-tight text-darkest">
+        <h1 className="text1 text-darkest">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 text-sm text-gray">{description}</p>
+          <p className="mt-1 text5 text-gray">{description}</p>
         ) : null}
       </div>
 

@@ -63,13 +63,13 @@ export function DateInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -112,7 +112,7 @@ export function DateInput({
       className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
     >
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-semibold text-darkest">
+        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
           {label}
         </label>
       ) : null}
@@ -125,7 +125,7 @@ export function DateInput({
         aria-controls={panelId}
         aria-describedby={describedBy}
         onClick={handleToggle}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text-base shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
           error
             ? "border-red focus:border-red focus-visible:ring-red/30"
             : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
@@ -156,7 +156,7 @@ export function DateInput({
             >
               <Icon icon="mdi:chevron-left" width={20} height={20} />
             </button>
-            <p className="text-sm font-semibold text-darkest">
+            <p className="text5 font-semibold text-darkest">
               {formatMonthLabel(viewMonth)}
             </p>
             <button
@@ -172,7 +172,7 @@ export function DateInput({
             {getWeekdayLabels().map((day) => (
               <span
                 key={day}
-                className="py-1 text-center text-[11px] font-medium text-gray"
+                className="py-1 text-center text7 text-gray"
               >
                 {day}
               </span>
@@ -197,7 +197,7 @@ export function DateInput({
                     onChange?.(key);
                     setOpen(false);
                   }}
-                  className={`flex size-9 cursor-pointer items-center justify-center rounded-lg text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                  className={`flex size-9 cursor-pointer items-center justify-center rounded-lg text5 transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
                     isSelected
                       ? "bg-blue-normal font-semibold text-white"
                       : "text-darkest hover:bg-blue-lightest"

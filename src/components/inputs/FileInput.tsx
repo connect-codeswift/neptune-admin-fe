@@ -50,13 +50,13 @@ export function FileInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -65,7 +65,7 @@ export function FileInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`.trim()}>
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-semibold text-darkest">
+        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
           {label}
         </label>
       ) : null}
@@ -78,7 +78,7 @@ export function FileInput({
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-lightest px-3 py-1.5 text-sm font-semibold text-blue-deep transition-colors hover:bg-blue-light disabled:cursor-not-allowed"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-lightest px-3 py-1.5 text5 font-semibold text-blue-deep transition-colors hover:bg-blue-light disabled:cursor-not-allowed"
         >
           <Icon icon="mdi:paperclip" width={16} height={16} aria-hidden />
           Browse
@@ -87,7 +87,7 @@ export function FileInput({
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
-          className="min-w-0 flex-1 cursor-pointer truncate text-left text-sm disabled:cursor-not-allowed"
+          className="min-w-0 flex-1 cursor-pointer truncate text-left text5 disabled:cursor-not-allowed"
         >
           {value ? (
             <span className="text-darkest">

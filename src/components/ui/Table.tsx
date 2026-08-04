@@ -48,7 +48,7 @@ export function Table<T>({
                   <th
                     key={column.id}
                     scope="col"
-                    className={`h-10 px-4 text-[11px] font-bold tracking-[0.66px] text-[#8892a3] uppercase ${column.headerClassName ?? ""}`.trim()}
+                    className={`h-10 px-4 text8 tracking-[0.66px] text-[#8892a3] uppercase ${column.headerClassName ?? ""}`.trim()}
                   >
                     {headerContent}
                   </th>
@@ -62,7 +62,7 @@ export function Table<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-10 text-center text-sm text-[#8892a3]"
+                  className="px-4 py-10 text-center text5 text-[#8892a3]"
                 >
                   {emptyMessage}
                 </td>
@@ -123,17 +123,17 @@ export function TableUserCell({
   return (
     <div className="flex items-center gap-2.5">
       <div
-        className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-blue-normal text-[10px] font-bold text-white"
+        className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-blue-normal text8 text-white"
         aria-hidden
       >
         {avatarLabel}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-semibold text-darkest">
+        <p className="truncate text5 font-semibold text-darkest">
           {name}
         </p>
         {email ? (
-          <p className="truncate text-[11px] text-[#8892a3]">{email}</p>
+          <p className="truncate text7 text-[#8892a3]">{email}</p>
         ) : null}
       </div>
     </div>
@@ -151,7 +151,7 @@ export function TableRoleBadge({
 }: Readonly<TableRoleBadgeProps>) {
   return (
     <span
-      className={`inline-flex items-center rounded-md bg-blue-normal/12 px-2 py-0.5 text-[12.5px] font-medium text-darkest ${className}`.trim()}
+      className={`inline-flex items-center rounded-md bg-blue-normal/12 px-2 py-0.5 text6 font-medium text-darkest ${className}`.trim()}
     >
       {children}
     </span>
@@ -185,7 +185,7 @@ export function TableStatusBadge({
 }: Readonly<TableStatusBadgeProps>) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[status]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text7 ${STATUS_CLASS[status]}`}
     >
       {label ?? STATUS_LABEL[status]}
     </span>
@@ -209,7 +209,7 @@ export function TableTextCell({
   }
 
   return (
-    <span className={`text-[12.5px] ${colorClass} ${className}`.trim()}>
+    <span className={`text6 ${colorClass} ${className}`.trim()}>
       {children}
     </span>
   );

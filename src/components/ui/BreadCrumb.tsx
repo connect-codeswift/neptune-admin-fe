@@ -46,7 +46,7 @@ export function BreadCrumb({
 
   return (
     <nav aria-label={label} className={className}>
-      <ol className="flex flex-wrap items-center gap-1.5 text-sm text-gray">
+      <ol className="flex flex-wrap items-center gap-1.5 text5 text-gray">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const key = `${item.label}-${item.href ?? "current"}`;

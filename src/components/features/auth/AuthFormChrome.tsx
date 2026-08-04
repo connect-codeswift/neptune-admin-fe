@@ -9,10 +9,10 @@ export function AuthFormHeader({
 }: Readonly<AuthFormHeaderProps>) {
   return (
     <div>
-      <h1 className="text-[40px] leading-10 font-medium tracking-[-2px] text-darkest">
+      <h1 className="text1 tracking-[-2px] text-darkest">
         {title}
       </h1>
-      <p className="pt-2 text-lg font-medium text-[#8892a3]">{description}</p>
+      <p className="pt-2 text3 text-[#8892a3]">{description}</p>
     </div>
   );
 }
@@ -27,7 +27,7 @@ export function AuthDivider({
   return (
     <div className="flex items-center gap-3 pt-5">
       <div className="h-px min-w-0 flex-1 bg-darkest/10" />
-      <span className="shrink-0 text-xs font-medium whitespace-nowrap text-[#8892a3]">
+      <span className="shrink-0 text6 whitespace-nowrap text-[#8892a3]">
         {label}
       </span>
       <div className="h-px min-w-0 flex-1 bg-darkest/10" />

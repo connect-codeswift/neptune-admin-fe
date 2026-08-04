@@ -50,13 +50,13 @@ export function OtpInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${groupId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${groupId}-helper`} className="text-xs text-gray">
+      <p id={`${groupId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -135,7 +135,7 @@ export function OtpInput({
       disabled={disabled}
     >
       {label ? (
-        <legend className="mb-0.5 text-sm font-semibold text-darkest">
+        <legend className="mb-0.5 text5 font-semibold text-darkest">
           {label}
         </legend>
       ) : null}
@@ -159,7 +159,7 @@ export function OtpInput({
             onChange={(event) => handleChange(index, event)}
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPaste={handlePaste}
-            className={`h-12 w-11 rounded-[10px] border bg-white text-center text-lg font-semibold text-darkest shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+            className={`h-12 w-11 rounded-[10px] border bg-white text-center text3 text-darkest shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
               error
                 ? "border-red focus:border-red focus-visible:ring-red/30"
                 : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"

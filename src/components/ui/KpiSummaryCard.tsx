@@ -15,11 +15,11 @@ export function KpiSummaryCard({
     <article
       className={`rounded-2xl bg-consent-bg p-5 ${className}`.trim()}
     >
-      <p className="text-sm font-medium text-gray">{title}</p>
-      <p className="mt-2 text-3xl font-bold tracking-tight text-darkest">
+      <p className="text5 text-gray">{title}</p>
+      <p className="mt-2 text1 text-darkest">
         {value}
       </p>
-      <p className="mt-3 text-sm font-medium text-blue-normal">
+      <p className="mt-3 text5 text-blue-normal">
         {activeCount} active
       </p>
     </article>

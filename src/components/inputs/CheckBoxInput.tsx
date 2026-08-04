@@ -34,13 +34,13 @@ export function CheckBoxInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="pl-6.5 text-xs text-gray">
+      <p id={`${inputId}-helper`} className="pl-6.5 text6 text-gray">
         {helperText}
       </p>
     );
@@ -66,7 +66,7 @@ export function CheckBoxInput({
           {...props}
         />
         {label ? (
-          <span className="text-sm font-medium text-darkest">{label}</span>
+          <span className="text5 text-darkest">{label}</span>
         ) : null}
       </label>
       {fieldMessage}

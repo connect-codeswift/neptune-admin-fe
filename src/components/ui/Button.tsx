@@ -39,9 +39,9 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
-  sm: "h-9 gap-1.5 rounded-lg px-3 text-sm",
-  md: "h-11 gap-2 rounded-[10px] px-4 text-sm",
-  lg: "h-12 gap-2 rounded-[10px] px-5 text-base",
+  sm: "h-9 gap-1.5 rounded-lg px-3 text5",
+  md: "h-11 gap-2 rounded-[10px] px-4 text5",
+  lg: "h-12 gap-2 rounded-[10px] px-5 text5",
 };
 
 export const Button = forwardRef<HTMLButtonElement, Readonly<ButtonProps>>(

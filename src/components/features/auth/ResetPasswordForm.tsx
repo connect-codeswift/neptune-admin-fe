@@ -61,7 +61,7 @@ export function ResetPasswordForm() {
         <div className="mt-4 flex justify-center">
           <Link
             href="/login"
-            className="text-[13px] text-blue-normal hover:text-blue-deep"
+            className="text5 text-blue-normal hover:text-blue-deep"
           >
             Back to sign in
           </Link>

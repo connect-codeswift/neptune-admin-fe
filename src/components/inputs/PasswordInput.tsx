@@ -38,13 +38,13 @@ export function PasswordInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -55,7 +55,7 @@ export function PasswordInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="text-sm font-semibold text-darkest"
+          className="text5 font-semibold text-darkest"
         >
           {label}
         </label>
@@ -68,7 +68,7 @@ export function PasswordInput({
           disabled={disabled}
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={describedBy}
-          className={`h-12 w-full rounded-[10px] border bg-white py-0 pr-11 pl-3.5 text-base text-darkest shadow-xl outline-none transition-colors placeholder:text-darkest/50 focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+          className={`h-12 w-full rounded-[10px] border bg-white py-0 pr-11 pl-3.5 text5 text-darkest shadow-xl outline-none transition-colors placeholder:text-darkest/50 focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
             error
               ? "border-red focus:border-red focus-visible:ring-red/30"
               : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"

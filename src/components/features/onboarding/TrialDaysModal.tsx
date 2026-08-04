@@ -44,7 +44,7 @@ export function TrialDaysModal({
       }}
     >
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-gray">
+        <p className="text5 text-gray">
           {isStart
             ? `Choose how many days of trial access to give ${clientName}.`
             : `Choose how many additional days to extend the trial for ${clientName}.`}

@@ -54,13 +54,13 @@ export function SelectInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -95,7 +95,7 @@ export function SelectInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="text-sm font-semibold text-darkest"
+          className="text5 font-semibold text-darkest"
         >
           {label}
         </label>
@@ -109,7 +109,7 @@ export function SelectInput({
         aria-controls={listboxId}
         aria-describedby={describedBy}
         onClick={() => setOpen((current) => !current)}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text-base shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
           error
             ? "border-red focus:border-red focus-visible:ring-red/30"
             : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
@@ -133,7 +133,7 @@ export function SelectInput({
           className="absolute top-[calc(100%+0.25rem)] left-0 z-20 max-h-60 w-full overflow-auto rounded-[10px] border border-darkest/12 bg-white p-1 shadow-xl"
         >
           {options.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-gray">No options</p>
+            <p className="px-3 py-2 text5 text-gray">No options</p>
           ) : (
             options.map((option) => {
               const isSelected = option.value === value;
@@ -147,7 +147,7 @@ export function SelectInput({
                     onChange?.(option.value);
                     setOpen(false);
                   }}
-                  className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                     isSelected
                       ? "bg-blue-lightest text-blue-deep"
                       : "text-darkest hover:bg-lightgray"

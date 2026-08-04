@@ -51,13 +51,13 @@ export function MultiBadgesInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -109,7 +109,7 @@ export function MultiBadgesInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="text-sm font-semibold text-darkest"
+          className="text5 font-semibold text-darkest"
         >
           {label}
         </label>
@@ -124,7 +124,7 @@ export function MultiBadgesInput({
         {value.map((badge) => (
           <span
             key={badge}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-lightest px-2 py-1 text-xs font-medium text-blue-deep"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-lightest px-2 py-1 text6 text-blue-deep"
           >
             {badge}
             <button
@@ -149,7 +149,7 @@ export function MultiBadgesInput({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={() => addBadge(draft)}
-          className="min-w-32 flex-1 bg-transparent py-1 text-base text-darkest outline-none placeholder:text-darkest/50 disabled:cursor-not-allowed"
+          className="min-w-32 flex-1 bg-transparent py-1 text5 text-darkest outline-none placeholder:text-darkest/50 disabled:cursor-not-allowed"
         />
       </div>
       {fieldMessage}

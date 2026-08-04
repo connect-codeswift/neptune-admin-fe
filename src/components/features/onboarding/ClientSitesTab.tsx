@@ -16,7 +16,7 @@ const COLUMNS: TableColumn<ClientSite>[] = [
     id: "name",
     header: "Site Name",
     cell: (row) => (
-      <span className="text-[13px] font-semibold text-darkest">{row.name}</span>
+      <span className="text5 font-semibold text-darkest">{row.name}</span>
     ),
   },
   {

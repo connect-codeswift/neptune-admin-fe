@@ -68,7 +68,7 @@ function BadgeButton({
         aria-pressed={selected}
         disabled={disabled}
         onClick={() => onToggle(option.value)}
-        className={`cursor-pointer rounded-[10px] border px-4 py-3.5 text-left text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:cursor-not-allowed disabled:opacity-50 ${cardClass}`}
+        className={`cursor-pointer rounded-[10px] border px-4 py-3.5 text-left text5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:cursor-not-allowed disabled:opacity-50 ${cardClass}`}
       >
         {option.label}
       </button>
@@ -88,7 +88,7 @@ function BadgeButton({
       aria-pressed={selected}
       disabled={disabled}
       onClick={() => onToggle(option.value)}
-      className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${badgeClass}`}
+      className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${badgeClass}`}
     >
       <span
         className={`flex size-4 shrink-0 items-center justify-center rounded-full ${
@@ -114,14 +114,14 @@ function buildFieldMessage(
 ) {
   if (error) {
     return (
-      <p id={`${groupId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   }
   if (helperText) {
     return (
-      <p id={`${groupId}-helper`} className="text-xs text-gray">
+      <p id={`${groupId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -192,9 +192,9 @@ export function ToggleBadges({
       `grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 ${className}`.trim();
   }
 
-  let labelClass = "text-base font-bold text-darkest";
+  let labelClass = "text4 text-darkest";
   if (variant === "card") {
-    labelClass = "text-sm font-semibold text-darkest";
+    labelClass = "text5 font-semibold text-darkest";
   }
 
   return (
@@ -212,7 +212,7 @@ export function ToggleBadges({
               <span className="sr-only">Options</span>
             )}
             {showLegendCount ? (
-              <span className="text-sm font-normal text-gray">{count}</span>
+              <span className="text5 text-gray">{count}</span>
             ) : null}
           </span>
         </legend>
@@ -234,7 +234,7 @@ export function ToggleBadges({
       </div>
 
       {showFooterCount ? (
-        <p className="text-xs text-gray">{footerCountText}</p>
+        <p className="text6 text-gray">{footerCountText}</p>
       ) : null}
     </fieldset>
   );

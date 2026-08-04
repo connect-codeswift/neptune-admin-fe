@@ -46,13 +46,13 @@ export function CheckboxGroupInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${groupId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${groupId}-helper`} className="text-xs text-gray">
+      <p id={`${groupId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -73,7 +73,7 @@ export function CheckboxGroupInput({
       disabled={disabled}
     >
       {label ? (
-        <legend className="mb-0.5 text-sm font-semibold text-darkest">
+        <legend className="mb-0.5 text5 font-semibold text-darkest">
           {label}
         </legend>
       ) : null}
@@ -109,7 +109,7 @@ export function CheckboxGroupInput({
                   error ? "border-red" : ""
                 }`}
               />
-              <span className="text-sm font-medium text-darkest">
+              <span className="text5 text-darkest">
                 {option.label}
               </span>
             </label>

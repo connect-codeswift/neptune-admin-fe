@@ -32,21 +32,30 @@ body {
 
 @layer base {
   .text1 {
-    @apply text-[22px] lg:text-[26px] lg:tracking-tight font-semibold lg:leading-tight;
+    @apply text-[24px] lg:text-[26px] lg:tracking-tight font-semibold lg:leading-tight;
   }
   .text2 {
-    @apply text-[18px] lg:text-[20px] lg:tracking-tight font-bold lg:leading-tight;
+    @apply text-[18px] lg:text-[20px] lg:tracking-tight font-semibold lg:leading-tight;
   }
   .text3 {
-    @apply text-[14px] lg:text-[16px] lg:tracking-tight font-medium lg:leading-tight;
-  } /* BASE 14 on mobile, 16 on desktop */
+    @apply text-[16px] lg:text-[18px] lg:tracking-tight font-semibold lg:leading-tight;
+  }
   .text4 {
-    @apply text-[12px] lg:text-[14px] lg:tracking-tight font-medium lg:leading-tight;
+    @apply text-[14px] lg:text-[16px] lg:tracking-tight font-bold lg:leading-tight;
   }
   .text5 {
+    @apply text-[13px] lg:text-[14px] lg:tracking-tight font-medium lg:leading-tight;
+  } /* BASE 14 on mobile, 16 on desktop */
+  .text6 {
+    @apply text-[12px] lg:text-[13px] lg:tracking-tight font-medium lg:leading-tight;
+  }
+  .text7 {
     @apply text-[11px] lg:text-[12px] lg:tracking-tight font-semibold lg:leading-tight;
   }
-  .text6 {
+  .text8 {
     @apply text-[10px] lg:text-[11px] lg:tracking-tight font-bold lg:leading-tight;
+  }
+  .text9 {
+    @apply text-[9px] lg:text-[10px] lg:tracking-tight font-bold lg:leading-tight;
   }
 }

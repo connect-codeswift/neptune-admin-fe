@@ -40,13 +40,13 @@ export function ToggleInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text-xs text-red" role="alert">
+      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text-xs text-gray">
+      <p id={`${inputId}-helper`} className="text6 text-gray">
         {helperText}
       </p>
     );
@@ -60,7 +60,7 @@ export function ToggleInput({
             {label ? (
               <label
                 htmlFor={inputId}
-                className={`text-sm font-semibold text-darkest ${
+                className={`text5 font-semibold text-darkest ${
                   disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
                 }`}
               >
@@ -68,7 +68,7 @@ export function ToggleInput({
               </label>
             ) : null}
             {description ? (
-              <p className="mt-0.5 text-xs text-gray">{description}</p>
+              <p className="mt-0.5 text6 text-gray">{description}</p>
             ) : null}
           </div>
         ) : null}
