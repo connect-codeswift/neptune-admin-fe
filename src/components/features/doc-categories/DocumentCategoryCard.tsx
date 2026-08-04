@@ -31,7 +31,7 @@ export function DocumentCategoryCard({
   onSave,
 }: DocumentCategoryCardProps) {
   return (
-    <article className="flex flex-col gap-4 rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-xl backdrop-blur-[10px]">
+    <article className="flex flex-col gap-4 rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-lg backdrop-blur-[10px]">
       <div className="flex items-start gap-3">
         <div
           className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal/12 text-blue-normal"

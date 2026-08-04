@@ -24,7 +24,7 @@ export function RoleCard({ role, basePath }: RoleCardProps) {
   const hiddenCount = role.rights.length - visibleRights.length;
 
   return (
-    <article className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-xl backdrop-blur-[10px]">
+    <article className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-lg backdrop-blur-[10px]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

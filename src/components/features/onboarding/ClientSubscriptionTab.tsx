@@ -236,7 +236,7 @@ export function ClientSubscriptionTab({
           data={subscription.history}
           getRowId={(row) => row.id}
           emptyMessage="No trial history yet."
-          className="border-darkest/8 bg-white shadow-xl backdrop-blur-none"
+          className="border-darkest/8 bg-white shadow-lg backdrop-blur-none"
         />
       </DetailCard>
     </div>

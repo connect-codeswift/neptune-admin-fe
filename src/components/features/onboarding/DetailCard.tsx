@@ -15,7 +15,7 @@ export function DetailCard({
 }>) {
   return (
     <section
-      className={`rounded-[20px] border border-white bg-white/62 p-5.5 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
+      className={`rounded-[20px] border border-white bg-white/62 p-5.5 shadow-lg backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">

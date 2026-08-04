@@ -1,13 +1,22 @@
 import axios from "axios";
+import {
+  AUTH_TOKEN_KEY,
+  getMfaToken,
+  ORG_TOKEN_KEY,
+} from "@/lib/auth-tokens";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-const UNAUTHENTICATED_AUTH_PATHS = [
+const BODY_CREDENTIAL_AUTH_PATHS = [
+  "/Auth/login",
+  "/Auth/verify-mfa",
   "/SuperAdminAuth/login",
   "/SuperAdminAuth/verify-mfa",
   "/SuperAdminAuth/mfa/setup",
   "/SuperAdminAuth/mfa/enable",
 ] as const;
+
+const MFA_BEARER_AUTH_PATHS = ["/Auth/mfa/setup", "/Auth/mfa/enable"] as const;
 
 const axiosInstance = axios.create({
   baseURL: apiUrl.replace(/\/$/, ""),
@@ -17,9 +26,14 @@ const axiosInstance = axios.create({
   timeout: 30_000,
 });
 
-function isUnauthenticatedAuthPath(url?: string): boolean {
+function isBodyCredentialAuthPath(url?: string): boolean {
   if (!url) return false;
-  return UNAUTHENTICATED_AUTH_PATHS.some((path) => url.includes(path));
+  return BODY_CREDENTIAL_AUTH_PATHS.some((path) => url.includes(path));
+}
+
+function isMfaBearerAuthPath(url?: string): boolean {
+  if (!url) return false;
+  return MFA_BEARER_AUTH_PATHS.some((path) => url.includes(path));
 }
 
 function extractErrorMessage(data: unknown, fallback: string): string {
@@ -37,13 +51,23 @@ function extractErrorMessage(data: unknown, fallback: string): string {
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window === "undefined") return config;
 
-  if (isUnauthenticatedAuthPath(config.url)) {
+  if (isBodyCredentialAuthPath(config.url)) {
     delete config.headers.Authorization;
     return config;
   }
 
-  const orgToken = window.localStorage.getItem("neptune_admin_org_token");
-  const authToken = window.localStorage.getItem("neptune_admin_auth_token");
+  if (isMfaBearerAuthPath(config.url)) {
+    const mfaToken = getMfaToken();
+    if (mfaToken) {
+      config.headers.Authorization = `Bearer ${mfaToken}`;
+    } else {
+      delete config.headers.Authorization;
+    }
+    return config;
+  }
+
+  const orgToken = window.localStorage.getItem(ORG_TOKEN_KEY);
+  const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
   const token = orgToken || authToken;
 
   if (token) {

@@ -43,7 +43,7 @@ export function SetupTabBar({
             iconName = "lucide:check";
           } else if (active) {
             circleClass =
-              "border-blue-normal bg-blue-normal text-white shadow-xl";
+              "border-blue-normal bg-blue-normal text-white shadow-lg";
             labelClass = "font-bold text-blue-normal";
           }
 

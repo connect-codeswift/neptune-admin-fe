@@ -10,7 +10,7 @@ export function WizardSectionCard({
   children: ReactNode;
 }>) {
   return (
-    <section className="rounded-2xl border border-darkest/8 bg-white p-6 shadow-xl">
+    <section className="rounded-2xl border border-darkest/8 bg-white p-6 shadow-lg">
       <h2 className="text3 text-darkest">{title}</h2>
       {description ? (
         <p className="mt-1 text5 text-gray">{description}</p>

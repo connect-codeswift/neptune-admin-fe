@@ -10,6 +10,10 @@ export default async function CompanyIndexPage({
   params: Promise<{ company: string }>;
 }>) {
   const { company } = await params;
+  if (company === "super") {
+    redirect("/super/dashboard");
+  }
+
   const siteId = getDefaultSiteIdForOrg(company);
   redirect(buildOrgSitePath(company, siteId));
 }

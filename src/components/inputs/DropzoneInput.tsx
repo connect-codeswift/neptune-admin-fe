@@ -134,7 +134,7 @@ export function DropzoneInput({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`rounded-[10px] border border-dashed bg-white p-6 text-center shadow-xl transition-colors ${dropzoneBorder} ${
+        className={`rounded-[10px] border border-dashed bg-white p-6 text-center shadow-lg transition-colors ${dropzoneBorder} ${
           dragging ? "bg-blue-lightest/40" : ""
         } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`.trim()}
       >

@@ -34,7 +34,7 @@ export function RecentActivityCard({
 
   return (
     <section
-      className={`rounded-2xl border border-darkest/8 bg-white p-6 shadow-xl ${className}`.trim()}
+      className={`rounded-2xl border border-darkest/8 bg-white p-6 shadow-lg ${className}`.trim()}
     >
       <header className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text4 text-darkest">{title}</h2>

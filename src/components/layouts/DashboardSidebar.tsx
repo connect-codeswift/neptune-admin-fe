@@ -4,28 +4,41 @@ import { Icon } from "@iconify/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getAuthRole } from "@/lib/auth-tokens";
 import {
-  buildOrgSiteBasePath,
-  getAdminNavSections,
-  parseOrgSitePath,
+  getSidebarLogoHref,
+  getSidebarNavSections,
   type SidebarNavSection,
 } from "@/lib/sidebar-items";
+import { SidebarSystemStatus } from "./SidebarSystemStatus";
 
-export type AdminDashboardSidebarUser = {
+export type DashboardSidebarUser = {
   name: string;
   role: string;
   initials?: string;
 };
 
-export type AdminDashboardSidebarProps = {
+export type DashboardSidebarProps = {
   sections?: SidebarNavSection[];
-  user?: AdminDashboardSidebarUser;
+  user?: DashboardSidebarUser;
   activeHref?: string;
   logoHref?: string;
   className?: string;
 };
 
-const DEFAULT_USER: AdminDashboardSidebarUser = {
+/** @deprecated Use DashboardSidebarUser */
+export type AdminDashboardSidebarUser = DashboardSidebarUser;
+
+/** @deprecated Use DashboardSidebarProps */
+export type AdminDashboardSidebarProps = DashboardSidebarProps;
+
+/** @deprecated Use DashboardSidebarUser */
+export type SuperAdminDashboardSidebarUser = DashboardSidebarUser;
+
+/** @deprecated Use DashboardSidebarProps */
+export type SuperAdminDashboardSidebarProps = DashboardSidebarProps;
+
+const DEFAULT_USER: DashboardSidebarUser = {
   name: "Ahmed Alsakkaf",
   role: "Neptune Admin",
 };
@@ -51,27 +64,25 @@ function isItemActive(
   return pathname.startsWith(`${href}/`);
 }
 
-export function AdminDashboardSidebar({
+export function DashboardSidebar({
   sections,
   user = DEFAULT_USER,
   activeHref,
   logoHref,
   className = "",
-}: Readonly<AdminDashboardSidebarProps>) {
+}: Readonly<DashboardSidebarProps>) {
   const pathname = usePathname();
+  const storedRole = getAuthRole();
   const currentHref = activeHref ?? pathname;
-  const orgSite = parseOrgSitePath(pathname);
-  const navSections = sections ?? getAdminNavSections(pathname);
+  const navSections = sections ?? getSidebarNavSections(pathname, storedRole);
   const resolvedLogoHref =
-    logoHref ??
-    (orgSite
-      ? buildOrgSiteBasePath(orgSite.company, orgSite.site)
-      : "/dashboard");
+    logoHref ?? getSidebarLogoHref(pathname, storedRole);
+  const showSystemStatus = storedRole === "super-admin";
   const initials = user.initials ?? getInitials(user.name);
 
   return (
     <aside
-      className={`flex h-full min-h-0 max-h-full w-59 flex-col gap-3.5 overflow-hidden rounded-[20px] border border-white/90 bg-white/62 px-3.75 py-4.75 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
+      className={`flex h-full min-h-0 max-h-full w-59 flex-col gap-3.5 overflow-hidden rounded-[20px] border border-white/90 bg-white/62 px-3.75 py-4.75 shadow-lg backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="flex shrink-0 items-end justify-center border-b border-darkest/8 px-2 pt-2 pb-6">
         <Link href={resolvedLogoHref} className="flex items-center justify-center">
@@ -138,6 +149,8 @@ export function AdminDashboardSidebar({
       </nav>
 
       <div className="flex shrink-0 flex-col gap-3.5">
+        {showSystemStatus ? <SidebarSystemStatus /> : null}
+
         <div className="flex items-center gap-2.5 border-t border-darkest/8 px-2.5 pt-3.5 pb-2.5">
           <div
             className="flex size-7.5 shrink-0 items-center justify-center rounded-[10px] bg-blue-normal text8 tracking-[0.22px] text-white"
@@ -156,3 +169,9 @@ export function AdminDashboardSidebar({
     </aside>
   );
 }
+
+/** @deprecated Use DashboardSidebar */
+export const AdminDashboardSidebar = DashboardSidebar;
+
+/** @deprecated Use DashboardSidebar */
+export const SuperAdminDashboardSidebar = DashboardSidebar;

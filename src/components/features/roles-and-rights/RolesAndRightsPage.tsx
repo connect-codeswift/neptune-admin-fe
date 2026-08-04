@@ -11,7 +11,7 @@ function StatCard({
   label,
 }: Readonly<{ value: number; label: string }>) {
   return (
-    <article className="flex min-h-24 flex-col justify-center rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-xl backdrop-blur-[10px]">
+    <article className="flex min-h-24 flex-col justify-center rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-lg backdrop-blur-[10px]">
       <p className="text1 text-darkest">{value}</p>
       <p className="mt-1 text6 text-gray">{label}</p>
     </article>

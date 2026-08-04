@@ -84,7 +84,7 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-6">
-          <section className="rounded-[20px] border border-white bg-white/62 p-5.5 shadow-xl backdrop-blur-[10px]">
+          <section className="rounded-[20px] border border-white bg-white/62 p-5.5 shadow-lg backdrop-blur-[10px]">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <div
                 className="flex size-16 shrink-0 items-center justify-center rounded-full bg-blue-normal text2 text-white"

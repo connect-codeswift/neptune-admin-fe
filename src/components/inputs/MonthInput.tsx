@@ -120,7 +120,7 @@ export function MonthInput({
         aria-controls={panelId}
         aria-describedby={describedBy}
         onClick={handleToggle}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
           error
             ? "border-red focus:border-red focus-visible:ring-red/30"
             : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
@@ -140,7 +140,7 @@ export function MonthInput({
       {open ? (
         <div
           id={panelId}
-          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 rounded-[10px] border border-darkest/12 bg-white p-3 shadow-xl"
+          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 rounded-[10px] border border-darkest/12 bg-white p-3 shadow-lg"
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <button

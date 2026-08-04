@@ -70,7 +70,7 @@ export function PpeCatalogPage() {
       />
 
       {filteredItems.length === 0 ? (
-        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-xl backdrop-blur-[10px]">
+        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
           No PPE items in this category.
         </p>
       ) : (

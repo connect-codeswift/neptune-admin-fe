@@ -70,7 +70,7 @@ export function FileInput({
         </label>
       ) : null}
       <div
-        className={`flex h-12 items-center gap-2 rounded-[10px] border bg-white px-3 shadow-xl ${
+        className={`flex h-12 items-center gap-2 rounded-[10px] border bg-white px-3 shadow-lg ${
           error ? "border-red" : "border-darkest/12"
         } ${disabled ? "bg-lightgray opacity-60" : ""} ${className}`.trim()}
       >

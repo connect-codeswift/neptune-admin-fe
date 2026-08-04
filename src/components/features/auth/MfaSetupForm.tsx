@@ -6,12 +6,21 @@ import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { OtpInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
-import { clearMfaToken, getMfaToken } from "@/lib/auth-tokens";
-import { mfaEnable, mfaSetup } from "@/services/auth.service";
+import {
+  clearMfaToken,
+  getAuthFlow,
+  getMfaToken,
+  type AuthFlowKind,
+} from "@/lib/auth-flow";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
-export function MfaSetupForm() {
+type MfaSetupFormProps = Readonly<{
+  flow: AuthFlowKind;
+}>;
+
+export function MfaSetupForm({ flow }: MfaSetupFormProps) {
   const router = useRouter();
+  const authFlow = getAuthFlow(flow);
   const setupStarted = useRef(false);
   const [storedMfaToken] = useState(() => getMfaToken());
   const [mfaSecret, setMfaSecret] = useState("");
@@ -22,15 +31,18 @@ export function MfaSetupForm() {
   const [setupError, setSetupError] = useState<string | null>(null);
 
   useEffect(() => {
+    const flowConfig = getAuthFlow(flow);
+
     if (!storedMfaToken) {
-      router.replace("/login");
+      router.replace(flowConfig.loginPath);
       return;
     }
 
     if (setupStarted.current) return;
     setupStarted.current = true;
 
-    mfaSetup({ mfaToken: storedMfaToken })
+    flowConfig
+      .mfaSetup(storedMfaToken)
       .then((response) => {
         setMfaSecret(response.mfaSecret);
         setOtpAuthUri(response.otpAuthUri);
@@ -42,7 +54,7 @@ export function MfaSetupForm() {
         toast.error(message);
       })
       .finally(() => setLoadingSetup(false));
-  }, [router, storedMfaToken]);
+  }, [flow, router, storedMfaToken]);
 
   const handleEnable = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,16 +62,16 @@ export function MfaSetupForm() {
 
     setLoadingEnable(true);
     try {
-      await mfaEnable({ mfaToken: storedMfaToken, code });
+      const response = await authFlow.mfaEnable(storedMfaToken, code);
       clearMfaToken();
-      router.replace("/dashboard");
+      router.replace(authFlow.resolveDashboardPath(response.accessToken));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Could not enable MFA.";
       toast.error(message);
       if (message.toLowerCase().includes("expired")) {
         clearMfaToken();
-        router.replace("/login");
+        router.replace(authFlow.loginPath);
       }
     } finally {
       setLoadingEnable(false);
@@ -137,7 +149,7 @@ export function MfaSetupForm() {
         ) : null}
 
         <Link
-          href="/login"
+          href={authFlow.loginPath}
           onClick={() => clearMfaToken()}
           className="text-center text5 text-blue-normal hover:text-blue-deep"
         >

@@ -10,7 +10,7 @@ type RegulationListProps = Readonly<{
 export function RegulationList({ regulations }: RegulationListProps) {
   if (regulations.length === 0) {
     return (
-      <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-xl backdrop-blur-[10px]">
+      <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
         No regulations match your search.
       </p>
     );

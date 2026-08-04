@@ -241,7 +241,7 @@ export function ContextMenu({
           left: coords?.left ?? 0,
           visibility: coords ? "visible" : "hidden",
         }}
-        className={`z-50 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-xl ${menuClassName}`.trim()}
+        className={`z-50 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-lg ${menuClassName}`.trim()}
       >
         {items.map((item) => {
           if (isSeparator(item)) {

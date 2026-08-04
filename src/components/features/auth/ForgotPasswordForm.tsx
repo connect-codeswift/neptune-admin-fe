@@ -37,7 +37,7 @@ export function ForgotPasswordForm() {
           fullWidth
           size="lg"
           rightIcon="lucide:arrow-right"
-          className="mt-6 shadow-xl"
+          className="mt-6 shadow-lg"
         >
           Send reset link
         </Button>

@@ -1,11 +1,14 @@
-/** Flat body from POST /SuperAdminAuth/login — not wrapped in ApiResponse. */
-export type SuperAdminLoginResponse = {
+/** Flat body from POST /Auth/login and POST /SuperAdminAuth/login. */
+export type LoginResponse = {
   mfaRequired?: boolean;
   mfaSetupRequired?: boolean;
   mfaToken?: string;
   accessToken?: string;
   refreshToken?: string | null;
 };
+
+/** @deprecated Use LoginResponse */
+export type SuperAdminLoginResponse = LoginResponse;
 
 export type VerifyMfaResponse = {
   accessToken: string;

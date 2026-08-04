@@ -1,3 +1,6 @@
+import type { StoredAuthRole } from "@/lib/auth-tokens";
+import { getDummyOrganization } from "@/lib/dummy-organizations";
+
 export type SidebarNavItem = {
   label: string;
   href: string;
@@ -10,6 +13,8 @@ export type SidebarNavSection = {
   label: string;
   items: SidebarNavItem[];
 };
+
+const SUPER_ADMIN_BASE_PATH = "/super";
 
 /** Super-admin shell: dashboard + client onboarding only. */
 export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
@@ -73,12 +78,27 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
 
 const STATIC_ROOT_SEGMENTS = new Set([
   "login",
+  "super",
   "forgot-password",
   "reset-password",
   "add-a-company",
   "client-accounts",
   "dashboard",
 ]);
+
+export function prefixNavItems(
+  basePath: string,
+  items: SidebarNavItem[],
+): SidebarNavItem[] {
+  return items.map((item) => ({
+    ...item,
+    href:
+      item.href === "/dashboard"
+        ? `${basePath}/dashboard`
+        : `${basePath}${item.href}`,
+    exact: item.exact ?? item.href === "/dashboard",
+  }));
+}
 
 export function parseOrgSitePath(
   pathname: string,
@@ -96,33 +116,60 @@ export function buildOrgSiteBasePath(company: string, site: string): string {
   return `/${company}/${site}`;
 }
 
-function prefixNavItems(
-  basePath: string,
-  items: SidebarNavItem[],
-): SidebarNavItem[] {
-  return items.map((item) => ({
-    ...item,
-    href: item.href === "/dashboard" ? basePath : `${basePath}${item.href}`,
-    exact: item.exact ?? item.href === "/dashboard",
-  }));
-}
-
-export function getAdminNavSections(pathname: string): SidebarNavSection[] {
-  const orgSite = parseOrgSitePath(pathname);
-  if (orgSite) {
-    const basePath = buildOrgSiteBasePath(orgSite.company, orgSite.site);
-    return [
-      {
-        label: "Admin",
-        items: prefixNavItems(basePath, ORG_ADMIN_NAV_ITEMS),
-      },
-    ];
-  }
-
+export function getSuperAdminNavSections(): SidebarNavSection[] {
   return [
     {
       label: "Super Admin",
-      items: SUPER_ADMIN_NAV_ITEMS,
+      items: prefixNavItems(SUPER_ADMIN_BASE_PATH, SUPER_ADMIN_NAV_ITEMS),
     },
   ];
+}
+
+export function getOrgAdminNavSections(
+  pathname: string,
+  sectionLabel = "Admin",
+): SidebarNavSection[] {
+  const orgSite = parseOrgSitePath(pathname);
+  if (!orgSite) return [];
+
+  const basePath = buildOrgSiteBasePath(orgSite.company, orgSite.site);
+  return [
+    {
+      label: sectionLabel,
+      items: prefixNavItems(basePath, ORG_ADMIN_NAV_ITEMS),
+    },
+  ];
+}
+
+export function getSidebarNavSections(
+  pathname: string,
+  role: StoredAuthRole | null,
+): SidebarNavSection[] {
+  if (role === "super-admin") {
+    const sections = getSuperAdminNavSections();
+    const orgSite = parseOrgSitePath(pathname);
+    if (orgSite) {
+      const companyName =
+        getDummyOrganization(orgSite.company)?.name ?? "Admin";
+      sections.push(...getOrgAdminNavSections(pathname, companyName));
+    }
+    return sections;
+  }
+
+  if (role === "admin") return getOrgAdminNavSections(pathname);
+  return [];
+}
+
+export function getSidebarLogoHref(
+  pathname: string,
+  role: StoredAuthRole | null,
+): string {
+  if (role === "super-admin") return `${SUPER_ADMIN_BASE_PATH}/dashboard`;
+
+  const orgSite = parseOrgSitePath(pathname);
+  if (orgSite) {
+    return `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/dashboard`;
+  }
+
+  return "/dashboard";
 }

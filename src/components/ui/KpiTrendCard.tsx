@@ -82,7 +82,7 @@ export function KpiTrendCard({
 
   return (
     <article
-      className={`flex min-h-34 flex-col justify-between rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
+      className={`flex min-h-34 flex-col justify-between rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-lg backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="flex justify-end">
         <Sparkline data={data} trend={direction} gradientId={gradientId} />

@@ -1,10 +1,17 @@
-export type SuperAdminLoginPayload = {
+export type LoginPayload = {
   email: string;
   password: string;
 };
 
+/** @deprecated Use LoginPayload */
+export type SuperAdminLoginPayload = LoginPayload;
+
 export type VerifyMfaPayload = {
   mfaToken: string;
+  code: string;
+};
+
+export type OrgEnableMfaPayload = {
   code: string;
 };
 

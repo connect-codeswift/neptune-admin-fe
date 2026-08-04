@@ -74,7 +74,7 @@ export function ClientSitesTab({
         data={client.sites}
         getRowId={(row) => row.id}
         emptyMessage="No sites registered."
-        className="border-darkest/8 bg-white shadow-xl backdrop-blur-none"
+        className="border-darkest/8 bg-white shadow-lg backdrop-blur-none"
       />
     </DetailCard>
   );

@@ -6,21 +6,30 @@ import { useEffect, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { OtpInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
-import { clearMfaToken, getMfaToken } from "@/lib/auth-tokens";
-import { verifyMfa } from "@/services/auth.service";
+import {
+  clearMfaToken,
+  getAuthFlow,
+  getMfaToken,
+  type AuthFlowKind,
+} from "@/lib/auth-flow";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
-export function MfaVerifyForm() {
+type MfaVerifyFormProps = Readonly<{
+  flow: AuthFlowKind;
+}>;
+
+export function MfaVerifyForm({ flow }: MfaVerifyFormProps) {
   const router = useRouter();
+  const authFlow = getAuthFlow(flow);
   const [storedMfaToken] = useState(() => getMfaToken());
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!storedMfaToken) {
-      router.replace("/login");
+      router.replace(authFlow.loginPath);
     }
-  }, [router, storedMfaToken]);
+  }, [authFlow.loginPath, router, storedMfaToken]);
 
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,16 +37,19 @@ export function MfaVerifyForm() {
 
     setLoading(true);
     try {
-      await verifyMfa({ mfaToken: storedMfaToken, code });
+      const response = await authFlow.verifyMfa({
+        mfaToken: storedMfaToken,
+        code,
+      });
       clearMfaToken();
-      router.replace("/dashboard");
+      router.replace(authFlow.resolveDashboardPath(response.accessToken));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Verification failed.";
       toast.error(message);
       if (message.toLowerCase().includes("expired")) {
         clearMfaToken();
-        router.replace("/login");
+        router.replace(authFlow.loginPath);
       }
     } finally {
       setLoading(false);
@@ -77,7 +89,7 @@ export function MfaVerifyForm() {
         </Button>
 
         <Link
-          href="/login"
+          href={authFlow.loginPath}
           onClick={() => clearMfaToken()}
           className="text-center text5 text-blue-normal hover:text-blue-deep"
         >

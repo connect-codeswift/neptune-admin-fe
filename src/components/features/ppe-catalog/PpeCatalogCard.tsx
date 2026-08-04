@@ -37,7 +37,7 @@ export function PpeCatalogCard({ item }: PpeCatalogCardProps) {
   const isLowStock = item.stock <= item.minStockLevel;
 
   return (
-    <article className="flex h-full flex-col rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-xl backdrop-blur-[10px]">
+    <article className="flex h-full flex-col rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-lg backdrop-blur-[10px]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text3 text-darkest">{item.name}</h2>
