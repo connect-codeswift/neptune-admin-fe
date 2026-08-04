@@ -30,7 +30,7 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   },
   {
     label: "User Management",
-    href: "/users-management",
+    href: "/user-management",
     icon: "tabler:user",
   },
   {
@@ -76,7 +76,73 @@ export const DEFAULT_ADMIN_NAV_SECTIONS: SidebarNavSection[] = [
     items: CLIENT_ONBOARDING_NAV_ITEMS,
   },
   {
-    label: "Super Admin",
+    label: "Admin",
     items: SUPER_ADMIN_NAV_ITEMS,
   },
 ];
+
+const CLIENT_ONBOARDING_PATHS = ["/add-a-company", "/client-accounts"] as const;
+
+const STATIC_ROOT_SEGMENTS = new Set([
+  "login",
+  "forgot-password",
+  "reset-password",
+  "add-a-company",
+  "client-accounts",
+  "dashboard",
+]);
+
+export function parseOrgSitePath(
+  pathname: string,
+): { company: string; site: string } | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const [company, site] = segments;
+  if (!company || !site || STATIC_ROOT_SEGMENTS.has(company)) return null;
+
+  return { company, site };
+}
+
+export function buildOrgSiteBasePath(company: string, site: string): string {
+  return `/${company}/${site}`;
+}
+
+function prefixNavItems(
+  basePath: string,
+  items: SidebarNavItem[],
+): SidebarNavItem[] {
+  return items.map((item) => ({
+    ...item,
+    href: item.href === "/dashboard" ? basePath : `${basePath}${item.href}`,
+  }));
+}
+
+function isClientOnboardingPath(pathname: string): boolean {
+  return CLIENT_ONBOARDING_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
+export function getAdminNavSections(pathname: string): SidebarNavSection[] {
+  const orgSite = parseOrgSitePath(pathname);
+  if (orgSite) {
+    const basePath = buildOrgSiteBasePath(orgSite.company, orgSite.site);
+    return [
+      {
+        label: "Admin",
+        items: prefixNavItems(basePath, SUPER_ADMIN_NAV_ITEMS),
+      },
+    ];
+  }
+
+  if (isClientOnboardingPath(pathname)) {
+    return DEFAULT_ADMIN_NAV_SECTIONS.filter(
+      (section) => section.label === "Client Onboarding",
+    );
+  }
+
+  return DEFAULT_ADMIN_NAV_SECTIONS.filter(
+    (section) => section.label !== "Client Onboarding",
+  );
+}

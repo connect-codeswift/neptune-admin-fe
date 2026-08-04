@@ -17,6 +17,10 @@ import {
 } from "@/components/ui";
 import { DUMMY_ORGANIZATIONS } from "@/lib/dummy-organizations";
 import {
+  buildOrgSitePath,
+  getDefaultSiteIdForOrg,
+} from "@/lib/org-sites";
+import {
   TrialDaysModal,
   type TrialDaysModalMode,
 } from "./TrialDaysModal";
@@ -91,6 +95,7 @@ type ClientRowActionHandlers = {
   onStartTrial: (client: ClientAccount) => void;
   onExtendTrial: (client: ClientAccount) => void;
   onOpenOverview: (client: ClientAccount) => void;
+  onOpenDashboard: (client: ClientAccount) => void;
 };
 
 function ClientNameCell({ row }: Readonly<{ row: ClientAccount }>) {
@@ -109,6 +114,7 @@ function ClientRowActions({
   onStartTrial,
   onExtendTrial,
   onOpenOverview,
+  onOpenDashboard,
 }: Readonly<{ client: ClientAccount } & ClientRowActionHandlers>) {
   const items: ContextMenuItem[] = [
     {
@@ -116,6 +122,12 @@ function ClientRowActions({
       label: "Open Overview",
       icon: "lucide:layout-dashboard",
       onSelect: () => onOpenOverview(client),
+    },
+    {
+      id: "open-dashboard",
+      label: "Open Dashboard",
+      icon: "lucide:monitor",
+      onSelect: () => onOpenDashboard(client),
     },
     {
       id: "start-trial",
@@ -191,6 +203,10 @@ export function ClientAccountsPage() {
 
   const columns = buildColumns({
     onOpenOverview: (client) => router.push(`/client-accounts/${client.id}`),
+    onOpenDashboard: (client) => {
+      const siteId = getDefaultSiteIdForOrg(client.id);
+      router.push(buildOrgSitePath(client.id, siteId));
+    },
     onStartTrial: (client) => setTrialDialog({ mode: "start", client }),
     onExtendTrial: (client) => setTrialDialog({ mode: "extend", client }),
   });

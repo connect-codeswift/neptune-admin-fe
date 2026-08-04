@@ -5,9 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  buildOrgSiteBasePath,
-  getAdminNavSections,
-  parseOrgSitePath,
+  DEFAULT_ADMIN_NAV_SECTIONS,
   type SidebarNavSection,
 } from "@/lib/sidebar-items";
 import { SidebarSystemStatus } from "./SidebarSystemStatus";
@@ -48,21 +46,14 @@ function isItemActive(pathname: string, href: string): boolean {
 }
 
 export function DashboardSidebar({
-  sections,
+  sections = DEFAULT_ADMIN_NAV_SECTIONS,
   user = DEFAULT_USER,
   activeHref,
-  logoHref,
+  logoHref = "/dashboard",
   className = "",
 }: Readonly<DashboardSidebarProps>) {
   const pathname = usePathname();
   const currentHref = activeHref ?? pathname;
-  const orgSite = parseOrgSitePath(pathname);
-  const navSections = sections ?? getAdminNavSections(pathname);
-  const resolvedLogoHref =
-    logoHref ??
-    (orgSite
-      ? buildOrgSiteBasePath(orgSite.company, orgSite.site)
-      : "/dashboard");
   const initials = user.initials ?? getInitials(user.name);
 
   return (
@@ -70,7 +61,7 @@ export function DashboardSidebar({
       className={`flex h-full min-h-0 max-h-full w-59 flex-col gap-3.5 overflow-hidden rounded-[20px] border border-white/90 bg-white/62 px-3.75 py-4.75 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="flex shrink-0 items-end justify-center border-b border-darkest/8 px-2 pt-2 pb-6">
-        <Link href={resolvedLogoHref} className="flex items-center justify-center">
+        <Link href={logoHref} className="flex items-center justify-center">
           <Image
             src="/sidebar/neptune-wordmark.svg"
             alt="Neptune"
@@ -87,7 +78,7 @@ export function DashboardSidebar({
         className="min-h-0 scrollbar-none flex-1 overflow-y-auto overscroll-contain pr-1 max-h-[calc(100vh-22rem)]"
         aria-label="Admin"
       >
-        {navSections.map((section) => (
+        {sections.map((section) => (
           <div key={section.label} className="mb-3 last:mb-0">
             <p className="px-2 pt-px pb-1.5 text-[10px] font-bold tracking-[1px] text-[#8892a3] uppercase">
               {section.label}

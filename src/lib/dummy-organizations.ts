@@ -91,7 +91,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     ],
     sites: [
       {
-        id: "s1",
+        id: "1",
         name: "Houston Main Plant",
         type: "Manufacturing",
         address: "100 Corporate Pkwy, Houston TX",
@@ -100,7 +100,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
         status: "active",
       },
       {
-        id: "s2",
+        id: "2",
         name: "Baytown Distribution Hub",
         type: "Warehouse",
         address: "420 Industrial Blvd, Baytown TX",
@@ -109,7 +109,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
         status: "active",
       },
       {
-        id: "s3",
+        id: "3",
         name: "Clear Lake R&D Lab",
         type: "Laboratory",
         address: "88 Research Dr, Clear Lake TX",
@@ -179,7 +179,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     ],
     sites: [
       {
-        id: "s1",
+        id: "1",
         name: "Midland Operations Center",
         type: "Operations",
         address: "500 Permian Basin Rd, Midland TX",
@@ -188,7 +188,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
         status: "active",
       },
       {
-        id: "s2",
+        id: "2",
         name: "Corpus Christi Terminal",
         type: "Terminal",
         address: "1200 Harbor Way, Corpus Christi TX",
@@ -265,7 +265,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     ],
     sites: [
       {
-        id: "s1",
+        id: "1",
         name: "Dallas Fulfillment Center",
         type: "Warehouse",
         address: "800 Logistics Ln, Dallas TX",
@@ -274,7 +274,7 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
         status: "active",
       },
       {
-        id: "s2",
+        id: "2",
         name: "Fort Worth Cross-Dock",
         type: "Distribution",
         address: "45 Freight Ave, Fort Worth TX",

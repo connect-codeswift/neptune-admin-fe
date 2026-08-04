@@ -67,7 +67,7 @@ export function RecentActivityCard({
                   {item.time}
                 </time>
               </div>
-              <p className="mt-0.5 text-sm text-gray">{item.target}</p>
+              <p className="mt-0.5 text-sm font-bold text-darkest">{item.target}</p>
             </li>
           ))}
         </ul>
