@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { LoginForm } from "@/components/feats/auth/LoginForm";
 
 export default function LoginPage() {
-  return <PlaceholderPage title="Login" />;
+  return <LoginForm />;
 }

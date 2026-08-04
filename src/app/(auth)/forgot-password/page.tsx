@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { ForgotPasswordForm } from "@/components/feats/auth/ForgotPasswordForm";
 
 export default function ForgotPasswordPage() {
-  return <PlaceholderPage title="Forgot Password" />;
+  return <ForgotPasswordForm />;
 }
