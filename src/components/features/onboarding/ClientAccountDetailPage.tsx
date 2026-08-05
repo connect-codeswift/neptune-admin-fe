@@ -44,7 +44,7 @@ export function ClientAccountDetailPage({
     <div className="flex flex-col gap-5 pb-4">
       <header className="rounded-2xl border border-darkest/8 bg-white/62 px-5.5 py-5 shadow-lg backdrop-blur-[10px]">
         <Link
-          href="/client-accounts"
+          href="/super/client-accounts"
           className="inline-flex items-center gap-1.5 text6 text-[#8892a3] hover:text-darkest"
         >
           <Icon icon="lucide:arrow-left" width={12} height={12} aria-hidden />

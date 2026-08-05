@@ -90,7 +90,7 @@ export function SelectInput({
   return (
     <div
       ref={rootRef}
-      className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
+      className={`relative flex flex-col gap-1.5 ${open ? "z-50" : ""} ${containerClassName}`.trim()}
     >
       {label ? (
         <label
@@ -130,7 +130,7 @@ export function SelectInput({
         <div
           id={listboxId}
           aria-labelledby={inputId}
-          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 max-h-60 w-full overflow-auto rounded-[10px] border border-darkest/12 bg-white p-1 shadow-lg"
+          className="absolute top-[calc(100%+0.25rem)] left-0 z-50 max-h-60 w-full overflow-auto rounded-[10px] border border-darkest/12 bg-white p-1 shadow-lg"
         >
           {options.length === 0 ? (
             <p className="px-3 py-2 text5 text-gray">No options</p>

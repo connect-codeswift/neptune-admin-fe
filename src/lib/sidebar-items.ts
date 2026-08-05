@@ -34,6 +34,16 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/client-accounts",
     icon: "lucide:briefcase",
   },
+  {
+    label: "Pricing",
+    href: "/pricing",
+    icon: "lucide:tag",
+  },
+  {
+    label: "Subscriptions",
+    href: "/subscriptions",
+    icon: "lucide:credit-card",
+  },
 ];
 
 /** Org/site admin nav — lives under /{company}/{site}/… */
@@ -83,6 +93,8 @@ const STATIC_ROOT_SEGMENTS = new Set([
   "reset-password",
   "add-a-company",
   "client-accounts",
+  "pricing",
+  "subscriptions",
   "dashboard",
 ]);
 

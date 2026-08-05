@@ -1,4 +1,5 @@
 import { DUMMY_ORGANIZATIONS } from "@/lib/dummy-organizations";
+import { DEFAULT_SUBSCRIPTIONS } from "@/lib/dummy-subscriptions";
 
 export type SuperAdminDashboardKpi = {
   value: string | number;
@@ -110,15 +111,14 @@ export const SUPER_ADMIN_PLATFORM_STATS: SuperAdminPlatformStat[] = [
     activeCount: activeCompanies,
   },
   {
-    title: "Active Modules",
-    value: DUMMY_ORGANIZATIONS.reduce(
-      (sum, org) => sum + org.modules.filter((module) => module.active).length,
+    title: "Licensed Modules",
+    value: DEFAULT_SUBSCRIPTIONS.reduce(
+      (sum, subscription) => sum + subscription.modules.length,
       0,
     ),
-    activeCount: DUMMY_ORGANIZATIONS.reduce(
-      (sum, org) => sum + org.modules.length,
-      0,
-    ),
+    activeCount: DEFAULT_SUBSCRIPTIONS.filter(
+      (subscription) => subscription.status === "active",
+    ).reduce((sum, subscription) => sum + subscription.modules.length, 0),
   },
 ];
 

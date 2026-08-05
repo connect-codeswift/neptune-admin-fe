@@ -4,7 +4,11 @@ import type { ReactNode } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { TextButton } from "@/components/ui";
-import type { ClientAccountDetail } from "./client-accounts.mock";
+import { getModuleLabel } from "@/lib/ehs-modules";
+import {
+  type ClientAccountDetail,
+  getClientSubscription,
+} from "./client-accounts.mock";
 import { DetailCard } from "./DetailCard";
 
 function InfoField({
@@ -21,22 +25,10 @@ function InfoField({
   );
 }
 
-function ModulePill({
-  label,
-  active,
-}: Readonly<{ label: string; active: boolean }>) {
-  if (active) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-blue-normal/18 bg-blue-normal/12 px-3 py-1.5 text7 text-blue-normal">
-        <span className="size-1.5 rounded-full bg-blue-normal" aria-hidden />
-        {label}
-      </span>
-    );
-  }
-
+function ModulePill({ label }: Readonly<{ label: string }>) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-darkest/12 bg-darkest/5 px-3 py-1.5 text7 text-darkest/50">
-      <span className="size-1.5 rounded-full bg-darkest/25" aria-hidden />
+    <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-blue-normal/18 bg-blue-normal/12 px-3 py-1.5 text7 text-blue-normal">
+      <span className="size-1.5 rounded-full bg-blue-normal" aria-hidden />
       {label}
     </span>
   );
@@ -60,6 +52,10 @@ export function ClientOverviewTab({
   const websiteHref = client.website.startsWith("http")
     ? client.website
     : `https://${client.website}`;
+  const subscription = getClientSubscription(client.id);
+  const yearlyValue = subscription
+    ? `$${subscription.yearlyTotal.toLocaleString()}/yr`
+    : "No subscription";
 
   return (
     <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
@@ -93,15 +89,17 @@ export function ClientOverviewTab({
         </DetailCard>
 
         <DetailCard title="Licensed Modules">
-          <div className="flex flex-wrap gap-2.5">
-            {client.modules.map((module) => (
-              <ModulePill
-                key={module.id}
-                label={module.label}
-                active={module.active}
-              />
-            ))}
-          </div>
+          {subscription && subscription.modules.length > 0 ? (
+            <div className="flex flex-wrap gap-2.5">
+              {subscription.modules.map((moduleId) => (
+                <ModulePill key={moduleId} label={getModuleLabel(moduleId)} />
+              ))}
+            </div>
+          ) : (
+            <p className="text5 text-gray">
+              No modules licensed — this client has no active subscription yet.
+            </p>
+          )}
         </DetailCard>
       </div>
 
@@ -166,10 +164,7 @@ export function ClientOverviewTab({
               label="Assigned CSM"
               value={client.contract.assignedCsm}
             />
-            <ContractRow
-              label="Monthly Contract Value"
-              value={client.contract.monthlyValue}
-            />
+            <ContractRow label="Yearly Contract Value" value={yearlyValue} />
           </div>
         </DetailCard>
 

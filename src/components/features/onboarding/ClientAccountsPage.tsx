@@ -202,7 +202,8 @@ export function ClientAccountsPage() {
   const [trialDialog, setTrialDialog] = useState<TrialDialogState>(null);
 
   const columns = buildColumns({
-    onOpenOverview: (client) => router.push(`/client-accounts/${client.id}`),
+    onOpenOverview: (client) =>
+      router.push(`/super/client-accounts/${client.id}`),
     onOpenDashboard: (client) => {
       const siteId = getDefaultSiteIdForOrg(client.id);
       router.push(buildOrgSitePath(client.id, siteId));
@@ -221,7 +222,7 @@ export function ClientAccountsPage() {
         title="Client Accounts"
         description="All organizations provisioned on Neptune EHSS"
         actions={
-          <Button href="/add-a-company" leftIcon="lucide:plus" size="sm">
+          <Button href="/super/add-a-company" leftIcon="lucide:plus" size="sm">
             New Client
           </Button>
         }
