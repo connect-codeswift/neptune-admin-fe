@@ -26,3 +26,9 @@ export type MfaEnableResponse = {
 export type SelectCompanyResponse = {
   accessToken: string;
 };
+
+export type SuperAdminForgotPasswordResponse = unknown;
+
+export type SuperAdminResetPasswordResponse = unknown;
+
+export type SuperAdminBootstrapResponse = unknown;

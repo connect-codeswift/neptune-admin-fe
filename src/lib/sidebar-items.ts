@@ -7,6 +7,8 @@ export type SidebarNavItem = {
   icon: string;
   /** When true, only highlight on an exact pathname match (e.g. dashboard root). */
   exact?: boolean;
+  /** Shows a subtle preview badge — route has no backend yet. */
+  preview?: boolean;
 };
 
 export type SidebarNavSection = {
@@ -79,11 +81,18 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/version-history",
     icon: "lucide:file-clock",
   },
-  {
-    label: "Regulations",
-    href: "/regulation-library",
-    icon: "lucide:book-open",
-  },
+  // {
+  //   label: "Regulations",
+  //   href: "/regulation-library",
+  //   icon: "lucide:book-open",
+  //   preview: true,
+  // },
+  // {
+  //   label: "LOTO Procedures",
+  //   href: "/loto-procedures",
+  //   icon: "lucide:lock",
+  //   preview: true,
+  // },
   {
     label: "PPE Catalog",
     href: "/ppe-catalog",

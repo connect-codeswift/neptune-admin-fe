@@ -1,16 +1,22 @@
 "use client";
 
+import { ToggleBadges } from "@/components/inputs";
 import { TextInput } from "@/components/inputs";
+import { getModuleOptions } from "@/lib/ehs-modules";
 import { WizardSectionCard } from "./WizardSectionCard";
 
 export type SetupStepOneProps = {
   organizationName: string;
   onOrganizationNameChange: (value: string) => void;
+  selectedModules: string[];
+  onSelectedModulesChange: (value: string[]) => void;
 };
 
 export function SetupStepOne({
   organizationName,
   onOrganizationNameChange,
+  selectedModules,
+  onSelectedModulesChange,
 }: Readonly<SetupStepOneProps>) {
   return (
     <WizardSectionCard title="Organization">
@@ -21,10 +27,21 @@ export function SetupStepOne({
           value={organizationName}
           onChange={(event) => onOrganizationNameChange(event.target.value)}
         />
-        <p className="rounded-xl border border-darkest/8 bg-white/80 px-4 py-3 text6 text-gray">
-          Modules are licensed on the client&apos;s subscription, not here. Create
-          the subscription after onboarding to grant module access.
-        </p>
+
+        <div>
+          <p className="mb-3 text5 font-semibold text-darkest">
+            Activated modules
+          </p>
+          <ToggleBadges
+            options={getModuleOptions()}
+            value={selectedModules}
+            onChange={onSelectedModulesChange}
+            variant="card"
+          />
+          <p className="mt-3 text6 text-gray">
+            Selected modules are saved with the organization at registration.
+          </p>
+        </div>
       </div>
     </WizardSectionCard>
   );

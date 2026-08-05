@@ -6,6 +6,21 @@ export type SuperAdminCompanyResponse = {
   updatedAt: string;
   siteCount: number;
   userCount: number;
+  accessExpiresAt?: string | null;
+  daysRemaining?: number | null;
+};
+
+export type SuperAdminCompanyDetailResponse = SuperAdminCompanyResponse & {
+  code?: string | null;
+  industry?: string | null;
+  legalName?: string | null;
+  website?: string | null;
+  employeeCount?: number | null;
+  complianceZone?: string | null;
+  primaryContactName?: string | null;
+  primaryContactTitle?: string | null;
+  primaryContactEmail?: string | null;
+  primaryContactPhone?: string | null;
 };
 
 export type SuperAdminSiteResponse = {

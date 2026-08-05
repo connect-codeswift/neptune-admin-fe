@@ -1,25 +1,26 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
-import { TextButton } from "@/components/ui";
-import { getModuleLabel } from "@/lib/ehs-modules";
+import { EmailInput, TextInput } from "@/components/inputs";
+import { Button } from "@/components/ui";
+import type { SuperAdminCompanyDetailResponse } from "@/dtos/res/companies.res";
 import {
-  type ClientAccountDetail,
-  getClientSubscription,
-} from "./client-accounts.mock";
+  activatedModuleCodesToIds,
+  getModuleLabel,
+  parseActivatedModuleCodes,
+} from "@/lib/ehs-modules";
+import { useUpdateCompanyProfile } from "@/hooks/useClientAccountDetail";
 import { DetailCard } from "./DetailCard";
 
 function InfoField({
   label,
   children,
-}: Readonly<{ label: string; children: ReactNode }>) {
+}: Readonly<{ label: string; children: React.ReactNode }>) {
   return (
     <div className="flex min-w-0 flex-col gap-1 border-b border-darkest/12 pb-2">
-      <p className="text7 tracking-[0.5px] text-[#8892a3] uppercase">
-        {label}
-      </p>
+      <p className="text7 tracking-[0.5px] text-[#8892a3] uppercase">{label}</p>
       <div className="text5 font-semibold text-darkest">{children}</div>
     </div>
   );
@@ -34,176 +35,251 @@ function ModulePill({ label }: Readonly<{ label: string }>) {
   );
 }
 
-function ContractRow({
-  label,
-  value,
-}: Readonly<{ label: string; value: string }>) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-darkest/12 pb-2">
-      <p className="text6 text-[#8892a3]">{label}</p>
-      <p className="text5 font-semibold text-darkest">{value}</p>
-    </div>
-  );
+function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+type ProfileFormState = {
+  name: string;
+  code: string;
+  industry: string;
+  legalName: string;
+  website: string;
+  employeeCount: string;
+  complianceZone: string;
+  primaryContactName: string;
+  primaryContactTitle: string;
+  primaryContactEmail: string;
+  primaryContactPhone: string;
+};
+
+function toFormState(company: SuperAdminCompanyDetailResponse): ProfileFormState {
+  return {
+    name: company.name ?? "",
+    code: company.code ?? "",
+    industry: company.industry ?? "",
+    legalName: company.legalName ?? "",
+    website: company.website ?? "",
+    employeeCount:
+      company.employeeCount != null ? String(company.employeeCount) : "",
+    complianceZone: company.complianceZone ?? "",
+    primaryContactName: company.primaryContactName ?? "",
+    primaryContactTitle: company.primaryContactTitle ?? "",
+    primaryContactEmail: company.primaryContactEmail ?? "",
+    primaryContactPhone: company.primaryContactPhone ?? "",
+  };
 }
 
 export function ClientOverviewTab({
-  client,
-}: Readonly<{ client: ClientAccountDetail }>) {
-  const websiteHref = client.website.startsWith("http")
-    ? client.website
-    : `https://${client.website}`;
-  const subscription = getClientSubscription(client.id);
-  const yearlyValue = subscription
-    ? `$${subscription.yearlyTotal.toLocaleString()}/yr`
-    : "No subscription";
+  company,
+}: Readonly<{ company: SuperAdminCompanyDetailResponse }>) {
+  const updateProfile = useUpdateCompanyProfile(company.id);
+  const [form, setForm] = useState(() => toFormState(company));
+  const [dirty, setDirty] = useState(false);
+
+  const moduleCodes = parseActivatedModuleCodes(company.activatedModules);
+  const moduleIds = activatedModuleCodesToIds(moduleCodes);
+
+  const handleChange = (field: keyof ProfileFormState, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setDirty(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      toast.error("Company name cannot be empty.");
+      return;
+    }
+
+    const employeeCount = form.employeeCount.trim()
+      ? Number(form.employeeCount)
+      : undefined;
+
+    try {
+      await updateProfile.mutateAsync({
+        name: form.name.trim(),
+        code: form.code.trim() || undefined,
+        industry: form.industry.trim() || undefined,
+        legalName: form.legalName.trim() || undefined,
+        website: form.website.trim() || undefined,
+        employeeCount: Number.isFinite(employeeCount) ? employeeCount : undefined,
+        complianceZone: form.complianceZone.trim() || undefined,
+        primaryContactName: form.primaryContactName.trim() || undefined,
+        primaryContactTitle: form.primaryContactTitle.trim() || undefined,
+        primaryContactEmail: form.primaryContactEmail.trim() || undefined,
+        primaryContactPhone: form.primaryContactPhone.trim() || undefined,
+      });
+      toast.success("Company profile updated.");
+      setDirty(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update profile.",
+      );
+    }
+  };
+
+  const websiteHref = form.website.startsWith("http")
+    ? form.website
+    : form.website
+      ? `https://${form.website}`
+      : "";
 
   return (
     <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
-        <DetailCard title="Company Information">
-          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-            <InfoField label="Legal Name">{client.legalName}</InfoField>
-            <InfoField label="Industry">{client.industry}</InfoField>
-            <InfoField label="Client ID">{client.code}</InfoField>
-            <InfoField label="Contract Start">{client.contractStart}</InfoField>
-            <InfoField label="Company Website">
-              <a
-                href={websiteHref}
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-normal hover:text-blue-deep"
+        <DetailCard
+          title="Company Information"
+          action={
+            dirty ? (
+              <Button
+                type="button"
+                size="sm"
+                loading={updateProfile.isPending}
+                onClick={() => void handleSave()}
               >
-                {client.website}
-              </a>
+                Save changes
+              </Button>
+            ) : null
+          }
+        >
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+            <TextInput
+              label="Company name"
+              value={form.name}
+              onChange={(event) => handleChange("name", event.target.value)}
+            />
+            <TextInput
+              label="Legal name"
+              value={form.legalName}
+              onChange={(event) => handleChange("legalName", event.target.value)}
+            />
+            <TextInput
+              label="Client code"
+              value={form.code}
+              onChange={(event) => handleChange("code", event.target.value)}
+            />
+            <TextInput
+              label="Industry"
+              value={form.industry}
+              onChange={(event) => handleChange("industry", event.target.value)}
+            />
+            <TextInput
+              label="Website"
+              value={form.website}
+              onChange={(event) => handleChange("website", event.target.value)}
+            />
+            <TextInput
+              label="Number of employees"
+              value={form.employeeCount}
+              onChange={(event) =>
+                handleChange("employeeCount", event.target.value)
+              }
+            />
+            <InfoField label="Number of sites">
+              {company.siteCount} sites
             </InfoField>
-            <InfoField label="Number of Employees">
-              {client.employeeCount}
-            </InfoField>
-            <InfoField label="Number of Sites">
-              {client.siteCount} sites
-            </InfoField>
-            <InfoField label="Compliance Zone">
-              {client.complianceZone}
+            <TextInput
+              label="Compliance zone"
+              value={form.complianceZone}
+              onChange={(event) =>
+                handleChange("complianceZone", event.target.value)
+              }
+            />
+            <InfoField label="Created">{formatDate(company.createdAt)}</InfoField>
+            <InfoField label="Last updated">
+              {formatDate(company.updatedAt)}
             </InfoField>
           </div>
         </DetailCard>
 
-        <DetailCard title="Licensed Modules">
-          {subscription && subscription.modules.length > 0 ? (
+        <DetailCard title="Activated Modules">
+          {moduleIds.length > 0 ? (
             <div className="flex flex-wrap gap-2.5">
-              {subscription.modules.map((moduleId) => (
+              {moduleIds.map((moduleId) => (
                 <ModulePill key={moduleId} label={getModuleLabel(moduleId)} />
               ))}
             </div>
+          ) : moduleCodes.length > 0 ? (
+            <div className="flex flex-wrap gap-2.5">
+              {moduleCodes.map((code) => (
+                <ModulePill key={code} label={code} />
+              ))}
+            </div>
           ) : (
-            <p className="text5 text-gray">
-              No modules licensed — this client has no active subscription yet.
-            </p>
+            <p className="text5 text-gray">No modules activated yet.</p>
           )}
+          <p className="mt-3 text6 text-gray">
+            Manage modules on the Modules tab.
+          </p>
         </DetailCard>
       </div>
 
       <div className="flex flex-col gap-5">
-        <DetailCard
-          title="Primary Contact"
-          action={
-            <div
-              className="flex size-8 items-center justify-center rounded-full bg-blue-normal text8 text-white"
-              aria-hidden
-            >
-              {client.primaryContact.initials}
-            </div>
-          }
-        >
-          <div className="flex flex-col gap-3">
-            <div>
-              <p className="text4 text-darkest">
-                {client.primaryContact.name}
-              </p>
-              <p className="mt-1 text6 text-[#8892a3]">
-                {client.primaryContact.title}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 border-t border-darkest/12 pt-3">
-              <div className="flex items-center gap-2 text6 text-darkest/50">
-                <Icon
-                  icon="lucide:mail"
-                  width={14}
-                  height={14}
-                  className="shrink-0"
-                  aria-hidden
-                />
-                <span className="truncate">{client.primaryContact.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text6 text-darkest/50">
-                <Icon
-                  icon="lucide:phone"
-                  width={14}
-                  height={14}
-                  className="shrink-0"
-                  aria-hidden
-                />
-                <span>{client.primaryContact.phone}</span>
-              </div>
-            </div>
-          </div>
-        </DetailCard>
-
-        <DetailCard title="Contract Details">
-          <div className="flex flex-col gap-3">
-            <ContractRow label="Plan Type" value={client.contract.planType} />
-            <ContractRow
-              label="Contract Period"
-              value={client.contract.period}
+        <DetailCard title="Primary Contact">
+          <div className="flex flex-col gap-4">
+            <TextInput
+              label="Full name"
+              value={form.primaryContactName}
+              onChange={(event) =>
+                handleChange("primaryContactName", event.target.value)
+              }
             />
-            <ContractRow
-              label="License Seats"
-              value={client.contract.licenseSeats}
+            <TextInput
+              label="Title"
+              value={form.primaryContactTitle}
+              onChange={(event) =>
+                handleChange("primaryContactTitle", event.target.value)
+              }
             />
-            <ContractRow
-              label="Assigned CSM"
-              value={client.contract.assignedCsm}
+            <EmailInput
+              label="Email"
+              value={form.primaryContactEmail}
+              onChange={(event) =>
+                handleChange("primaryContactEmail", event.target.value)
+              }
             />
-            <ContractRow label="Yearly Contract Value" value={yearlyValue} />
-          </div>
-        </DetailCard>
-
-        <DetailCard title="Employee Data">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <Icon
-                  icon="lucide:file-text"
-                  width={16}
-                  height={16}
-                  className="shrink-0 text-darkest"
-                  aria-hidden
-                />
-                <p className="truncate text5 font-semibold text-darkest">
-                  {client.employeeData.fileName}
-                </p>
-              </div>
-              <span className="shrink-0 rounded-[20px] bg-green/12 px-2 py-0.5 text7 text-green">
-                {client.employeeData.status}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-3 border-t border-darkest/12 pt-3">
-              <p className="text7 text-[#8892a3]">
-                Last Updated: {client.employeeData.lastUpdated}
-              </p>
-              <TextButton
-                type="button"
-                size="sm"
-                underline="always"
-                onClick={() =>
-                  toast.message("Employee data re-upload is not wired yet.")
-                }
+            <TextInput
+              label="Phone"
+              value={form.primaryContactPhone}
+              onChange={(event) =>
+                handleChange("primaryContactPhone", event.target.value)
+              }
+            />
+            {websiteHref ? (
+              <a
+                href={websiteHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text6 text-blue-normal hover:text-blue-deep"
               >
-                Re-upload
-              </TextButton>
-            </div>
+                <Icon icon="lucide:external-link" width={14} height={14} />
+                Visit website
+              </a>
+            ) : null}
           </div>
         </DetailCard>
+
+        {(company.accessExpiresAt || company.daysRemaining != null) && (
+          <DetailCard title="Access Window">
+            <div className="flex flex-col gap-2">
+              <InfoField label="Expires">
+                {formatDate(company.accessExpiresAt)}
+              </InfoField>
+              {company.daysRemaining != null ? (
+                <InfoField label="Days remaining">
+                  {company.daysRemaining} days
+                </InfoField>
+              ) : null}
+            </div>
+          </DetailCard>
+        )}
       </div>
     </div>
   );

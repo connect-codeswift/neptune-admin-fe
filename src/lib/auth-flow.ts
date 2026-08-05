@@ -26,6 +26,7 @@ export type AuthFlowConfig = {
   mfaPath: string;
   mfaSetupPath: string;
   forgotPasswordPath: string;
+  resetPasswordPath: string;
   resolveDashboardPath: (accessToken: string) => string;
   login: (payload: LoginPayload) => Promise<LoginResponse>;
   verifyMfa: (payload: VerifyMfaPayload) => Promise<VerifyMfaResponse>;
@@ -39,6 +40,7 @@ export const AUTH_FLOWS: Record<AuthFlowKind, AuthFlowConfig> = {
     mfaPath: "/login/mfa",
     mfaSetupPath: "/login/mfa-setup",
     forgotPasswordPath: "/forgot-password",
+    resetPasswordPath: "/reset-password",
     resolveDashboardPath: getOrgDashboardPath,
     login: orgLogin,
     verifyMfa: orgVerifyMfa,
@@ -50,6 +52,7 @@ export const AUTH_FLOWS: Record<AuthFlowKind, AuthFlowConfig> = {
     mfaPath: "/super/login/mfa",
     mfaSetupPath: "/super/login/mfa-setup",
     forgotPasswordPath: "/super/forgot-password",
+    resetPasswordPath: "/super/reset-password",
     resolveDashboardPath: () => "/super/dashboard",
     login: superAdminLogin,
     verifyMfa: superAdminVerifyMfa,

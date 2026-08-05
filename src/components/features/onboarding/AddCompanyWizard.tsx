@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layouts";
 import { Button, SetupTabBar } from "@/components/ui";
 import type { RegisterPayload } from "@/dtos/req/onboarding.req";
+import { moduleIdsToActivatedModules } from "@/lib/ehs-modules";
 import { register } from "@/services/auth.service";
 import { SetupStepFour, type InviteDraft } from "./SetupStepFour";
 import { SetupStepOne } from "./SetupStepOne";
@@ -49,6 +50,7 @@ function buildRegisterPayload(input: {
   region: string;
   industryType: string;
   companySize: string;
+  selectedModules: string[];
 }): RegisterPayload {
   const sites = input.sites.map((site) => ({
     industryType: site.industryType,
@@ -73,8 +75,7 @@ function buildRegisterPayload(input: {
     roleId: 0,
     organizationId: 0,
     organizationName: input.organizationName.trim(),
-    // Modules are licensed via the client's subscription, not at onboarding.
-    activatedModules: "",
+    activatedModules: moduleIdsToActivatedModules(input.selectedModules),
     invitedBy: null,
     sites,
   };
@@ -86,6 +87,7 @@ export function AddCompanyWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [organizationName, setOrganizationName] = useState("");
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
   const [siteName, setSiteName] = useState("");
   const [region, setRegion] = useState("");
@@ -151,6 +153,7 @@ export function AddCompanyWizard() {
       region,
       industryType,
       companySize,
+      selectedModules,
     });
 
     setIsSubmitting(true);
@@ -230,6 +233,8 @@ export function AddCompanyWizard() {
       <SetupStepOne
         organizationName={organizationName}
         onOrganizationNameChange={setOrganizationName}
+        selectedModules={selectedModules}
+        onSelectedModulesChange={setSelectedModules}
       />
     );
   } else if (stepIndex === 1) {
