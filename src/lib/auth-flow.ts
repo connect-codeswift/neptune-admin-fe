@@ -49,7 +49,8 @@ export const AUTH_FLOWS: Record<AuthFlowKind, AuthFlowConfig> = {
     mfaEnable: orgMfaEnable,
   },
   super: {
-    loginPath: "/super/login",
+    // One shared sign-in route; only the MFA steps below are staff-specific.
+    loginPath: "/login",
     mfaPath: "/super/login/mfa",
     mfaSetupPath: "/super/login/mfa-setup",
     forgotPasswordPath: "/super/forgot-password",

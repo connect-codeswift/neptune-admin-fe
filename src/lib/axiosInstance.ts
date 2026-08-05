@@ -13,6 +13,9 @@ import {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+/** The only sign-in route. Staff and tenant admins both start here. */
+const LOGIN_PATH = "/login";
+
 const BODY_CREDENTIAL_AUTH_PATHS = [
   "/Auth/login",
   "/Auth/verify-mfa",
@@ -129,13 +132,12 @@ axiosInstance.interceptors.response.use(
         !isCredentialAuthRequest &&
         !isOrgTokenReselectMessage(message)
       ) {
-        const role = window.localStorage.getItem(AUTH_ROLE_KEY);
         window.localStorage.removeItem(AUTH_TOKEN_KEY);
         window.localStorage.removeItem(ORG_TOKEN_KEY);
         window.localStorage.removeItem(AUTH_ROLE_KEY);
-        const loginPath = role === "admin" ? "/login" : "/super/login";
-        if (!window.location.pathname.startsWith(loginPath)) {
-          window.location.assign(loginPath);
+        // One sign-in for both audiences, so there is no role-dependent path to pick.
+        if (window.location.pathname !== LOGIN_PATH) {
+          window.location.assign(LOGIN_PATH);
         }
       }
     }
