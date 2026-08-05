@@ -5,46 +5,26 @@ import { useEffect, type ReactNode } from "react";
 import { IconButton } from "../ui/IconButton";
 import { HeaderSiteChanger } from "./HeaderSiteChanger";
 
-export type DashboardHeaderProps = {
+export type DashboardHeaderShellProps = {
   searchPlaceholder?: string;
-  /** Opens the global search / command palette (also triggered by ⌘K / Ctrl+K). */
   onSearchOpen?: () => void;
-  dateRangeStart?: Date;
-  dateRangeEnd?: Date;
-  onDateRangeClick?: () => void;
   hasNotifications?: boolean;
   onNotificationsClick?: () => void;
   className?: string;
-  /** Optional slot after the notification button (e.g. avatar). */
+  /** Rendered to the left of the search field (e.g. super-admin back control). */
+  leadingSlot?: ReactNode;
   endSlot?: ReactNode;
 };
 
-function formatHeaderDateRange(start: Date, end: Date): string {
-  const sameYear = start.getFullYear() === end.getFullYear();
-  const startLabel = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-  }).format(start);
-  const endLabel = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(end);
-  return `${startLabel} — ${endLabel}`;
-}
-
-export function DashboardHeader({
+export function DashboardHeaderShell({
   searchPlaceholder = "Search Incidents, actions, docs...",
   onSearchOpen,
-  dateRangeStart,
-  dateRangeEnd,
-  onDateRangeClick,
   hasNotifications = false,
   onNotificationsClick,
   className = "",
+  leadingSlot,
   endSlot,
-}: Readonly<DashboardHeaderProps>) {
+}: Readonly<DashboardHeaderShellProps>) {
   useEffect(() => {
     if (!onSearchOpen) return;
 
@@ -59,20 +39,18 @@ export function DashboardHeader({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onSearchOpen]);
 
-  let dateRangeLabel = "Select date range";
-  if (dateRangeStart && dateRangeEnd) {
-    dateRangeLabel = formatHeaderDateRange(dateRangeStart, dateRangeEnd);
-  }
-
   return (
     <header
       className={`flex items-center justify-between gap-4 ${className}`.trim()}
     >
-      <button
-        type="button"
-        onClick={onSearchOpen}
-        className="flex h-11 min-w-0 max-w-xl flex-1 items-center gap-3 rounded-full border border-darkest/10 bg-white px-4 text-left shadow-lg outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
-      >
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        {leadingSlot}
+
+        <button
+          type="button"
+          onClick={onSearchOpen}
+          className="flex h-11 min-w-0 max-w-xl flex-1 items-center gap-3 rounded-full border border-darkest/10 bg-white px-4 text-left shadow-lg outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
+        >
         <Icon
           icon="mdi:magnify"
           width={20}
@@ -86,7 +64,8 @@ export function DashboardHeader({
         <kbd className="hidden shrink-0 rounded-md border border-darkest/10 bg-lightgray px-1.5 py-0.5 font-sans text7 text-darkest/45 sm:inline-block">
           ⌘K
         </kbd>
-      </button>
+        </button>
+      </div>
 
       <div className="flex shrink-0 items-center gap-2.5">
         <HeaderSiteChanger />

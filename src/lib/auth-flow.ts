@@ -6,6 +6,7 @@ import type {
   VerifyMfaResponse,
 } from "@/dtos/res/auth.res";
 import { getOrgDashboardPath } from "@/lib/auth-redirect";
+import { clearAuthTokens, clearMfaToken, isSuperAdminRole } from "@/lib/auth-tokens";
 import {
   orgLogin,
   orgMfaEnable,
@@ -63,6 +64,18 @@ export const AUTH_FLOWS: Record<AuthFlowKind, AuthFlowConfig> = {
 
 export function getAuthFlow(kind: AuthFlowKind): AuthFlowConfig {
   return AUTH_FLOWS[kind];
+}
+
+/** Login path after sign-out; read role before clearing tokens. */
+export function getLogoutLoginPath(): string {
+  return isSuperAdminRole()
+    ? AUTH_FLOWS.super.loginPath
+    : AUTH_FLOWS.org.loginPath;
+}
+
+export function logoutSession() {
+  clearMfaToken();
+  clearAuthTokens();
 }
 
 export {

@@ -32,6 +32,12 @@ export function clearOrgToken() {
   window.localStorage.removeItem(ORG_TOKEN_KEY);
 }
 
+/** Clears org-scoped session only; staff auth token is preserved. */
+export function clearOrgSession() {
+  clearOrgToken();
+  clearTenantContext();
+}
+
 export function clearAuthTokens() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
