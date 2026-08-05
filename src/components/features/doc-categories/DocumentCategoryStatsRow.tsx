@@ -1,7 +1,6 @@
-import {
-  DUMMY_DOCUMENT_CATEGORIES,
-  getDocumentCategoryStats,
-} from "@/lib/dummy-doc-categories";
+"use client";
+
+import { useDocCategoryStats } from "@/hooks/useDocCategories";
 
 function StatCard({
   value,
@@ -16,13 +15,26 @@ function StatCard({
 }
 
 export function DocumentCategoryStatsRow() {
-  const stats = getDocumentCategoryStats(DUMMY_DOCUMENT_CATEGORIES);
+  const { data: stats, isLoading } = useDocCategoryStats();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {[1, 2, 3].map((key) => (
+          <StatCard key={key} value={0} label="Loading…" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <StatCard value={stats.totalCategories} label="Total Categories" />
-      <StatCard value={stats.totalDocuments} label="Total Documents" />
-      <StatCard value={stats.requiredCategories} label="Required Categories" />
+      <StatCard value={stats?.totalCategories ?? 0} label="Total Categories" />
+      <StatCard value={stats?.totalDocuments ?? 0} label="Total Documents" />
+      <StatCard
+        value={stats?.requiredCategories ?? 0}
+        label="Required Categories"
+      />
     </div>
   );
 }

@@ -1,15 +1,31 @@
 import {
-  getDummyOrganization,
-  type DummyOrganizationSite,
-} from "@/lib/dummy-organizations";
+  getCachedSitesForOrg,
+  getDefaultCachedSiteId,
+  getTenantContext,
+  type CachedTenantSite,
+} from "@/lib/tenant-context";
 
-/** Dummy implementation — replace with API call to getAllSitesOfThisOrg. */
-export function getAllSitesOfThisOrg(orgId: string): DummyOrganizationSite[] {
-  return getDummyOrganization(orgId)?.sites ?? [];
+export type OrgSiteOption = {
+  id: string;
+  name: string;
+  type: string;
+};
+
+function mapCachedSite(site: CachedTenantSite): OrgSiteOption {
+  return {
+    id: site.id,
+    name: site.name,
+    type: site.industryType || site.location || "Site",
+  };
+}
+
+/** Returns sites cached after select-company for the given org. */
+export function getAllSitesOfThisOrg(orgId: string): OrgSiteOption[] {
+  return getCachedSitesForOrg(orgId).map(mapCachedSite);
 }
 
 export function getDefaultSiteIdForOrg(orgId: string): string {
-  return getAllSitesOfThisOrg(orgId)[0]?.id ?? "1";
+  return getDefaultCachedSiteId(orgId) ?? "1";
 }
 
 /** Org admin dashboard entry path after login or tenant selection. */
@@ -29,4 +45,10 @@ export function replaceSiteInPath(
   }
   segments[1] = siteId;
   return `/${segments.join("/")}`;
+}
+
+export function getOrganizationName(orgId: string): string | undefined {
+  const context = getTenantContext();
+  if (!context || String(context.organizationId) !== orgId) return undefined;
+  return context.organizationName;
 }

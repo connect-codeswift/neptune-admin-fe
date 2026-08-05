@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import { CreateSuperAdminModal } from "@/components/features/super-admin/CreateSuperAdminModal";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
@@ -14,33 +16,50 @@ import {
   TableTextCell,
   type TableColumn,
 } from "@/components/ui";
-import {
-  SUPER_ADMIN_ACTIVITY_LOG,
-  SUPER_ADMIN_COMPANY_ROWS,
-  SUPER_ADMIN_DASHBOARD_KPIS,
-  SUPER_ADMIN_PLATFORM_STATS,
-  type SuperAdminCompanyRow,
-} from "@/lib/super-admin-dashboard.dummy";
+import { useSuperAdminCompanies } from "@/hooks/useSuperAdminCompanies";
+import { SUPER_ADMIN_ACTIVITY_LOG } from "@/lib/super-admin-dashboard.dummy";
 
-function CompanyNameCell({ row }: Readonly<{ row: SuperAdminCompanyRow }>) {
+type CompanyRow = {
+  id: string;
+  name: string;
+  activatedModules: string;
+  sites: number;
+  users: number;
+  status: "active" | "inactive";
+  createdAt: string;
+};
+
+function CompanyNameCell({ row }: Readonly<{ row: CompanyRow }>) {
   return (
     <div className="min-w-0">
       <p className="truncate text5 font-semibold text-darkest">{row.name}</p>
-      <p className="truncate text7 text-[#b3bbc8]">{row.code}</p>
+      <p className="truncate text7 text-[#b3bbc8]">ID {row.id}</p>
     </div>
   );
 }
 
-const COMPANY_COLUMNS: TableColumn<SuperAdminCompanyRow>[] = [
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+const COMPANY_COLUMNS: TableColumn<CompanyRow>[] = [
   {
     id: "company",
     header: "Company",
     cell: (row) => <CompanyNameCell row={row} />,
   },
   {
-    id: "industry",
-    header: "Industry",
-    cell: (row) => <TableTextCell>{row.industry}</TableTextCell>,
+    id: "modules",
+    header: "Modules",
+    cell: (row) => (
+      <TableTextCell muted>{row.activatedModules || "—"}</TableTextCell>
+    ),
   },
   {
     id: "sites",
@@ -49,18 +68,13 @@ const COMPANY_COLUMNS: TableColumn<SuperAdminCompanyRow>[] = [
   },
   {
     id: "users",
-    header: "Licensed Users",
+    header: "Users",
     cell: (row) => <TableTextCell>{row.users}</TableTextCell>,
   },
   {
-    id: "employees",
-    header: "Employees",
-    cell: (row) => <TableTextCell>{row.employees}</TableTextCell>,
-  },
-  {
-    id: "plan",
-    header: "Plan",
-    cell: (row) => <TableTextCell muted>{row.plan}</TableTextCell>,
+    id: "created",
+    header: "Created",
+    cell: (row) => <TableTextCell muted>{formatDate(row.createdAt)}</TableTextCell>,
   },
   {
     id: "status",
@@ -72,14 +86,100 @@ const COMPANY_COLUMNS: TableColumn<SuperAdminCompanyRow>[] = [
       />
     ),
   },
-  {
-    id: "csm",
-    header: "CSM",
-    cell: (row) => <TableTextCell>{row.csm}</TableTextCell>,
-  },
 ];
 
 export function SuperAdminDashboardPage() {
+  const [createStaffOpen, setCreateStaffOpen] = useState(false);
+  const { data: companies = [], isLoading, isError, error, refetch } =
+    useSuperAdminCompanies();
+
+  const companyRows = useMemo<CompanyRow[]>(
+    () =>
+      companies.map((company) => ({
+        id: String(company.id),
+        name: company.name,
+        activatedModules: company.activatedModules,
+        sites: company.siteCount,
+        users: company.userCount,
+        status: company.userCount > 0 ? "active" : "inactive",
+        createdAt: company.createdAt,
+      })),
+    [companies],
+  );
+
+  const totalSites = companyRows.reduce((sum, row) => sum + row.sites, 0);
+  const totalUsers = companyRows.reduce((sum, row) => sum + row.users, 0);
+  const activeCompanies = companyRows.filter((row) => row.status === "active")
+    .length;
+
+  const dashboardKpis = [
+    {
+      label: "Companies",
+      value: companyRows.length,
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [companyRows.length],
+    },
+    {
+      label: "Sites",
+      value: totalSites,
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [totalSites],
+    },
+    {
+      label: "Users",
+      value: totalUsers,
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [totalUsers],
+    },
+    {
+      label: "Active Clients",
+      value: activeCompanies,
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [activeCompanies],
+    },
+  ];
+
+  const platformStats = [
+    {
+      title: "Companies",
+      value: String(companyRows.length),
+      activeCount: activeCompanies,
+    },
+    {
+      title: "Sites",
+      value: String(totalSites),
+      activeCount: totalSites,
+    },
+    {
+      title: "Users",
+      value: String(totalUsers),
+      activeCount: totalUsers,
+    },
+    {
+      title: "Modules",
+      value: String(
+        new Set(
+          companyRows.flatMap((row) =>
+            row.activatedModules
+              .split(",")
+              .map((module) => module.trim())
+              .filter(Boolean),
+          ),
+        ).size,
+      ),
+      activeCount: activeCompanies,
+    },
+    {
+      title: "Active",
+      value: String(activeCompanies),
+      activeCount: activeCompanies,
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
@@ -90,8 +190,16 @@ export function SuperAdminDashboardPage() {
             <Button
               variant="secondary"
               size="sm"
+              leftIcon="lucide:user-plus"
+              onClick={() => setCreateStaffOpen(true)}
+            >
+              Add Staff Account
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               leftIcon="lucide:refresh-cw"
-              onClick={() => toast.success("Global dashboard refreshed.")}
+              onClick={() => void refetch()}
             >
               Refresh
             </Button>
@@ -106,7 +214,7 @@ export function SuperAdminDashboardPage() {
             <Button
               size="sm"
               leftIcon="lucide:download"
-              onClick={() => toast.success("Global report export started.")}
+              onClick={() => toast.info("Export is not available yet.")}
             >
               Export Report
             </Button>
@@ -115,7 +223,7 @@ export function SuperAdminDashboardPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {SUPER_ADMIN_DASHBOARD_KPIS.map((kpi) => (
+        {dashboardKpis.map((kpi) => (
           <KpiTrendCard
             key={kpi.label}
             value={kpi.value}
@@ -139,12 +247,22 @@ export function SuperAdminDashboardPage() {
             </Link>
           }
         >
-          <Table
-            columns={COMPANY_COLUMNS}
-            data={SUPER_ADMIN_COMPANY_ROWS}
-            getRowId={(row) => row.id}
-            emptyMessage="No companies on the platform yet."
-          />
+          {isLoading ? (
+            <p className="text5 text-gray">Loading companies…</p>
+          ) : null}
+          {isError ? (
+            <p className="text5 text-red">
+              {error instanceof Error ? error.message : "Failed to load companies."}
+            </p>
+          ) : null}
+          {!isLoading && !isError ? (
+            <Table
+              columns={COMPANY_COLUMNS}
+              data={companyRows}
+              getRowId={(row) => row.id}
+              emptyMessage="No companies on the platform yet."
+            />
+          ) : null}
         </DetailCard>
 
         <RecentActivityCard
@@ -159,12 +277,12 @@ export function SuperAdminDashboardPage() {
         title="Platform Overview"
         action={
           <p className="text5 text-gray">
-            Aggregated across {SUPER_ADMIN_COMPANY_ROWS.length} companies
+            Aggregated across {companyRows.length} companies
           </p>
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {SUPER_ADMIN_PLATFORM_STATS.map((stat) => (
+          {platformStats.map((stat) => (
             <KpiSummaryCard
               key={stat.title}
               title={stat.title}
@@ -174,6 +292,11 @@ export function SuperAdminDashboardPage() {
           ))}
         </div>
       </DetailCard>
+
+      <CreateSuperAdminModal
+        open={createStaffOpen}
+        onClose={() => setCreateStaffOpen(false)}
+      />
     </div>
   );
 }

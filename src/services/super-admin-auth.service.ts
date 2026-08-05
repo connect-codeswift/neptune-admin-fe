@@ -1,5 +1,6 @@
 import type {
   LoginPayload,
+  SuperAdminCreatePayload,
   SuperAdminMfaSetupPayload,
   SuperAdminSelectCompanyPayload,
   VerifyMfaPayload,
@@ -59,9 +60,18 @@ export async function superAdminMfaEnable(payload: VerifyMfaPayload) {
   return data;
 }
 
+export type GetSuperAdminCompaniesParams = {
+  search?: string;
+  pageNumber?: number;
+  pageSize?: number;
+};
+
 /** GET /SuperAdminCompanies */
-export async function getCompanies() {
-  const { data } = await axiosInstance.get<ApiResponse>("/SuperAdminCompanies");
+export async function getCompanies(params?: GetSuperAdminCompaniesParams) {
+  const { data } = await axiosInstance.get<ApiResponse>(
+    "/SuperAdminCompanies",
+    { params },
+  );
   return data;
 }
 
@@ -84,6 +94,15 @@ export async function selectCompany(payload: SuperAdminSelectCompanyPayload) {
     setOrgToken(token);
   }
 
+  return data;
+}
+
+/** POST /SuperAdminAuth/create */
+export async function createSuperAdmin(payload: SuperAdminCreatePayload) {
+  const { data } = await axiosInstance.post<ApiResponse<unknown>>(
+    "/SuperAdminAuth/create",
+    payload,
+  );
   return data;
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { SearchInput, SelectInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
@@ -14,14 +15,23 @@ import {
   TableUserCell,
   type TableColumn,
 } from "@/components/ui";
-import { DUMMY_USERS, getUserStats, type DummyUser } from "@/lib/dummy-users";
-import { buildOrgSitePath } from "@/lib/org-sites";
+import {
+  useSuperAdminUserStats,
+  useSuperAdminUsers,
+} from "@/hooks/useSuperAdminUsers";
+import type { UserListItem } from "@/lib/mappers/users.mapper";
+import {
+  buildOrgSitePath,
+  getAllSitesOfThisOrg,
+} from "@/lib/org-sites";
 import {
   buildOrgSiteBasePath,
   parseOrgSitePath,
 } from "@/lib/sidebar-items";
 import { SubscriptionSeatLimitModal } from "./SubscriptionSeatLimitModal";
 import { useSubscriptionSeats } from "./useSubscriptionSeats";
+
+const PAGE_SIZE = 20;
 
 function StatCard({
   value,
@@ -37,9 +47,9 @@ function StatCard({
 
 function buildColumns(
   basePath: string,
-  onView: (user: DummyUser) => void,
-  onEdit: (user: DummyUser) => void,
-): TableColumn<DummyUser>[] {
+  onView: (user: UserListItem) => void,
+  onEdit: (user: UserListItem) => void,
+): TableColumn<UserListItem>[] {
   return [
     {
       id: "user",
@@ -58,11 +68,6 @@ function buildColumns(
       cell: (row) => <TableRoleBadge>{row.role}</TableRoleBadge>,
     },
     {
-      id: "department",
-      header: "Department",
-      cell: (row) => <TableTextCell>{row.department}</TableTextCell>,
-    },
-    {
       id: "site",
       header: "Site",
       cell: (row) => <TableTextCell>{row.site}</TableTextCell>,
@@ -71,11 +76,6 @@ function buildColumns(
       id: "status",
       header: "Status",
       cell: (row) => <TableStatusBadge status={row.status} />,
-    },
-    {
-      id: "lastLogin",
-      header: "Last Login",
-      cell: (row) => <TableTextCell muted>{row.lastLogin}</TableTextCell>,
     },
     {
       id: "actions",
@@ -101,6 +101,10 @@ export function UserManagementPage() {
   const orgSite = parseOrgSitePath(pathname);
   const { atSeatLimit, seatInfo } = useSubscriptionSeats();
   const [seatLimitModalOpen, setSeatLimitModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [siteFilter, setSiteFilter] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
+
   const adminHref = orgSite
     ? buildOrgSitePath(orgSite.company, orgSite.site)
     : "/dashboard";
@@ -108,7 +112,35 @@ export function UserManagementPage() {
     ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/user-management`
     : "/user-management";
 
-  const stats = getUserStats(DUMMY_USERS);
+  const siteOptions = useMemo(() => {
+    const sites = orgSite ? getAllSitesOfThisOrg(orgSite.company) : [];
+    return [
+      { value: "", label: "All sites" },
+      ...sites.map((site) => ({ value: site.id, label: site.name })),
+    ];
+  }, [orgSite]);
+
+  const siteId = siteFilter ? Number(siteFilter) : undefined;
+
+  const {
+    data: usersPage,
+    isLoading,
+    isError,
+    error,
+  } = useSuperAdminUsers({
+    siteId: Number.isFinite(siteId) ? siteId : undefined,
+    search,
+    pageNumber,
+    pageSize: PAGE_SIZE,
+  });
+
+  const { data: stats } = useSuperAdminUserStats(
+    Number.isFinite(siteId) ? siteId : undefined,
+  );
+
+  const users = usersPage?.users ?? [];
+  const totalRecords = usersPage?.totalRecords ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
 
   const columns = buildColumns(
     basePath,
@@ -124,11 +156,25 @@ export function UserManagementPage() {
     router.push(`${basePath}/new`);
   };
 
+  const handleSiteFilterChange = (value: string) => {
+    setSiteFilter(value);
+    setPageNumber(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPageNumber(1);
+  };
+
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title="User Management"
-        description={`${stats.total} users across all departments and sites`}
+        description={
+          stats
+            ? `${stats.total} users across all departments and sites`
+            : "Manage users for the selected organization"
+        }
         breadcrumbs={[
           { label: "Admin", href: adminHref },
           { label: "User Management" },
@@ -163,18 +209,75 @@ export function UserManagementPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard value={stats.total} label="Total Users" />
-        <StatCard value={stats.active} label="Active" />
-        <StatCard value={stats.pendingSetup} label="Pending Setup" />
-        <StatCard value={stats.suspended} label="Suspended" />
+        <StatCard value={stats?.total ?? 0} label="Total Users" />
+        <StatCard value={stats?.active ?? 0} label="Active" />
+        <StatCard value={stats?.pendingSetup ?? 0} label="Pending Setup" />
+        <StatCard value={stats?.suspended ?? 0} label="Suspended" />
       </div>
 
-      <Table
-        columns={columns}
-        data={DUMMY_USERS}
-        getRowId={(row) => row.id}
-        emptyMessage="No users found."
-      />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+        <SearchInput
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={(event) => handleSearchChange(event.target.value)}
+          aria-label="Search users"
+        />
+        <SelectInput
+          label="Site"
+          options={siteOptions}
+          value={siteFilter}
+          onChange={handleSiteFilterChange}
+        />
+      </div>
+
+      {isLoading ? (
+        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
+          Loading users…
+        </p>
+      ) : null}
+
+      {isError ? (
+        <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
+          {error instanceof Error ? error.message : "Failed to load users."}
+        </p>
+      ) : null}
+
+      {!isLoading && !isError ? (
+        <>
+          <Table
+            columns={columns}
+            data={users}
+            getRowId={(row) => row.id}
+            emptyMessage="No users found."
+          />
+
+          {totalRecords > PAGE_SIZE ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text6 text-gray">
+                Page {pageNumber} of {totalPages} · {totalRecords} users
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pageNumber <= 1}
+                  onClick={() => setPageNumber((current) => current - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pageNumber >= totalPages}
+                  onClick={() => setPageNumber((current) => current + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
       {seatInfo ? (
         <SubscriptionSeatLimitModal

@@ -1,57 +1,73 @@
+import type {
+  AssignPermissionsPayload,
+  CreateRolePayload,
+} from "@/dtos/req/roles.req";
+import type {
+  CreateRoleResponse,
+  PermissionResponse,
+  RoleResponse,
+  RoleWithPermissionsResponse,
+} from "@/dtos/res/roles.res";
 import axiosInstance from "@/lib/axiosInstance";
-import type { ApiPayload, ApiResponse } from "@/types/api.types";
+import type { ApiResponse } from "@/types/api.types";
+
+export type GetSuperAdminRolesParams = {
+  pageNumber?: number;
+  pageSize?: number;
+};
 
 /** GET /SuperAdminRoles */
-export async function getRoles() {
-  const { data } = await axiosInstance.get<ApiResponse>("/SuperAdminRoles");
-  return data;
-}
-
-/** GET /SuperAdminRoles/with-permissions */
-export async function getRolesWithPermissions() {
-  const { data } = await axiosInstance.get<ApiResponse>(
-    "/SuperAdminRoles/with-permissions",
+export async function getAllRoles(params?: GetSuperAdminRolesParams) {
+  const { data } = await axiosInstance.get<ApiResponse<RoleResponse[]>>(
+    "/SuperAdminRoles",
+    { params },
   );
   return data;
 }
 
 /** GET /SuperAdminRoles/permissions */
-export async function getPermissions() {
-  const { data } = await axiosInstance.get<ApiResponse>(
+export async function getAllPermissions() {
+  const { data } = await axiosInstance.get<ApiResponse<PermissionResponse[]>>(
     "/SuperAdminRoles/permissions",
   );
   return data;
 }
 
+/** GET /SuperAdminRoles/with-permissions */
+export async function getAllRolesPermissions() {
+  const { data } = await axiosInstance.get<
+    ApiResponse<RoleWithPermissionsResponse[]>
+  >("/SuperAdminRoles/with-permissions");
+  return data;
+}
+
 /** POST /SuperAdminRoles */
-export async function createRole(payload: ApiPayload) {
-  const { data } = await axiosInstance.post<ApiResponse>(
+export async function createRole(payload: CreateRolePayload) {
+  const { data } = await axiosInstance.post<ApiResponse<CreateRoleResponse>>(
     "/SuperAdminRoles",
     payload,
   );
   return data;
 }
 
-/** PUT /SuperAdminRoles/{id}/permissions */
-export async function updateRolePermissions(
-  id: string | number,
-  payload: ApiPayload,
+/** PUT /SuperAdminRoles/{roleId}/permissions — full replace */
+export async function assignRolePermissions(
+  roleId: number,
+  payload: AssignPermissionsPayload,
 ) {
-  const { data } = await axiosInstance.put<ApiResponse>(
-    `/SuperAdminRoles/${id}/permissions`,
+  const { data } = await axiosInstance.put<ApiResponse<unknown>>(
+    `/SuperAdminRoles/${roleId}/permissions`,
     payload,
   );
   return data;
 }
 
-/** Create role then assign permissions (POST role → PUT permissions). */
-export async function createRoleWithPermissions(
-  rolePayload: ApiPayload,
-  permissionsPayload: ApiPayload,
-  getCreatedRoleId: (response: ApiResponse) => string | number,
-) {
-  const created = await createRole(rolePayload);
-  const roleId = getCreatedRoleId(created);
-  const permissions = await updateRolePermissions(roleId, permissionsPayload);
-  return { created, permissions };
+/** @deprecated Use assignRolePermissions */
+export async function assignPermissions(input: {
+  roleId: number;
+  permissionIds: number[];
+}) {
+  return assignRolePermissions(input.roleId, {
+    permissionIds: input.permissionIds,
+  });
 }

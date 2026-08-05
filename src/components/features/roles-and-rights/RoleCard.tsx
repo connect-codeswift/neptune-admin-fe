@@ -1,13 +1,12 @@
 "use client";
 
 import { IconButton } from "@/components/ui";
-import {
-  VISIBLE_RIGHTS_COUNT,
-  type DummyRole,
-} from "@/lib/dummy-roles";
+import type { RoleViewModel } from "@/lib/mappers/roles.mapper";
+
+const VISIBLE_RIGHTS_COUNT = 6;
 
 type RoleCardProps = Readonly<{
-  role: DummyRole;
+  role: RoleViewModel;
   basePath: string;
 }>;
 
@@ -20,8 +19,8 @@ function RightTag({ label }: Readonly<{ label: string }>) {
 }
 
 export function RoleCard({ role, basePath }: RoleCardProps) {
-  const visibleRights = role.rights.slice(0, VISIBLE_RIGHTS_COUNT);
-  const hiddenCount = role.rights.length - visibleRights.length;
+  const visibleRights = role.permissionLabels.slice(0, VISIBLE_RIGHTS_COUNT);
+  const hiddenCount = role.permissionLabels.length - visibleRights.length;
 
   return (
     <article className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-lg backdrop-blur-[10px]">
@@ -36,7 +35,9 @@ export function RoleCard({ role, basePath }: RoleCardProps) {
             ) : null}
           </div>
 
-          <p className="mt-1 text5 text-gray">{role.description}</p>
+          <p className="mt-1 text5 text-gray">
+            {role.description || "No description provided."}
+          </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {visibleRights.map((right) => (
@@ -46,6 +47,9 @@ export function RoleCard({ role, basePath }: RoleCardProps) {
               <span className="text6 font-semibold text-blue-normal">
                 +{hiddenCount} more
               </span>
+            ) : null}
+            {role.permissionLabels.length === 0 ? (
+              <span className="text6 text-gray">No permissions assigned</span>
             ) : null}
           </div>
         </div>

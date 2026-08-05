@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { CheckBoxInput, TextInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
+import { useCreateDocCategory } from "@/hooks/useDocCategories";
 
 const DEFAULT_CATEGORY_COLOR = "#7c3aed";
 
@@ -18,13 +19,37 @@ export function DocumentCategoryForm({
   onSubmit,
 }: DocumentCategoryFormProps) {
   const colorInputId = useId();
+  const createMutation = useCreateDocCategory();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [color, setColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [requiresApproval, setRequiresApproval] = useState(false);
+  const [isRequired, setIsRequired] = useState(false);
+  const [retentionDays, setRetentionDays] = useState("");
 
-  const handleCreate = () => {
-    onSubmit?.();
-    toast.success("Category created.");
-    onCancel();
+  const handleCreate = async () => {
+    if (!name.trim()) {
+      toast.error("Category name is required.");
+      return;
+    }
+
+    try {
+      await createMutation.mutateAsync({
+        categorytName: name.trim(),
+        description: description.trim() || null,
+        color: color.trim() || null,
+        isRequired,
+        requiresApprovalWorkflow: requiresApproval,
+        retentionDays: retentionDays ? Number(retentionDays) : null,
+      });
+      onSubmit?.();
+      toast.success("Category created.");
+      onCancel();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create category.",
+      );
+    }
   };
 
   return (
@@ -35,8 +60,15 @@ export function DocumentCategoryForm({
             label="Category Name"
             placeholder="e.g. Risk Assessment"
             required
+            value={name}
+            onChange={(event) => setName(event.target.value)}
           />
-          <TextInput label="Description" placeholder="Short description" />
+          <TextInput
+            label="Description"
+            placeholder="Short description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor={colorInputId}
@@ -65,11 +97,21 @@ export function DocumentCategoryForm({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-end">
           <CheckBoxInput
+            label="Required category"
+            checked={isRequired}
+            onChange={(event) => setIsRequired(event.target.checked)}
+          />
+          <CheckBoxInput
             label="Requires approval workflow"
             checked={requiresApproval}
             onChange={(event) => setRequiresApproval(event.target.checked)}
           />
-          <TextInput label="Retention" placeholder="e.g. 7 years" />
+          <TextInput
+            label="Retention (days)"
+            placeholder="e.g. 2555"
+            value={retentionDays}
+            onChange={(event) => setRetentionDays(event.target.value)}
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -79,9 +121,10 @@ export function DocumentCategoryForm({
           <Button
             size="sm"
             leftIcon="lucide:folder-plus"
-            onClick={handleCreate}
+            onClick={() => void handleCreate()}
+            disabled={createMutation.isPending}
           >
-            Create Category
+            {createMutation.isPending ? "Creating…" : "Create Category"}
           </Button>
         </div>
       </div>

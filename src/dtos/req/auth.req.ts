@@ -3,9 +3,6 @@ export type LoginPayload = {
   password: string;
 };
 
-/** @deprecated Use LoginPayload */
-export type SuperAdminLoginPayload = LoginPayload;
-
 export type VerifyMfaPayload = {
   mfaToken: string;
   code: string;
@@ -22,4 +19,11 @@ export type SuperAdminMfaSetupPayload = {
 export type SuperAdminSelectCompanyPayload = {
   organizationId: number;
   siteId: number;
+};
+
+/** Request body for POST /SuperAdminAuth/create */
+export type SuperAdminCreatePayload = {
+  email: string;
+  fullName: string;
+  password: string;
 };

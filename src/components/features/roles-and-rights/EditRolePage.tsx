@@ -1,16 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { PageHeader, PlaceholderPage } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import {
-  getDummyRole,
-  getRoleTypeLabel,
-  type DummyRole,
-} from "@/lib/dummy-roles";
+  useAllPermissions,
+  useAssignRolePermissions,
+  useRolesWithPermissions,
+} from "@/hooks/useRolesAndRights";
+import type { RoleViewModel } from "@/lib/mappers/roles.mapper";
 import { RightsSelector } from "./RightsSelector";
 import { useRolesAndRightsPaths } from "./useRolesAndRightsPaths";
 
@@ -33,14 +34,15 @@ function SummaryRow({
 function RoleSummaryCard({
   role,
   grantedCount,
-}: Readonly<{ role: DummyRole; grantedCount: number }>) {
+}: Readonly<{ role: RoleViewModel; grantedCount: number }>) {
   return (
     <DetailCard title="Role Summary">
       <SummaryRow label="Users assigned" value={String(role.userCount)} />
-      <SummaryRow label="Type" value={getRoleTypeLabel(role)} />
+      <SummaryRow
+        label="Type"
+        value={role.isSystem ? "System" : "Custom"}
+      />
       <SummaryRow label="Rights" value={`${grantedCount} granted`} />
-      <SummaryRow label="Created" value={role.createdAt ?? "—"} />
-      <SummaryRow label="Last modified" value={role.lastModifiedAt ?? "—"} />
     </DetailCard>
   );
 }
@@ -48,10 +50,51 @@ function RoleSummaryCard({
 export function EditRolePage({ roleId }: EditRolePageProps) {
   const router = useRouter();
   const { adminHref, basePath } = useRolesAndRightsPaths();
-  const role = getDummyRole(roleId);
-  const [selectedRights, setSelectedRights] = useState<string[]>(
-    role?.rights ?? [],
+  const {
+    data: roles = [],
+    isLoading: rolesLoading,
+    isError: rolesError,
+    error: rolesLoadError,
+  } = useRolesWithPermissions();
+  const {
+    data: permissionsCatalog,
+    isLoading: permissionsLoading,
+    isError: permissionsError,
+    error: permissionsLoadError,
+  } = useAllPermissions();
+  const assignPermissionsMutation = useAssignRolePermissions();
+
+  const role = roles.find((entry) => entry.id === roleId);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>(
+    [],
   );
+
+  useEffect(() => {
+    if (!role) return;
+    setSelectedPermissionIds(role.permissionIds);
+  }, [role]);
+
+  if (rolesLoading) {
+    return (
+      <PlaceholderPage
+        title="Loading Role"
+        description="Fetching role details from the API…"
+      />
+    );
+  }
+
+  if (rolesError) {
+    return (
+      <PlaceholderPage
+        title="Failed to Load Role"
+        description={
+          rolesLoadError instanceof Error
+            ? rolesLoadError.message
+            : "Could not load role details."
+        }
+      />
+    );
+  }
 
   if (!role) {
     return (
@@ -71,24 +114,48 @@ export function EditRolePage({ roleId }: EditRolePageProps) {
     );
   }
 
-  const handleSave = () => {
-    toast.success("Role saved.");
-    router.push(basePath);
+  const handleSave = async () => {
+    if (selectedPermissionIds.length === 0) {
+      toast.error("Select at least one permission.");
+      return;
+    }
+
+    try {
+      await assignPermissionsMutation.mutateAsync({
+        roleId: role.numericId,
+        permissionIds: selectedPermissionIds,
+      });
+      toast.success("Role permissions saved.");
+      router.push(basePath);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save role.",
+      );
+    }
   };
 
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title={`Role: ${role.name}`}
-        description={role.description}
+        description={role.description || "No description provided."}
         breadcrumbs={[
           { label: "Admin", href: adminHref },
           { label: "Roles & Rights", href: basePath },
           { label: role.name },
         ]}
         actions={
-          <Button size="sm" leftIcon="lucide:save" onClick={handleSave}>
-            Save Changes
+          <Button
+            size="sm"
+            leftIcon="lucide:save"
+            onClick={() => void handleSave()}
+            disabled={
+              assignPermissionsMutation.isPending ||
+              permissionsLoading ||
+              permissionsError
+            }
+          >
+            {assignPermissionsMutation.isPending ? "Saving…" : "Save Changes"}
           </Button>
         }
       />
@@ -98,18 +165,36 @@ export function EditRolePage({ roleId }: EditRolePageProps) {
           title="Rights"
           action={
             <span className="text5 text-gray">
-              {selectedRights.length} granted
+              {selectedPermissionIds.length} granted
             </span>
           }
         >
-          <RightsSelector
-            selected={selectedRights}
-            onChange={setSelectedRights}
-            showHeader={false}
-          />
+          {permissionsLoading ? (
+            <p className="text5 text-gray">Loading permissions…</p>
+          ) : null}
+
+          {permissionsError ? (
+            <p className="text5 text-red">
+              {permissionsLoadError instanceof Error
+                ? permissionsLoadError.message
+                : "Failed to load permissions."}
+            </p>
+          ) : null}
+
+          {!permissionsLoading && !permissionsError ? (
+            <RightsSelector
+              groups={permissionsCatalog?.groups ?? []}
+              selectedIds={selectedPermissionIds}
+              onChange={setSelectedPermissionIds}
+              showHeader={false}
+            />
+          ) : null}
         </DetailCard>
 
-        <RoleSummaryCard role={role} grantedCount={selectedRights.length} />
+        <RoleSummaryCard
+          role={role}
+          grantedCount={selectedPermissionIds.length}
+        />
       </div>
     </div>
   );

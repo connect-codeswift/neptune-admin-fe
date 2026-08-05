@@ -25,11 +25,19 @@ export function getOrgToken(): string | null {
   return window.localStorage.getItem(ORG_TOKEN_KEY);
 }
 
+import { clearTenantContext } from "@/lib/tenant-context";
+
+export function clearOrgToken() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(ORG_TOKEN_KEY);
+}
+
 export function clearAuthTokens() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(ORG_TOKEN_KEY);
   window.localStorage.removeItem(AUTH_ROLE_KEY);
+  clearTenantContext();
 }
 
 export function setAuthRole(role: StoredAuthRole) {

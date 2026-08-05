@@ -1,10 +1,9 @@
 "use client";
 
+import type { DocCategoryViewModel } from "@/hooks/useDocCategories";
 import { Icon } from "@iconify/react";
-import { toast } from "sonner";
 import { TextInput } from "@/components/inputs";
 import { Button, IconButton } from "@/components/ui";
-import type { DummyDocumentCategory } from "@/lib/dummy-doc-categories";
 
 type CategoryDraft = {
   name: string;
@@ -12,13 +11,14 @@ type CategoryDraft = {
 };
 
 type DocumentCategoryCardProps = Readonly<{
-  category: DummyDocumentCategory;
+  category: DocCategoryViewModel;
   isEditing: boolean;
   draft: CategoryDraft;
   onDraftChange: (draft: CategoryDraft) => void;
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
+  onDelete?: () => void;
 }>;
 
 export function DocumentCategoryCard({
@@ -29,6 +29,7 @@ export function DocumentCategoryCard({
   onEdit,
   onCancel,
   onSave,
+  onDelete,
 }: DocumentCategoryCardProps) {
   return (
     <article className="flex flex-col gap-4 rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-lg backdrop-blur-[10px]">
@@ -52,7 +53,7 @@ export function DocumentCategoryCard({
                 ) : null}
               </div>
               {!isEditing ? (
-                <p className="mt-1 text5 text-gray">{category.description}</p>
+                <p className="mt-1 text5 text-gray">{category.description || "—"}</p>
               ) : null}
             </div>
 
@@ -63,15 +64,13 @@ export function DocumentCategoryCard({
                 size="sm"
                 onClick={onEdit}
               />
-              {category.deletable ? (
+              {onDelete ? (
                 <IconButton
                   icon="lucide:trash-2"
                   label={`Delete ${category.name}`}
                   size="sm"
                   variant="soft"
-                  onClick={() =>
-                    toast.info(`Delete ${category.name} is not wired yet.`)
-                  }
+                  onClick={onDelete}
                 />
               ) : null}
             </div>

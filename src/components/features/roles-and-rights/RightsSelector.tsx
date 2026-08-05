@@ -1,15 +1,12 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import {
-  isLockedRight,
-  RIGHTS_GROUPS,
-  type RightsGroup,
-} from "@/lib/permissions";
+import type { PermissionGroup } from "@/lib/mappers/roles.mapper";
 
 type RightsSelectorProps = Readonly<{
-  selected: string[];
-  onChange: (selected: string[]) => void;
+  groups: PermissionGroup[];
+  selectedIds: number[];
+  onChange: (selectedIds: number[]) => void;
   grantedLabel?: string;
   showHeader?: boolean;
 }>;
@@ -60,43 +57,52 @@ function RightsGroupSection({
   selectedSet,
   onToggle,
 }: Readonly<{
-  entry: RightsGroup;
-  selectedSet: Set<string>;
-  onToggle: (right: string) => void;
+  entry: PermissionGroup;
+  selectedSet: Set<number>;
+  onToggle: (permissionId: number) => void;
 }>) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {entry.rights.map((right) => {
-        const locked = isLockedRight(right);
-        return (
+    <div>
+      <p className="mb-2 text6 font-semibold tracking-[0.4px] text-gray uppercase">
+        {entry.group}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {entry.permissions.map((permission) => (
           <RightChip
-            key={right}
-            label={right}
-            selected={selectedSet.has(right)}
-            locked={locked}
-            onToggle={() => onToggle(right)}
+            key={permission.id}
+            label={permission.label}
+            selected={selectedSet.has(permission.id)}
+            locked={permission.locked}
+            onToggle={() => onToggle(permission.id)}
           />
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
 
 export function RightsSelector({
-  selected,
+  groups,
+  selectedIds,
   onChange,
   grantedLabel = "granted",
   showHeader = true,
 }: RightsSelectorProps) {
-  const selectedSet = new Set(selected);
+  const selectedSet = new Set(selectedIds);
 
-  const toggleRight = (right: string) => {
-    if (isLockedRight(right)) return;
-    if (selectedSet.has(right)) {
-      onChange(selected.filter((item) => item !== right));
+  const togglePermission = (permissionId: number) => {
+    const permission = groups
+      .flatMap((group) => group.permissions)
+      .find((entry) => entry.id === permissionId);
+
+    if (permission?.locked) return;
+
+    if (selectedSet.has(permissionId)) {
+      onChange(selectedIds.filter((id) => id !== permissionId));
       return;
     }
-    onChange([...selected, right]);
+
+    onChange([...selectedIds, permissionId]);
   };
 
   return (
@@ -105,21 +111,25 @@ export function RightsSelector({
         <div className="flex items-center justify-between gap-3">
           <h3 className="text4 text-darkest">Rights</h3>
           <p className="text5 text-gray">
-            {selected.length} {grantedLabel}
+            {selectedIds.length} {grantedLabel}
           </p>
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-6">
-        {RIGHTS_GROUPS.map((entry) => (
-          <RightsGroupSection
-            key={entry.group}
-            entry={entry}
-            selectedSet={selectedSet}
-            onToggle={toggleRight}
-          />
-        ))}
-      </div>
+      {groups.length === 0 ? (
+        <p className="text5 text-gray">No permissions returned by the API.</p>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {groups.map((entry) => (
+            <RightsGroupSection
+              key={entry.group}
+              entry={entry}
+              selectedSet={selectedSet}
+              onToggle={togglePermission}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -30,6 +30,6 @@ export function unwrapList<T>(response: ApiResponse): T[] {
 
 export function assertApiSuccess(response: ApiResponse, fallback: string): void {
   if (response.success === false || response.isError) {
-    throw new Error(response.message || response.errorDetails || fallback);
+    throw new Error(response.message || fallback);
   }
 }

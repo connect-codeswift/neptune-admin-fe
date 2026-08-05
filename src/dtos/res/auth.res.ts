@@ -7,9 +7,6 @@ export type LoginResponse = {
   refreshToken?: string | null;
 };
 
-/** @deprecated Use LoginResponse */
-export type SuperAdminLoginResponse = LoginResponse;
-
 export type VerifyMfaResponse = {
   accessToken: string;
   refreshToken?: string | null;
