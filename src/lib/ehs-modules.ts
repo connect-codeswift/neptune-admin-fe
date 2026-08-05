@@ -5,23 +5,41 @@
 export type EhsModule = {
   id: string;
   label: string;
-  /** Backend comma-separated module code (e.g. Incident, Hazard, PPE). */
+  /** Backend comma-separated module code (e.g. INCIDENT, POLICY_MAKER). */
   apiCode: string;
 };
 
 export const EHS_MODULES: readonly EhsModule[] = [
-  { id: "incident-reporting", label: "Incident Reporting", apiCode: "Incident" },
-  { id: "hazard-management", label: "Hazard Management", apiCode: "Hazard" },
+  { id: "incident", label: "Incident", apiCode: "INCIDENT" },
+  { id: "near-miss", label: "Near Miss", apiCode: "NEAR_MISS" },
+  { id: "hazard", label: "Hazard", apiCode: "HAZARD" },
+  { id: "lockout-tagout", label: "Lockout/Tagout", apiCode: "LOCKOUT_TAGOUT" },
   { id: "capa", label: "CAPA", apiCode: "CAPA" },
-  { id: "safety-observations", label: "Safety Observations", apiCode: "SafetyObservations" },
-  { id: "ppe-management", label: "PPE Management", apiCode: "PPE" },
-  { id: "document-control", label: "Document Control", apiCode: "DocumentControl" },
-  { id: "compliance-calendar", label: "Compliance Calendar", apiCode: "ComplianceCalendar" },
-  { id: "training-management", label: "Training Management", apiCode: "Training" },
-  { id: "action-plan", label: "Action Plan", apiCode: "ActionPlan" },
-  { id: "regulation-library", label: "Regulations Library", apiCode: "Regulations" },
-  { id: "loto-procedures", label: "LOTO Procedures", apiCode: "LOTO" },
-  { id: "analytics", label: "Analytics & Reporting", apiCode: "Analytics" },
+  { id: "audits", label: "Audits", apiCode: "AUDITS" },
+  { id: "inspections", label: "Inspections", apiCode: "INSPECTIONS" },
+  {
+    id: "policy-maker",
+    label: "Policy Maker",
+    apiCode: "POLICY_MAKER",
+  },
+  {
+    id: "regulatory-compliance",
+    label: "Regulatory Compliance",
+    apiCode: "REGULATORY_COMPLIANCE",
+  },
+  {
+    id: "behaviour-based-safety",
+    label: "Behaviour Based Safety",
+    apiCode: "BEHAVIOUR_BASED_SAFETY",
+  },
+  { id: "walk-and-talks", label: "Walk and Talks", apiCode: "WALK_AND_TALKS" },
+  { id: "ppe-management", label: "PPE Management", apiCode: "PPE_MANAGEMENT" },
+  {
+    id: "industrial-hygiene",
+    label: "Industrial Hygiene",
+    apiCode: "INDUSTRIAL_HYGIENE",
+  },
+  { id: "hazcom", label: "Hazcom", apiCode: "HAZCOM" },
 ] as const;
 
 export function getModuleLabel(moduleId: string): string {

@@ -70,7 +70,7 @@ function LineRow({
           </label>
         ) : null}
 
-        {editable && item.overridden && onClearOverride ? (
+        {editable && onClearOverride ? (
           <button
             type="button"
             onClick={() => onClearOverride(item.kind, item.key)}

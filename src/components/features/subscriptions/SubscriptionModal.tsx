@@ -53,7 +53,7 @@ function createEmptyDraft(
   const orgId = availableOrgId ?? DUMMY_ORGANIZATIONS[0]?.id ?? "1";
   const org = DUMMY_ORGANIZATIONS.find((entry) => entry.id === orgId);
   const siteCount = org?.siteCount ?? 1;
-  const modules = ["incident-reporting", "hazard-management"];
+  const modules = ["incident", "hazard"];
   const licensedUsers = 25;
   const lineItems = buildLineItems(rates, {
     licensedUsers,

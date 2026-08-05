@@ -14,22 +14,24 @@ export type PricingRates = {
 };
 
 export const DEFAULT_MODULE_PRICES: Record<string, number> = {
-  "incident-reporting": 468,
-  "hazard-management": 540,
-  capa: 708,
-  "safety-observations": 504,
+  incident: 470,
+  "near-miss": 500,
+  hazard: 540,
+  "lockout-tagout": 780,
+  capa: 710,
+  audits: 580,
+  inspections: 550,
+  "policy-maker": 640,
+  "regulatory-compliance": 660,
+  "behaviour-based-safety": 500,
+  "walk-and-talks": 480,
   "ppe-management": 420,
-  "document-control": 576,
-  "compliance-calendar": 552,
-  "training-management": 636,
-  "action-plan": 624,
-  "regulation-library": 660,
-  "loto-procedures": 780,
-  analytics: 1188,
+  "industrial-hygiene": 600,
+  hazcom: 540,
 };
 
 export const DEFAULT_PRICING_RATES: PricingRates = {
-  pricePerUser: 144,
+  pricePerUser: 140,
   pricePerSite: 600,
   modulePrices: { ...DEFAULT_MODULE_PRICES },
 };
