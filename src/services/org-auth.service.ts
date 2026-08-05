@@ -5,12 +5,23 @@ import type {
   MfaSetupResponse,
   VerifyMfaResponse,
 } from "@/dtos/res/auth.res";
-import { setAuthRole, setOrgToken } from "@/lib/auth-tokens";
+import { setAuthEmail, setAuthRole, setOrgToken } from "@/lib/auth-tokens";
 import axiosInstance from "@/lib/axiosInstance";
 
-/** POST /Auth/login */
+/**
+ * POST /Auth/login
+ *
+ * Unlike the SuperAdmin flow this can return a full session immediately: when
+ * the account has MFA disabled the response carries `accessToken` and there is
+ * no `mfaToken` at all. Store it here so an MFA-off admin is not stranded.
+ */
 export async function orgLogin(payload: LoginPayload) {
   const { data } = await axiosInstance.post<LoginResponse>("/Auth/login", payload);
+  setAuthEmail(payload.email);
+  if (data.accessToken) {
+    setOrgToken(data.accessToken);
+    setAuthRole("admin");
+  }
   return data;
 }
 

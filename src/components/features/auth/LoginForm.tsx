@@ -35,6 +35,14 @@ export function LoginForm({ flow }: LoginFormProps) {
       clearAuthTokens();
       const response = await authFlow.login({ email, password });
 
+      // Tenant login returns a session outright when the account has MFA off,
+      // with no mfaToken at all. The SuperAdmin flow never does this: MFA is
+      // mandatory there, so it always continues to one of the branches below.
+      if (response.accessToken) {
+        router.push(authFlow.resolveDashboardPath(response.accessToken));
+        return;
+      }
+
       if (!response.mfaToken) {
         toast.error("Unexpected login response. Please try again.");
         return;
