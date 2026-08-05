@@ -101,18 +101,23 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
 
   useEffect(() => {
     const handleReselect = () => {
-      if (getAuthRole() !== "super-admin") return;
-      const currentOrgSite = parseOrgSitePath(window.location.pathname);
-      openPicker(
-        currentOrgSite ? Number(currentOrgSite.company) : undefined,
-        currentOrgSite ? Number(currentOrgSite.site) : undefined,
-      );
+      const role = getAuthRole();
+      if (role === "super-admin") {
+        const currentOrgSite = parseOrgSitePath(window.location.pathname);
+        openPicker(
+          currentOrgSite ? Number(currentOrgSite.company) : undefined,
+          currentOrgSite ? Number(currentOrgSite.site) : undefined,
+        );
+        return;
+      }
+
+      router.replace("/login");
     };
 
     window.addEventListener(ORG_TOKEN_RESELECT_EVENT, handleReselect);
     return () =>
       window.removeEventListener(ORG_TOKEN_RESELECT_EVENT, handleReselect);
-  }, [openPicker]);
+  }, [openPicker, router]);
 
   const handlePickerSuccess = (path: string) => {
     setPickerOpen(false);

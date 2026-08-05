@@ -48,6 +48,16 @@ export function clearAuthTokens() {
   clearTenantContext();
 }
 
+/** Clears session storage and redirects to the given login path. */
+export function forceLogoutRedirect(loginPath: string) {
+  if (typeof window === "undefined") return;
+  clearMfaToken();
+  clearAuthTokens();
+  if (!window.location.pathname.startsWith(loginPath)) {
+    window.location.assign(loginPath);
+  }
+}
+
 export function setAuthRole(role: StoredAuthRole) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(AUTH_ROLE_KEY, role);
