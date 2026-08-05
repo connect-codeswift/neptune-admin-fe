@@ -28,6 +28,14 @@ export type SiteDraft = {
   companySize: string;
 };
 
+function industryLabel(value: string) {
+  return INDUSTRY_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+function companySizeLabel(value: string) {
+  return COMPANY_SIZE_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
 export type SetupStepTwoProps = {
   siteName: string;
   onSiteNameChange: (value: string) => void;
@@ -39,6 +47,7 @@ export type SetupStepTwoProps = {
   onCompanySizeChange: (value: string) => void;
   sites: SiteDraft[];
   onAddSite: () => void;
+  onRemoveSite: (id: string) => void;
 };
 
 export function SetupStepTwo({
@@ -52,6 +61,7 @@ export function SetupStepTwo({
   onCompanySizeChange,
   sites,
   onAddSite,
+  onRemoveSite,
 }: Readonly<SetupStepTwoProps>) {
   return (
     <WizardSectionCard
@@ -90,23 +100,55 @@ export function SetupStepTwo({
       <div className="mt-4">
         <TextButton type="button" onClick={onAddSite} className="gap-1.5">
           <Icon icon="lucide:plus" width={16} height={16} aria-hidden />
-          Add Another Site
+          Add Site
         </TextButton>
       </div>
 
       {sites.length > 0 ? (
-        <ul className="mt-5 divide-y divide-darkest/8 border-t border-darkest/8">
-          {sites.map((site) => (
-            <li key={site.id} className="py-3">
-              <p className="text5 font-semibold text-darkest">{site.name}</p>
-              <p className="text6 text-gray">
-                {[site.region, site.industryType, site.companySize]
-                  .filter(Boolean)
-                  .join(" • ")}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-6">
+          <div className="mb-3 flex items-center justify-between gap-3 border-t border-darkest/8 pt-5">
+            <p className="text8 tracking-[0.66px] text-gray uppercase">
+              Added Sites
+            </p>
+            <p className="text6 text-gray">
+              {sites.length} site{sites.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <ul className="divide-y divide-darkest/8">
+            {sites.map((site) => (
+              <li
+                key={site.id}
+                className="flex items-center justify-between gap-4 py-3.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text5 font-semibold text-darkest">
+                    {site.name}
+                  </p>
+                  <p className="truncate text6 text-gray">
+                    {[site.region, industryLabel(site.industryType), companySizeLabel(site.companySize)]
+                      .filter(Boolean)
+                      .join(" • ")}
+                  </p>
+                </div>
+                <TextButton
+                  type="button"
+                  variant="danger"
+                  onClick={() => onRemoveSite(site.id)}
+                  className="inline-flex shrink-0 items-center gap-1.5"
+                  aria-label={`Remove ${site.name}`}
+                >
+                  <Icon
+                    icon="lucide:trash-2"
+                    width={14}
+                    height={14}
+                    aria-hidden
+                  />
+                  Remove
+                </TextButton>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </WizardSectionCard>
   );
