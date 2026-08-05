@@ -1,0 +1,9 @@
+---
+description: Prefer TW scale tokens over arbitrary px
+globs: src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Tailwind
+
+Use scale tokens when lint suggests them: `rounded-[12px]`→`rounded-xl`, `min-w-[960px]`→`min-w-240`, `w-[236px]`→`w-59`, `px-[15px]`→`px-3.75`, `py-[19px]`→`py-4.75`, `w-[131px]`→`w-32.75`, `size-[30px]`→`size-7.5`, `h-[60px]`→`h-15`. Keep true one-offs (`rounded-[20px]`, input `rounded-[10px]`). Icons: Iconify; pixel-exact logos → `public/`.
