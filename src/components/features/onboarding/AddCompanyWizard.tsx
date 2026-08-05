@@ -183,8 +183,13 @@ export function AddCompanyWizard() {
   };
 
   const addSite = () => {
-    if (!siteName.trim()) {
-      toast.error("Enter a site name first.");
+    if (
+      !siteName.trim() ||
+      !region.trim() ||
+      !industryType ||
+      !companySize
+    ) {
+      toast.error("Complete the site form first.");
       return;
     }
     setSites((current) => [
@@ -201,6 +206,10 @@ export function AddCompanyWizard() {
     setRegion("");
     setIndustryType("");
     setCompanySize("");
+  };
+
+  const removeSite = (id: string) => {
+    setSites((current) => current.filter((site) => site.id !== id));
   };
 
   const addInvite = () => {
@@ -250,6 +259,7 @@ export function AddCompanyWizard() {
         onCompanySizeChange={setCompanySize}
         sites={sites}
         onAddSite={addSite}
+        onRemoveSite={removeSite}
       />
     );
   } else if (stepIndex === 2) {
