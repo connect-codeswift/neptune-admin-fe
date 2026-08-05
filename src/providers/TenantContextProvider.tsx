@@ -1,0 +1,146 @@
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { CompanySitePickerModal } from "@/components/features/super-admin/CompanySitePickerModal";
+import { ORG_TOKEN_RESELECT_EVENT } from "@/lib/api-error";
+import {
+  getAuthRole,
+  getOrgToken,
+  isSuperAdminRole,
+} from "@/lib/auth-tokens";
+import { parseOrgSitePath } from "@/lib/sidebar-items";
+import {
+  enterOrganization,
+  fetchCompanies,
+} from "@/lib/select-company-flow";
+import { getTenantContext } from "@/lib/tenant-context";
+
+type TenantContextProviderProps = Readonly<{
+  children: React.ReactNode;
+}>;
+
+export function TenantContextProvider({ children }: TenantContextProviderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [initialOrganizationId, setInitialOrganizationId] = useState<number>();
+  const [initialSiteId, setInitialSiteId] = useState<number>();
+  const [checking, setChecking] = useState(true);
+
+  const orgSite = parseOrgSitePath(pathname);
+
+  const openPicker = useCallback(
+    (organizationId?: number, siteId?: number) => {
+      setInitialOrganizationId(organizationId);
+      setInitialSiteId(siteId);
+      setPickerOpen(true);
+    },
+    [],
+  );
+
+  const ensureOrgContext = useCallback(async () => {
+    if (!isSuperAdminRole()) {
+      setChecking(false);
+      return;
+    }
+
+    if (!orgSite) {
+      setChecking(false);
+      return;
+    }
+
+    const organizationId = Number(orgSite.company);
+    const siteId = Number(orgSite.site);
+    if (!Number.isFinite(organizationId) || !Number.isFinite(siteId)) {
+      setChecking(false);
+      return;
+    }
+
+    const orgToken = getOrgToken();
+    const context = getTenantContext();
+    const contextMatches =
+      context?.organizationId === organizationId &&
+      context?.siteId === siteId;
+
+    if (orgToken && contextMatches) {
+      setChecking(false);
+      return;
+    }
+
+    setChecking(true);
+    try {
+      const companies = await fetchCompanies();
+      const company = companies.find((entry) => entry.id === organizationId);
+      if (!company) {
+        openPicker(organizationId, siteId);
+        return;
+      }
+
+      await enterOrganization({
+        organizationId,
+        organizationName: company.name,
+        siteId,
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Select a company and site to continue.",
+      );
+      openPicker(organizationId, siteId);
+    } finally {
+      setChecking(false);
+    }
+  }, [openPicker, orgSite]);
+
+  useEffect(() => {
+    void ensureOrgContext();
+  }, [ensureOrgContext]);
+
+  useEffect(() => {
+    const handleReselect = () => {
+      if (getAuthRole() !== "super-admin") return;
+      const currentOrgSite = parseOrgSitePath(window.location.pathname);
+      openPicker(
+        currentOrgSite ? Number(currentOrgSite.company) : undefined,
+        currentOrgSite ? Number(currentOrgSite.site) : undefined,
+      );
+    };
+
+    window.addEventListener(ORG_TOKEN_RESELECT_EVENT, handleReselect);
+    return () =>
+      window.removeEventListener(ORG_TOKEN_RESELECT_EVENT, handleReselect);
+  }, [openPicker]);
+
+  const handlePickerSuccess = (path: string) => {
+    setPickerOpen(false);
+    if (pathname !== path) {
+      router.push(path);
+    } else {
+      router.refresh();
+    }
+  };
+
+  if (checking && isSuperAdminRole() && orgSite) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text5 text-gray">
+        Preparing organization context…
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {children}
+      <CompanySitePickerModal
+        open={pickerOpen}
+        required
+        initialOrganizationId={initialOrganizationId}
+        initialSiteId={initialSiteId}
+        onSuccess={handlePickerSuccess}
+      />
+    </>
+  );
+}

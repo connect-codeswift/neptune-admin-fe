@@ -115,7 +115,7 @@ export function MultiBadgesInput({
         </label>
       ) : null}
       <div
-        className={`flex min-h-12 w-full flex-wrap items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 shadow-xl transition-colors focus-within:ring-2 ${
+        className={`flex min-h-12 w-full flex-wrap items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 shadow-lg transition-colors focus-within:ring-2 ${
           error
             ? "border-red focus-within:border-red focus-within:ring-red/30"
             : "border-darkest/12 focus-within:border-blue-normal focus-within:ring-blue-normal/30"

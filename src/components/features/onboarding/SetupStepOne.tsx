@@ -1,29 +1,16 @@
 "use client";
 
-import { TextInput, ToggleBadges } from "@/components/inputs";
+import { TextInput } from "@/components/inputs";
 import { WizardSectionCard } from "./WizardSectionCard";
-
-const MODULE_OPTIONS = [
-  { value: "incident-reporting", label: "Incident Reporting" },
-  { value: "hazard-management", label: "Hazard Management" },
-  { value: "capa", label: "CAPA" },
-  { value: "document-control", label: "Document Control" },
-  { value: "compliance-calendar", label: "Compliance Calendar" },
-  { value: "training-management", label: "Training Management" },
-];
 
 export type SetupStepOneProps = {
   organizationName: string;
   onOrganizationNameChange: (value: string) => void;
-  modules: string[];
-  onModulesChange: (value: string[]) => void;
 };
 
 export function SetupStepOne({
   organizationName,
   onOrganizationNameChange,
-  modules,
-  onModulesChange,
 }: Readonly<SetupStepOneProps>) {
   return (
     <WizardSectionCard title="Organization">
@@ -34,15 +21,10 @@ export function SetupStepOne({
           value={organizationName}
           onChange={(event) => onOrganizationNameChange(event.target.value)}
         />
-        <ToggleBadges
-          label="Activated Modules *"
-          helperText="Select the EHS modules to activate for this organization."
-          variant="card"
-          options={MODULE_OPTIONS}
-          value={modules}
-          onChange={onModulesChange}
-          countNoun="modules selected"
-        />
+        <p className="rounded-xl border border-darkest/8 bg-white/80 px-4 py-3 text6 text-gray">
+          Modules are licensed on the client&apos;s subscription, not here. Create
+          the subscription after onboarding to grant module access.
+        </p>
       </div>
     </WizardSectionCard>
   );

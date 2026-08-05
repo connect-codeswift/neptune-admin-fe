@@ -2,11 +2,14 @@ import {
   DUMMY_ORGANIZATIONS,
   getDummyOrganization,
   type DummyOrganization,
-  type DummyOrganizationModule,
   type DummyOrganizationSite,
 } from "@/lib/dummy-organizations";
+import {
+  DEFAULT_SUBSCRIPTIONS,
+  getSubscriptionForOrganization,
+  type Subscription,
+} from "@/lib/dummy-subscriptions";
 
-export type ClientModule = DummyOrganizationModule;
 export type ClientSite = DummyOrganizationSite;
 export type ClientTrialHistoryItem =
   DummyOrganization["subscription"]["history"][number];
@@ -26,4 +29,11 @@ export function getClientAccountDetail(id: string): ClientAccountDetail {
   const org = getDummyOrganization(id);
   if (org) return toClientAccountDetail(org);
   return toClientAccountDetail(DUMMY_ORGANIZATIONS[0]!);
+}
+
+/** The client's yearly contract, or null when no subscription exists yet. */
+export function getClientSubscription(
+  organizationId: string,
+): Subscription | null {
+  return getSubscriptionForOrganization(DEFAULT_SUBSCRIPTIONS, organizationId);
 }

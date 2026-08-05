@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { RegulationLibraryPage } from "@/components/features/regulation-library/RegulationLibraryPage";
 
-export default function RegulationLibraryPage() {
-  return <PlaceholderPage title="Regulation Library" />;
+export default function OrgSiteRegulationLibraryRoute() {
+  return <RegulationLibraryPage />;
 }

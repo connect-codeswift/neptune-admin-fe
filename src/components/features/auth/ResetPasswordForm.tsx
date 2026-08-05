@@ -53,7 +53,7 @@ export function ResetPasswordForm() {
           fullWidth
           size="lg"
           rightIcon="lucide:arrow-right"
-          className="mt-6 shadow-xl"
+          className="mt-6 shadow-lg"
         >
           Update password
         </Button>

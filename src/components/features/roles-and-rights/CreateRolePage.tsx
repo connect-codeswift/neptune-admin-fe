@@ -1,13 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { TextAreaInput, TextInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
-import { countSelectedByGroup } from "@/lib/permissions";
+import {
+  useAllPermissions,
+  useCreateRoleWithPermissions,
+  useRolesWithPermissions,
+} from "@/hooks/useRolesAndRights";
+import {
+  countSelectedByPermissionGroup,
+  matchPermissionIdsByLabels,
+} from "@/lib/mappers/roles.mapper";
 import {
   DEFAULT_PRESET_ID,
   getPresetRightCount,
@@ -21,20 +29,79 @@ export function CreateRolePage() {
   const router = useRouter();
   const { adminHref, basePath } = useRolesAndRightsPaths();
   const [activePresetId, setActivePresetId] = useState(DEFAULT_PRESET_ID);
-  const [selectedRights, setSelectedRights] = useState<string[]>(
-    getPresetRights(DEFAULT_PRESET_ID),
+  const [roleName, setRoleName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>(
+    [],
   );
 
-  const groupSummary = countSelectedByGroup(selectedRights);
+  const {
+    data: permissionsCatalog,
+    isLoading: permissionsLoading,
+    isError: permissionsError,
+    error: permissionsLoadError,
+  } = useAllPermissions();
+  const { data: existingRoles = [] } = useRolesWithPermissions();
+  const createRoleMutation = useCreateRoleWithPermissions();
+
+  const permissionGroups = permissionsCatalog?.groups ?? [];
+  const allPermissions = permissionsCatalog?.permissions ?? [];
+
+  useEffect(() => {
+    if (allPermissions.length === 0) return;
+    setSelectedPermissionIds((current) =>
+      current.length > 0
+        ? current
+        : matchPermissionIdsByLabels(
+            allPermissions,
+            getPresetRights(DEFAULT_PRESET_ID),
+          ),
+    );
+  }, [allPermissions.length]);
+
+  const groupSummary = countSelectedByPermissionGroup(
+    permissionGroups,
+    selectedPermissionIds,
+  );
 
   const handlePresetSelect = (presetId: string) => {
     setActivePresetId(presetId);
-    setSelectedRights(getPresetRights(presetId));
+    setSelectedPermissionIds(
+      matchPermissionIdsByLabels(allPermissions, getPresetRights(presetId)),
+    );
   };
 
-  const handleCreate = () => {
-    toast.success("Role created.");
-    router.push(basePath);
+  const handleCopyFromRole = (roleId: string) => {
+    const role = existingRoles.find((entry) => entry.id === roleId);
+    if (!role) return;
+    setSelectedPermissionIds(role.permissionIds);
+  };
+
+  const handleCreate = async () => {
+    const trimmedName = roleName.trim();
+    if (!trimmedName) {
+      toast.error("Role name is required.");
+      return;
+    }
+
+    if (selectedPermissionIds.length === 0) {
+      toast.error("Select at least one permission.");
+      return;
+    }
+
+    try {
+      await createRoleMutation.mutateAsync({
+        roleName: trimmedName,
+        description: description.trim() || null,
+        permissionIds: selectedPermissionIds,
+      });
+      toast.success("Role created.");
+      router.push(basePath);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create role.",
+      );
+    }
   };
 
   return (
@@ -55,9 +122,14 @@ export function CreateRolePage() {
             <Button
               size="sm"
               leftIcon="lucide:shield-plus"
-              onClick={handleCreate}
+              onClick={() => void handleCreate()}
+              disabled={
+                createRoleMutation.isPending ||
+                permissionsLoading ||
+                permissionsError
+              }
             >
-              Create Role
+              {createRoleMutation.isPending ? "Creating…" : "Create Role"}
             </Button>
           </>
         }
@@ -71,11 +143,15 @@ export function CreateRolePage() {
                 label="Role Name"
                 placeholder="e.g. Environmental Compliance Officer"
                 required
+                value={roleName}
+                onChange={(event) => setRoleName(event.target.value)}
               />
               <TextAreaInput
                 label="Description"
                 placeholder="Describe the responsibilities and scope of this role..."
                 rows={4}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
               />
             </div>
           </DetailCard>
@@ -84,22 +160,37 @@ export function CreateRolePage() {
             title="Rights"
             action={
               <span className="text5 text-gray">
-                {selectedRights.length} granted
+                {selectedPermissionIds.length} granted
               </span>
             }
           >
-            <RightsSelector
-              selected={selectedRights}
-              onChange={setSelectedRights}
-              showHeader={false}
-            />
+            {permissionsLoading ? (
+              <p className="text5 text-gray">Loading permissions…</p>
+            ) : null}
+
+            {permissionsError ? (
+              <p className="text5 text-red">
+                {permissionsLoadError instanceof Error
+                  ? permissionsLoadError.message
+                  : "Failed to load permissions."}
+              </p>
+            ) : null}
+
+            {!permissionsLoading && !permissionsError ? (
+              <RightsSelector
+                groups={permissionGroups}
+                selectedIds={selectedPermissionIds}
+                onChange={setSelectedPermissionIds}
+                showHeader={false}
+              />
+            ) : null}
           </DetailCard>
         </div>
 
         <div className="flex flex-col gap-6">
           <DetailCard
             title="Start from Preset"
-            description="Copy rights from an existing role, then customize"
+            description="Copy rights from a template, then customize"
           >
             <ul className="flex flex-col gap-2">
               {ROLE_PRESETS.map((preset) => {
@@ -120,6 +211,7 @@ export function CreateRolePage() {
                       type="button"
                       className={itemClass}
                       onClick={() => handlePresetSelect(preset.id)}
+                      disabled={permissionsLoading || permissionsError}
                     >
                       <span className="text5 font-semibold">{preset.name}</span>
                       <span className="text6 text-gray">
@@ -132,9 +224,35 @@ export function CreateRolePage() {
             </ul>
           </DetailCard>
 
+          {existingRoles.length > 0 ? (
+            <DetailCard
+              title="Copy from Role"
+              description="Mirror permissions from an existing role"
+            >
+              <ul className="flex flex-col gap-2">
+                {existingRoles.map((role) => (
+                  <li key={role.id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-[10px] border border-darkest/10 bg-white px-3.5 py-3 text-left transition-colors hover:border-darkest/20 hover:bg-darkest/3"
+                      onClick={() => handleCopyFromRole(role.id)}
+                    >
+                      <span className="text5 font-semibold text-darkest">
+                        {role.name}
+                      </span>
+                      <span className="text6 text-gray">
+                        {role.permissionIds.length} rights
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </DetailCard>
+          ) : null}
+
           <DetailCard title="Summary">
             <p className="text2 text-darkest">
-              {selectedRights.length}{" "}
+              {selectedPermissionIds.length}{" "}
               <span className="text4 font-normal text-gray">rights selected</span>
             </p>
             <div className="mt-4 flex flex-wrap gap-2">

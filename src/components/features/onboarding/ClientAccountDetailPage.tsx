@@ -25,7 +25,7 @@ export function ClientAccountDetailPage({
   const activeTab = TABS[activeIndex] ?? TABS[0];
 
   let tabContent = (
-    <div className="rounded-[20px] border border-white bg-white/62 px-6 py-10 text-center text5 text-gray shadow-xl backdrop-blur-[10px]">
+    <div className="rounded-[20px] border border-white bg-white/62 px-6 py-10 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
       {activeTab.label} content coming soon.
     </div>
   );
@@ -42,9 +42,9 @@ export function ClientAccountDetailPage({
 
   return (
     <div className="flex flex-col gap-5 pb-4">
-      <header className="rounded-2xl border border-darkest/8 bg-white/62 px-5.5 py-5 shadow-xl backdrop-blur-[10px]">
+      <header className="rounded-2xl border border-darkest/8 bg-white/62 px-5.5 py-5 shadow-lg backdrop-blur-[10px]">
         <Link
-          href="/client-accounts"
+          href="/super/client-accounts"
           className="inline-flex items-center gap-1.5 text6 text-[#8892a3] hover:text-darkest"
         >
           <Icon icon="lucide:arrow-left" width={12} height={12} aria-hidden />

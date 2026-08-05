@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { PpeCatalogPage } from "@/components/features/ppe-catalog/PpeCatalogPage";
 
-export default function PpeCatalogPage() {
-  return <PlaceholderPage title="PPE Catalog" />;
+export default function OrgSitePpeCatalogRoute() {
+  return <PpeCatalogPage />;
 }

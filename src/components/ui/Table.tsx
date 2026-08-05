@@ -30,7 +30,7 @@ export function Table<T>({
 }: Readonly<TableProps<T>>) {
   return (
     <div
-      className={`overflow-hidden rounded-[20px] border border-white/90 bg-white/62 shadow-xl backdrop-blur-[10px] ${className}`.trim()}
+      className={`overflow-hidden rounded-[20px] border border-white/90 bg-white/62 shadow-lg backdrop-blur-[10px] ${className}`.trim()}
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-240 border-collapse text-left">

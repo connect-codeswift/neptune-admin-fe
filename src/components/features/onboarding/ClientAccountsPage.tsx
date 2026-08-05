@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layouts";
 import {
@@ -15,11 +15,12 @@ import {
   type TableColumn,
   type TableStatus,
 } from "@/components/ui";
-import { DUMMY_ORGANIZATIONS } from "@/lib/dummy-organizations";
+import { useSuperAdminCompanies } from "@/hooks/useSuperAdminCompanies";
 import {
-  buildOrgSitePath,
-  getDefaultSiteIdForOrg,
-} from "@/lib/org-sites";
+  buildOrgDashboardPath,
+  enterOrganization,
+  fetchCompanySites,
+} from "@/lib/select-company-flow";
 import {
   TrialDaysModal,
   type TrialDaysModalMode,
@@ -28,63 +29,12 @@ import {
 type ClientAccount = {
   id: string;
   name: string;
-  code: string;
-  industry: string;
+  activatedModules: string;
   contractStart: string;
   status: Extract<TableStatus, "active" | "inactive">;
   sites: number;
-  csm: string;
+  users: number;
 };
-
-const CLIENT_ACCOUNTS: ClientAccount[] = DUMMY_ORGANIZATIONS.map((org) => ({
-  id: org.id,
-  name: org.name,
-  code: org.code,
-  industry: org.industry,
-  contractStart: org.contractStart,
-  status: org.status,
-  sites: org.siteCount,
-  csm: org.assignedCsm,
-}));
-
-const activeCount = DUMMY_ORGANIZATIONS.filter((o) => o.status === "active").length;
-const inactiveCount = DUMMY_ORGANIZATIONS.filter(
-  (o) => o.status === "inactive",
-).length;
-const onboardingCount = DUMMY_ORGANIZATIONS.filter((o) =>
-  o.subscription.statusLabel.toLowerCase().includes("trial"),
-).length;
-
-const KPI_CARDS = [
-  {
-    value: DUMMY_ORGANIZATIONS.length,
-    label: "Total Clients",
-    trendLabel: "+3",
-    trend: "up" as const,
-    data: [1, 1, 2, 2, 2, 3, 3],
-  },
-  {
-    value: onboardingCount,
-    label: "Onboarding",
-    trendLabel: "+1",
-    trend: "up" as const,
-    data: [0, 0, 1, 1, 1, 1, onboardingCount],
-  },
-  {
-    value: inactiveCount,
-    label: "Inactive",
-    trendLabel: "-1",
-    trend: "down" as const,
-    data: [2, 2, 2, 1, 1, 1, inactiveCount],
-  },
-  {
-    value: activeCount,
-    label: "Active Clients",
-    trendLabel: "30d",
-    trend: "up" as const,
-    data: [1, 1, 1, 2, 2, 2, activeCount],
-  },
-];
 
 type TrialDialogState = {
   mode: TrialDaysModalMode;
@@ -101,10 +51,8 @@ type ClientRowActionHandlers = {
 function ClientNameCell({ row }: Readonly<{ row: ClientAccount }>) {
   return (
     <div className="min-w-0">
-      <p className="truncate text5 font-semibold text-darkest">
-        {row.name}
-      </p>
-      <p className="truncate text7 text-[#b3bbc8]">{row.code}</p>
+      <p className="truncate text5 font-semibold text-darkest">{row.name}</p>
+      <p className="truncate text7 text-[#b3bbc8]">ID {row.id}</p>
     </div>
   );
 }
@@ -156,13 +104,15 @@ function buildColumns(
       cell: (row) => <ClientNameCell row={row} />,
     },
     {
-      id: "industry",
-      header: "Industry",
-      cell: (row) => <TableTextCell>{row.industry}</TableTextCell>,
+      id: "modules",
+      header: "Activated Modules",
+      cell: (row) => (
+        <TableTextCell muted>{row.activatedModules || "—"}</TableTextCell>
+      ),
     },
     {
       id: "contractStart",
-      header: "Contract Start",
+      header: "Created",
       cell: (row) => <TableTextCell>{row.contractStart}</TableTextCell>,
     },
     {
@@ -185,9 +135,9 @@ function buildColumns(
       ),
     },
     {
-      id: "csm",
-      header: "CSM",
-      cell: (row) => <TableTextCell>{row.csm}</TableTextCell>,
+      id: "users",
+      header: "Users",
+      cell: (row) => <TableTextCell>{row.users}</TableTextCell>,
     },
     {
       id: "action",
@@ -197,16 +147,104 @@ function buildColumns(
   ];
 }
 
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
 export function ClientAccountsPage() {
   const router = useRouter();
   const [trialDialog, setTrialDialog] = useState<TrialDialogState>(null);
+  const {
+    data: companies = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useSuperAdminCompanies();
+
+  const clientAccounts = useMemo<ClientAccount[]>(
+    () =>
+      companies.map((company) => ({
+        id: String(company.id),
+        name: company.name,
+        activatedModules: company.activatedModules,
+        contractStart: formatDate(company.createdAt),
+        status: company.userCount > 0 ? "active" : "inactive",
+        sites: company.siteCount,
+        users: company.userCount,
+      })),
+    [companies],
+  );
+
+  const activeCount = clientAccounts.filter((o) => o.status === "active").length;
+  const inactiveCount = clientAccounts.length - activeCount;
+
+  const kpiCards = [
+    {
+      value: clientAccounts.length,
+      label: "Total Clients",
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [clientAccounts.length],
+    },
+    {
+      value: clientAccounts.reduce((sum, client) => sum + client.sites, 0),
+      label: "Total Sites",
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [clientAccounts.reduce((sum, client) => sum + client.sites, 0)],
+    },
+    {
+      value: inactiveCount,
+      label: "Inactive",
+      trendLabel: "live",
+      trend: "down" as const,
+      data: [inactiveCount],
+    },
+    {
+      value: activeCount,
+      label: "Active Clients",
+      trendLabel: "live",
+      trend: "up" as const,
+      data: [activeCount],
+    },
+  ];
+
+  const handleOpenDashboard = async (client: ClientAccount) => {
+    try {
+      const organizationId = Number(client.id);
+      const sites = await fetchCompanySites(organizationId);
+      const defaultSiteId = sites[0]?.numericId;
+      if (!defaultSiteId) {
+        toast.error("This organization has no sites yet.");
+        return;
+      }
+
+      await enterOrganization({
+        organizationId,
+        organizationName: client.name,
+        siteId: defaultSiteId,
+      });
+      router.push(buildOrgDashboardPath(organizationId, defaultSiteId));
+    } catch (openError) {
+      toast.error(
+        openError instanceof Error
+          ? openError.message
+          : "Failed to open organization dashboard.",
+      );
+    }
+  };
 
   const columns = buildColumns({
-    onOpenOverview: (client) => router.push(`/client-accounts/${client.id}`),
-    onOpenDashboard: (client) => {
-      const siteId = getDefaultSiteIdForOrg(client.id);
-      router.push(buildOrgSitePath(client.id, siteId));
-    },
+    onOpenOverview: (client) =>
+      router.push(`/super/client-accounts/${client.id}`),
+    onOpenDashboard: (client) => void handleOpenDashboard(client),
     onStartTrial: (client) => setTrialDialog({ mode: "start", client }),
     onExtendTrial: (client) => setTrialDialog({ mode: "extend", client }),
   });
@@ -221,14 +259,24 @@ export function ClientAccountsPage() {
         title="Client Accounts"
         description="All organizations provisioned on Neptune EHSS"
         actions={
-          <Button href="/add-a-company" leftIcon="lucide:plus" size="sm">
-            New Client
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon="lucide:refresh-cw"
+              onClick={() => void refetch()}
+            >
+              Refresh
+            </Button>
+            <Button href="/super/add-a-company" leftIcon="lucide:plus" size="sm">
+              New Client
+            </Button>
+          </>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {KPI_CARDS.map((card) => (
+        {kpiCards.map((card) => (
           <KpiTrendCard
             key={card.label}
             value={card.value}
@@ -240,12 +288,26 @@ export function ClientAccountsPage() {
         ))}
       </div>
 
-      <Table
-        columns={columns}
-        data={CLIENT_ACCOUNTS}
-        getRowId={(row) => row.id}
-        emptyMessage="No client accounts yet."
-      />
+      {isLoading ? (
+        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
+          Loading client accounts…
+        </p>
+      ) : null}
+
+      {isError ? (
+        <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
+          {error instanceof Error ? error.message : "Failed to load clients."}
+        </p>
+      ) : null}
+
+      {!isLoading && !isError ? (
+        <Table
+          columns={columns}
+          data={clientAccounts}
+          getRowId={(row) => row.id}
+          emptyMessage="No client accounts yet."
+        />
+      ) : null}
 
       <TrialDaysModal
         key={dialogKey}

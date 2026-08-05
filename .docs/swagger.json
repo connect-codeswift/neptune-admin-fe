@@ -1201,7 +1201,7 @@
         }
       }
     },
-    "/api/Auth/GetCompaniesByOrganizationId/{organizationId}": {
+    "/api/Auth/GetSitesByOrganizationId/{organizationId}": {
       "get": {
         "tags": [
           "Auth"
@@ -1297,14 +1297,14 @@
         }
       }
     },
-    "/api/Auth/GetUsersBySubCompanyId/{subCompanyId}": {
+    "/api/Auth/GetUsersBySiteId/{siteId}": {
       "get": {
         "tags": [
           "Auth"
         ],
         "parameters": [
           {
-            "name": "subCompanyId",
+            "name": "siteId",
             "in": "path",
             "required": true,
             "schema": {
@@ -4806,6 +4806,69 @@
         }
       }
     },
+    "/api/Document/Category/{id}": {
+      "put": {
+        "tags": [
+          "Document"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDocCategoryDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDocCategoryDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDocCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Document"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Document/dashboard-kpis": {
       "get": {
         "tags": [
@@ -6054,6 +6117,68 @@
         }
       }
     },
+    "/api/Incident/proofread": {
+      "post": {
+        "tags": [
+          "Incident"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProofreadRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProofreadRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProofreadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Incident/draft-assist": {
+      "post": {
+        "tags": [
+          "Incident"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentDraftRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentDraftRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentDraftRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Incident/UpdateIncident/{id}": {
       "put": {
         "tags": [
@@ -6679,6 +6804,29 @@
         }
       }
     },
+    "/api/Inspection/{inspectionId}/detail-summary": {
+      "get": {
+        "tags": [
+          "Inspection"
+        ],
+        "parameters": [
+          {
+            "name": "inspectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Inspection/findings/{findingId}": {
       "put": {
         "tags": [
@@ -7238,6 +7386,93 @@
         }
       }
     },
+    "/api/notification": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notification/unread-count": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notification/{id}/read": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notification/read-all": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/ppe/issue": {
       "post": {
         "tags": [
@@ -7419,6 +7654,27 @@
     },
     "/api/ppe/{id}": {
       "get": {
+        "tags": [
+          "PPE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
         "tags": [
           "PPE"
         ],
@@ -9208,6 +9464,27 @@
             "maxLength": 100,
             "minLength": 1,
             "type": "string"
+          },
+          "description": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "maxLength": 10,
+            "type": "string",
+            "nullable": true
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "requiresApprovalWorkflow": {
+            "type": "boolean"
+          },
+          "retentionDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11667,6 +11944,33 @@
         },
         "additionalProperties": false
       },
+      "IncidentDraftRequestDto": {
+        "required": [
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "description": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "nullable": true
+          },
+          "incidentAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "IncidentDto": {
         "required": [
           "siteId",
@@ -11835,6 +12139,38 @@
           "feedback": {
             "type": "string",
             "nullable": true
+          },
+          "followUps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncidentFollowUpDto"
+            },
+            "nullable": true
+          },
+          "aiAssistedFields": {
+            "maxLength": 200,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IncidentFollowUpDto": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "isAiSuggested": {
+            "type": "boolean"
+          },
+          "isSelected": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12179,6 +12515,32 @@
           "availableSize": {
             "type": "string",
             "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "manufacturer": {
+            "type": "string",
+            "nullable": true
+          },
+          "safetyStandard": {
+            "type": "string",
+            "nullable": true
+          },
+          "hazardTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "trainingRequired": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12297,6 +12659,20 @@
         "type": "object",
         "properties": {
           "p_Codes": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProofreadRequestDto": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "maxLength": 8000,
             "minLength": 1,
             "type": "string"
           }
@@ -13225,6 +13601,40 @@
         },
         "additionalProperties": false
       },
+      "UpdateDocCategoryDto": {
+        "type": "object",
+        "properties": {
+          "categorytName": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "maxLength": 10,
+            "type": "string",
+            "nullable": true
+          },
+          "isRequired": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "requiresApprovalWorkflow": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "retentionDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateDocumentDto": {
         "required": [
           "ackUserIds",
@@ -13504,7 +13914,6 @@
       },
       "UserDto": {
         "required": [
-          "activatedModules",
           "email",
           "fullName",
           "organizationId",
@@ -13534,7 +13943,7 @@
           },
           "passwordHash": {
             "minLength": 1,
-            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$",
             "type": "string",
             "default": "string"
           },
@@ -13547,10 +13956,6 @@
             "format": "int32"
           },
           "organizationName": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "activatedModules": {
             "minLength": 1,
             "type": "string"
           },

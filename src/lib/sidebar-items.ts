@@ -1,3 +1,6 @@
+import type { StoredAuthRole } from "@/lib/auth-tokens";
+import { getDummyOrganization } from "@/lib/dummy-organizations";
+
 export type SidebarNavItem = {
   label: string;
   href: string;
@@ -11,7 +14,16 @@ export type SidebarNavSection = {
   items: SidebarNavItem[];
 };
 
-export const CLIENT_ONBOARDING_NAV_ITEMS: SidebarNavItem[] = [
+const SUPER_ADMIN_BASE_PATH = "/super";
+
+/** Super-admin shell: dashboard + client onboarding only. */
+export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: "lucide:layout-dashboard",
+    exact: true,
+  },
   {
     label: "Add a Company",
     href: "/add-a-company",
@@ -22,9 +34,25 @@ export const CLIENT_ONBOARDING_NAV_ITEMS: SidebarNavItem[] = [
     href: "/client-accounts",
     icon: "lucide:briefcase",
   },
+  {
+    label: "Pricing",
+    href: "/pricing",
+    icon: "lucide:tag",
+  },
+  {
+    label: "Subscriptions",
+    href: "/subscriptions",
+    icon: "lucide:credit-card",
+  },
+  {
+    label: "Writing Assistant",
+    href: "/chatbot",
+    icon: "lucide:sparkles",
+  },
 ];
 
-export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
+/** Org/site admin nav — lives under /{company}/{site}/… */
+export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -61,39 +89,34 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/ppe-catalog",
     icon: "lucide:hard-hat",
   },
-  {
-    label: "LOTO Procedures",
-    href: "/loto-procedures",
-    icon: "lucide:lock",
-  },
-  {
-    label: "Permit Templates",
-    href: "/permit-templates",
-    icon: "lucide:clipboard-clock",
-  },
 ];
-
-export const DEFAULT_ADMIN_NAV_SECTIONS: SidebarNavSection[] = [
-  {
-    label: "Client Onboarding",
-    items: CLIENT_ONBOARDING_NAV_ITEMS,
-  },
-  {
-    label: "Admin",
-    items: SUPER_ADMIN_NAV_ITEMS,
-  },
-];
-
-const CLIENT_ONBOARDING_PATHS = ["/add-a-company", "/client-accounts"] as const;
 
 const STATIC_ROOT_SEGMENTS = new Set([
   "login",
+  "super",
   "forgot-password",
   "reset-password",
   "add-a-company",
   "client-accounts",
+  "pricing",
+  "subscriptions",
+  "chatbot",
   "dashboard",
 ]);
+
+export function prefixNavItems(
+  basePath: string,
+  items: SidebarNavItem[],
+): SidebarNavItem[] {
+  return items.map((item) => ({
+    ...item,
+    href:
+      item.href === "/dashboard"
+        ? `${basePath}/dashboard`
+        : `${basePath}${item.href}`,
+    exact: item.exact ?? item.href === "/dashboard",
+  }));
+}
 
 export function parseOrgSitePath(
   pathname: string,
@@ -111,42 +134,60 @@ export function buildOrgSiteBasePath(company: string, site: string): string {
   return `/${company}/${site}`;
 }
 
-function prefixNavItems(
-  basePath: string,
-  items: SidebarNavItem[],
-): SidebarNavItem[] {
-  return items.map((item) => ({
-    ...item,
-    href: item.href === "/dashboard" ? basePath : `${basePath}${item.href}`,
-    exact: item.exact ?? item.href === "/dashboard",
-  }));
+export function getSuperAdminNavSections(): SidebarNavSection[] {
+  return [
+    {
+      label: "Super Admin",
+      items: prefixNavItems(SUPER_ADMIN_BASE_PATH, SUPER_ADMIN_NAV_ITEMS),
+    },
+  ];
 }
 
-function isClientOnboardingPath(pathname: string): boolean {
-  return CLIENT_ONBOARDING_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
+export function getOrgAdminNavSections(
+  pathname: string,
+  sectionLabel = "Admin",
+): SidebarNavSection[] {
+  const orgSite = parseOrgSitePath(pathname);
+  if (!orgSite) return [];
+
+  const basePath = buildOrgSiteBasePath(orgSite.company, orgSite.site);
+  return [
+    {
+      label: sectionLabel,
+      items: prefixNavItems(basePath, ORG_ADMIN_NAV_ITEMS),
+    },
+  ];
 }
 
-export function getAdminNavSections(pathname: string): SidebarNavSection[] {
+export function getSidebarNavSections(
+  pathname: string,
+  role: StoredAuthRole | null,
+): SidebarNavSection[] {
+  if (role === "super-admin") {
+    const sections = getSuperAdminNavSections();
+    const orgSite = parseOrgSitePath(pathname);
+    if (orgSite) {
+      const companyName =
+        getDummyOrganization(orgSite.company)?.name ?? "Admin";
+      sections.push(...getOrgAdminNavSections(pathname, companyName));
+    }
+    return sections;
+  }
+
+  if (role === "admin") return getOrgAdminNavSections(pathname);
+  return [];
+}
+
+export function getSidebarLogoHref(
+  pathname: string,
+  role: StoredAuthRole | null,
+): string {
+  if (role === "super-admin") return `${SUPER_ADMIN_BASE_PATH}/dashboard`;
+
   const orgSite = parseOrgSitePath(pathname);
   if (orgSite) {
-    const basePath = buildOrgSiteBasePath(orgSite.company, orgSite.site);
-    return [
-      {
-        label: "Admin",
-        items: prefixNavItems(basePath, SUPER_ADMIN_NAV_ITEMS),
-      },
-    ];
+    return `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/dashboard`;
   }
 
-  if (isClientOnboardingPath(pathname)) {
-    return DEFAULT_ADMIN_NAV_SECTIONS.filter(
-      (section) => section.label === "Client Onboarding",
-    );
-  }
-
-  return DEFAULT_ADMIN_NAV_SECTIONS.filter(
-    (section) => section.label !== "Client Onboarding",
-  );
+  return "/dashboard";
 }

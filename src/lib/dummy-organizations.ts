@@ -1,9 +1,3 @@
-export type DummyOrganizationModule = {
-  id: string;
-  label: string;
-  active: boolean;
-};
-
 export type DummyOrganizationSite = {
   id: string;
   name: string;
@@ -27,7 +21,6 @@ export type DummyOrganization = {
   website: string;
   employeeCount: number;
   complianceZone: string;
-  modules: DummyOrganizationModule[];
   sites: DummyOrganizationSite[];
   primaryContact: {
     name: string;
@@ -41,7 +34,6 @@ export type DummyOrganization = {
     period: string;
     licenseSeats: string;
     assignedCsm: string;
-    monthlyValue: string;
   };
   employeeData: {
     fileName: string;
@@ -85,14 +77,6 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     website: "www.neptune.meridianchemical.com",
     employeeCount: 450,
     complianceZone: "OSHA Standard Zone A",
-    modules: [
-      { id: "incident-reporting", label: "Incident Reporting", active: true },
-      { id: "hazard-management", label: "Hazard Management", active: true },
-      { id: "capa", label: "CAPA", active: true },
-      { id: "safety-observations", label: "Safety Observations", active: true },
-      { id: "ppe-management", label: "PPE Management", active: true },
-      { id: "document-control", label: "Document Control", active: false },
-    ],
     sites: [
       {
         id: "1",
@@ -134,7 +118,6 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
       period: "Mar 2026 — Feb 2027",
       licenseSeats: "50 / 50 used",
       assignedCsm: "Rachel Torres",
-      monthlyValue: "$3,750",
     },
     employeeData: {
       fileName: "employees_meridian_2026.xlsx",
@@ -175,13 +158,6 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     website: "www.1xtechnologies.com",
     employeeCount: 820,
     complianceZone: "OSHA Standard Zone B",
-    modules: [
-      { id: "incident-reporting", label: "Incident Reporting", active: true },
-      { id: "hazard-management", label: "Hazard Management", active: true },
-      { id: "work-permits", label: "Work Permits", active: true },
-      { id: "loto", label: "LOTO", active: true },
-      { id: "training-management", label: "Training Management", active: false },
-    ],
     sites: [
       {
         id: "1",
@@ -214,7 +190,6 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
       period: "Nov 2025 — Oct 2026",
       licenseSeats: "62 / 80 used",
       assignedCsm: "James Okafor",
-      monthlyValue: "$5,200",
     },
     employeeData: {
       fileName: "employees_1x_2026.xlsx",
@@ -264,11 +239,6 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
     website: "www.harringtonlogistics.com",
     employeeCount: 210,
     complianceZone: "OSHA Standard Zone A",
-    modules: [
-      { id: "incident-reporting", label: "Incident Reporting", active: true },
-      { id: "document-control", label: "Document Control", active: false },
-      { id: "compliance-calendar", label: "Compliance Calendar", active: false },
-    ],
     sites: [
       {
         id: "1",
@@ -301,7 +271,6 @@ export const DUMMY_ORGANIZATIONS: DummyOrganization[] = [
       period: "May 2026 — Apr 2027",
       licenseSeats: "25 / 25 used",
       assignedCsm: "Rachel Torres",
-      monthlyValue: "$1,890",
     },
     employeeData: {
       fileName: "employees_harrington_2026.xlsx",

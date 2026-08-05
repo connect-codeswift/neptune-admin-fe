@@ -1,27 +1,77 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { EmailInput, PasswordInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
+import { clearAuthTokens } from "@/lib/auth-tokens";
+import {
+  clearMfaToken,
+  getAuthFlow,
+  setMfaToken,
+  type AuthFlowKind,
+} from "@/lib/auth-flow";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
-export function LoginForm() {
+type LoginFormProps = Readonly<{
+  flow: AuthFlowKind;
+}>;
+
+export function LoginForm({ flow }: LoginFormProps) {
+  const router = useRouter();
+  const authFlow = getAuthFlow(flow);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-    toast.message("Sign in is not wired yet.");
+    setLoading(true);
+
+    try {
+      clearMfaToken();
+      clearAuthTokens();
+      const response = await authFlow.login({ email, password });
+
+      if (!response.mfaToken) {
+        toast.error("Unexpected login response. Please try again.");
+        return;
+      }
+
+      setMfaToken(response.mfaToken);
+
+      if (response.mfaSetupRequired) {
+        router.push(authFlow.mfaSetupPath);
+        return;
+      }
+
+      if (response.mfaRequired) {
+        router.push(authFlow.mfaPath);
+        return;
+      }
+
+      toast.error("Unexpected login response. Please try again.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Sign in failed.";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const title =
+    flow === "super" ? "Super admin sign in" : "Welcome back.";
+  const description =
+    flow === "super"
+      ? "Sign in to the Neptune super admin portal"
+      : "Sign in to your organization admin portal";
 
   return (
     <div>
-      <AuthFormHeader
-        title="Welcome back."
-        description="Sign in to Neptune admin portal"
-      />
+      <AuthFormHeader title={title} description={description} />
       <AuthDivider />
 
       <form onSubmit={handleSubmit} className="pt-5">
@@ -32,6 +82,7 @@ export function LoginForm() {
           onChange={(event) => setEmail(event.target.value)}
           required
           autoComplete="email"
+          disabled={loading}
         />
 
         <div className="mt-4">
@@ -42,10 +93,11 @@ export function LoginForm() {
             onChange={(event) => setPassword(event.target.value)}
             required
             autoComplete="current-password"
+            disabled={loading}
           />
           <div className="flex justify-end p-2">
             <Link
-              href="/forgot-password"
+              href={authFlow.forgotPasswordPath}
               className="text5 text-blue-normal hover:text-blue-deep"
             >
               Forgot Password?
@@ -58,7 +110,9 @@ export function LoginForm() {
           fullWidth
           size="lg"
           rightIcon="lucide:arrow-right"
-          className="mt-4 shadow-xl"
+          className="mt-4 shadow-lg"
+          loading={loading}
+          loadingText="Signing in…"
         >
           Sign in
         </Button>

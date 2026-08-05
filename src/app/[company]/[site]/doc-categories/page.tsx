@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { DocumentCategoriesPage } from "@/components/features/doc-categories/DocumentCategoriesPage";
 
-export default function DocCategoriesPage() {
-  return <PlaceholderPage title="Document Categories" />;
+export default function OrgSiteDocCategoriesRoute() {
+  return <DocumentCategoriesPage />;
 }

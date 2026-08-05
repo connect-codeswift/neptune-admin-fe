@@ -1,3 +1,7 @@
+import type {
+  AddDocCategoryPayload,
+  UpdateDocCategoryPayload,
+} from "@/dtos/res/doc-categories.res";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiPayload, ApiResponse } from "@/types/api.types";
 
@@ -73,10 +77,30 @@ export async function getAllDepartments() {
 }
 
 /** POST /Document/AddCategory */
-export async function addCategory(payload: ApiPayload) {
+export async function addCategory(payload: AddDocCategoryPayload) {
   const { data } = await axiosInstance.post<ApiResponse>(
     "/Document/AddCategory",
     payload,
+  );
+  return data;
+}
+
+/** PUT /Document/Category/{id} */
+export async function updateCategory(
+  id: string | number,
+  payload: UpdateDocCategoryPayload,
+) {
+  const { data } = await axiosInstance.put<ApiResponse>(
+    `/Document/Category/${id}`,
+    payload,
+  );
+  return data;
+}
+
+/** DELETE /Document/Category/{id} */
+export async function deleteCategory(id: string | number) {
+  const { data } = await axiosInstance.delete<ApiResponse>(
+    `/Document/Category/${id}`,
   );
   return data;
 }

@@ -114,7 +114,7 @@ export function MultiSelectInput({
         aria-controls={listboxId}
         aria-describedby={describedBy}
         onClick={() => setOpen((current) => !current)}
-        className={`flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 py-2 text-left text5 shadow-xl outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 py-2 text-left text5 shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
           error
             ? "border-red focus:border-red focus-visible:ring-red/30"
             : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
@@ -146,7 +146,7 @@ export function MultiSelectInput({
         <div
           id={listboxId}
           aria-labelledby={inputId}
-          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 max-h-60 w-full overflow-auto rounded-[10px] border border-darkest/12 bg-white p-1 shadow-xl"
+          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 max-h-60 w-full overflow-auto rounded-[10px] border border-darkest/12 bg-white p-1 shadow-lg"
         >
           {options.length === 0 ? (
             <p className="px-3 py-2 text5 text-gray">No options</p>

@@ -3,6 +3,7 @@
 import { Icon } from "@iconify/react";
 import { useEffect, type ReactNode } from "react";
 import { IconButton } from "../ui/IconButton";
+import { HeaderSiteChanger } from "./HeaderSiteChanger";
 
 export type DashboardHeaderProps = {
   searchPlaceholder?: string;
@@ -70,7 +71,7 @@ export function DashboardHeader({
       <button
         type="button"
         onClick={onSearchOpen}
-        className="flex h-11 min-w-0 max-w-xl flex-1 items-center gap-3 rounded-full border border-darkest/10 bg-white px-4 text-left shadow-xl outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
+        className="flex h-11 min-w-0 max-w-xl flex-1 items-center gap-3 rounded-full border border-darkest/10 bg-white px-4 text-left shadow-lg outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
       >
         <Icon
           icon="mdi:magnify"
@@ -88,29 +89,7 @@ export function DashboardHeader({
       </button>
 
       <div className="flex shrink-0 items-center gap-2.5">
-        <button
-          type="button"
-          onClick={onDateRangeClick}
-          className="inline-flex h-11 items-center gap-2 rounded-xl border border-darkest/10 bg-white px-3.5 text5 text-darkest shadow-xl outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30"
-        >
-          <Icon
-            icon="mdi:calendar-month-outline"
-            width={18}
-            height={18}
-            className="shrink-0 text-darkest/55"
-            aria-hidden
-          />
-          <span className="hidden whitespace-nowrap sm:inline">
-            {dateRangeLabel}
-          </span>
-          <Icon
-            icon="mdi:chevron-down"
-            width={18}
-            height={18}
-            className="shrink-0 text-darkest/40"
-            aria-hidden
-          />
-        </button>
+        <HeaderSiteChanger />
 
         <div className="relative">
           <IconButton
@@ -124,7 +103,7 @@ export function DashboardHeader({
             shape="rounded"
             size="md"
             onClick={onNotificationsClick}
-            className="size-11 border-darkest/10 bg-white shadow-xl hover:bg-lightgray"
+            className="size-11 border-darkest/10 bg-white shadow-lg hover:bg-lightgray"
           />
           {hasNotifications ? (
             <span

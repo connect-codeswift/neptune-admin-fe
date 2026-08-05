@@ -41,7 +41,6 @@ function createId() {
 
 function buildRegisterPayload(input: {
   organizationName: string;
-  modules: string[];
   adminName: string;
   adminEmail: string;
   adminPassword: string;
@@ -74,7 +73,8 @@ function buildRegisterPayload(input: {
     roleId: 0,
     organizationId: 0,
     organizationName: input.organizationName.trim(),
-    activatedModules: input.modules.join(","),
+    // Modules are licensed via the client's subscription, not at onboarding.
+    activatedModules: "",
     invitedBy: null,
     sites,
   };
@@ -86,11 +86,6 @@ export function AddCompanyWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [organizationName, setOrganizationName] = useState("");
-  const [modules, setModules] = useState<string[]>([
-    "incident-reporting",
-    "hazard-management",
-    "capa",
-  ]);
 
   const [siteName, setSiteName] = useState("");
   const [region, setRegion] = useState("");
@@ -123,7 +118,7 @@ export function AddCompanyWizard() {
 
   const goBack = () => {
     if (stepIndex === 0) {
-      router.push("/client-accounts");
+      router.push("/super/client-accounts");
       return;
     }
     setStepIndex((current) => current - 1);
@@ -148,7 +143,6 @@ export function AddCompanyWizard() {
 
     const payload = buildRegisterPayload({
       organizationName,
-      modules,
       adminName,
       adminEmail,
       adminPassword,
@@ -167,7 +161,7 @@ export function AddCompanyWizard() {
         return;
       }
       toast.success(response.message || "Client registered.");
-      router.push("/client-accounts");
+      router.push("/super/client-accounts");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Registration failed.",
@@ -236,8 +230,6 @@ export function AddCompanyWizard() {
       <SetupStepOne
         organizationName={organizationName}
         onOrganizationNameChange={setOrganizationName}
-        modules={modules}
-        onModulesChange={setModules}
       />
     );
   } else if (stepIndex === 1) {

@@ -290,11 +290,13 @@ GET /api/SuperAdminRoles?pageNumber=1&pageSize=50
   "permissionCount": 3, "isSystem": false, "usersAssigned": 1 }
 ```
 
-**`isSystem` is the one to branch on.** System roles (`Admin`, `Ehs_Manager`, `Ehs_Director`,
-`Ehs_Analyst`, `Ehs_Associate`, `Manager`) are shared by every company — the whole app's
-authorization depends on them existing everywhere by name, so they are **read-only here**.
-Hide or disable the edit affordance when `isSystem` is true; the API will reject the write
-anyway with `"This role does not belong to the selected company."`
+**`isSystem` is the one to branch on.** System roles (`Admin`, `Primary_Admin`, `Ehs_Manager`,
+`Ehs_Director`, `Ehs_Analyst`, `Ehs_Associate`, `Manager`) are shared by every company — the
+whole app's authorization depends on them existing everywhere by name, so they are **read-only
+here**. Hide or disable the edit affordance when `isSystem` is true; the API will reject the
+write anyway with `"This role does not belong to the selected company."`
+
+Use **`/SuperAdminRoles/*`** for this dashboard — not `/Auth/*`.
 
 `isSystem` maps directly to the design's **Type: System / Custom** row, and `usersAssigned` to
 **Users assigned**, in the Role Summary panel.
@@ -386,9 +388,17 @@ or a module that hasn't been written yet.
 | Delete a role | ❌ No endpoint. |
 
 ### Document Categories screen
-`DocCategory` currently has **only** a name and a site id. Missing: description, colour,
-REQUIRED flag, "requires approval workflow", retention, the `/slug`, and the per-category
-document count. The card as designed can't be populated.
+`DocCategory` now includes `categorytName`, `description`, `color`, `slug`, `isRequired`,
+`requiresApprovalWorkflow`, `retentionDays`, and `documentCount`. Full CRUD is available via:
+
+```http
+GET    /api/Document/GetAllCategories
+POST   /api/Document/AddCategory
+PUT    /api/Document/Category/{id}
+DELETE /api/Document/Category/{id}
+```
+
+⚠️ **`categorytName` is spelled exactly like that** — use it verbatim in request bodies.
 
 ### Version History, Regulations Library, LOTO Procedures, Permit Templates
 ❌ Not built. These modules don't exist in the backend yet and are owned by other devs — the
@@ -424,7 +434,7 @@ this screen.
 | Permission checkboxes | `GET /SuperAdminRoles/permissions` |
 | Create role | `POST /SuperAdminRoles` then `PUT /SuperAdminRoles/{id}/permissions` |
 | Save role permissions | `PUT /SuperAdminRoles/{id}/permissions` |
-| Document categories | `GET|POST /Document/GetAllCategories` / `AddCategory` |
+| Document categories | `GET /Document/GetAllCategories`, `POST /Document/AddCategory`, `PUT /Document/Category/{id}`, `DELETE /Document/Category/{id}` |
 | PPE catalog | `GET|POST /ppe` |
 
 **The five things that will trip you up:**
