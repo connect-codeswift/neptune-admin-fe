@@ -13,15 +13,25 @@ import {
   setMfaToken,
   type AuthFlowKind,
 } from "@/lib/auth-flow";
+import { portalLogin } from "@/services/portal-auth.service";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
+/**
+ * "portal" is the single sign-in for this app: it does not know or care which kind of
+ * account is signing in, and lets the backend resolve it. "org" and "super" remain for
+ * the legacy per-audience screens.
+ */
+type LoginFormMode = AuthFlowKind | "portal";
+
 type LoginFormProps = Readonly<{
-  flow: AuthFlowKind;
+  flow: LoginFormMode;
 }>;
 
 export function LoginForm({ flow }: LoginFormProps) {
   const router = useRouter();
-  const authFlow = getAuthFlow(flow);
+  // In portal mode the real flow is not known until the response says which kind of
+  // account it was, so this is only a starting point for the legacy modes.
+  const authFlow = getAuthFlow(flow === "portal" ? "org" : flow);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,13 +43,24 @@ export function LoginForm({ flow }: LoginFormProps) {
     try {
       clearMfaToken();
       clearAuthTokens();
-      const response = await authFlow.login({ email, password });
+      const response =
+        flow === "portal"
+          ? await portalLogin({ email, password })
+          : await authFlow.login({ email, password });
+
+      // The backend tells us which kind of account this was; everything downstream
+      // (verify-mfa, mfa/setup, select-company) is the existing per-audience flow,
+      // reached through its existing routes.
+      const resolvedFlow =
+        flow === "portal"
+          ? getAuthFlow(response.accountType === "staff" ? "super" : "org")
+          : authFlow;
 
       // Tenant login returns a session outright when the account has MFA off,
       // with no mfaToken at all. The SuperAdmin flow never does this: MFA is
       // mandatory there, so it always continues to one of the branches below.
       if (response.accessToken) {
-        router.push(authFlow.resolveDashboardPath(response.accessToken));
+        router.push(resolvedFlow.resolveDashboardPath(response.accessToken));
         return;
       }
 
@@ -51,12 +72,12 @@ export function LoginForm({ flow }: LoginFormProps) {
       setMfaToken(response.mfaToken);
 
       if (response.mfaSetupRequired) {
-        router.push(authFlow.mfaSetupPath);
+        router.push(resolvedFlow.mfaSetupPath);
         return;
       }
 
       if (response.mfaRequired) {
-        router.push(authFlow.mfaPath);
+        router.push(resolvedFlow.mfaPath);
         return;
       }
 
@@ -72,10 +93,13 @@ export function LoginForm({ flow }: LoginFormProps) {
 
   const title =
     flow === "super" ? "Super admin sign in" : "Welcome back.";
+  // Portal mode serves both audiences, so the copy must not claim to be either one.
   const description =
     flow === "super"
       ? "Sign in to the Neptune super admin portal"
-      : "Sign in to your organization admin portal";
+      : flow === "portal"
+        ? "Sign in to the Neptune admin portal"
+        : "Sign in to your organization admin portal";
 
   return (
     <div>

@@ -21,6 +21,17 @@ export type SignedInUser = {
  * disagree. The role label stays blank until it resolves rather than guessing,
  * so a SuperAdmin is never briefly labelled an Organization Admin.
  */
+/**
+ * Whether the signed-in account is CodeSwift staff. Starts false and resolves after mount,
+ * because the role lives in localStorage. Use it to gate staff-only requests: a tenant admin
+ * reaching this portal must not fire calls their token cannot satisfy.
+ */
+export function useIsSuperAdmin(): boolean {
+  const [isStaff, setIsStaff] = useState(false);
+  useEffect(() => setIsStaff(getAuthRole() === "super-admin"), []);
+  return isStaff;
+}
+
 export function useSignedInUser(): SignedInUser {
   const [user, setUser] = useState<SignedInUser>({
     name: "Signed in",
