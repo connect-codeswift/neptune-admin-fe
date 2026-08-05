@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button, type ButtonVariant } from "./Button";
 import { IconButton } from "./IconButton";
@@ -57,6 +57,9 @@ export function Modal({
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const showFooter =
     !hideFooter && Boolean(secondaryLabel || primaryLabel);
@@ -106,7 +109,12 @@ export function Modal({
     };
   }, [open, closeOnBackdrop, loading, onClose]);
 
-  if (typeof document === "undefined") return null;
+  // `typeof document === "undefined"` alone is not enough: it makes the server
+  // render nothing while the client's very first render portals a <dialog> into
+  // document.body, which is a hydration mismatch and made React throw away and
+  // re-render the whole tree on every page that mounts a modal. Waiting for mount
+  // means the first client render matches the server's empty one.
+  if (!mounted) return null;
 
   return createPortal(
     <dialog

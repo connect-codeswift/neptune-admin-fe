@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { PageHeader } from "@/components/layouts";
@@ -17,6 +17,7 @@ import {
   getModuleLabel,
   parseActivatedModuleCodes,
 } from "@/lib/ehs-modules";
+import { getAllSitesOfThisOrg } from "@/lib/org-sites";
 
 function formatRelativeTime(value: string): string {
   const date = new Date(value);
@@ -34,11 +35,33 @@ function formatRelativeTime(value: string): string {
 
 export function AdminDashboardPage({
   description = "System overview, user management, and configuration",
+  company,
+  site,
 }: Readonly<{
   description?: string;
+  company?: string;
+  site?: string;
 }>) {
   const { summary, activity, isLoading, isError, error, refetch } =
     useOrgDashboard(20);
+
+  // Site names live in the tenant context written at select-company, which is
+  // localStorage and so unavailable during SSR. Resolving after mount keeps the
+  // server and client markup identical on first paint.
+  const [siteName, setSiteName] = useState<string>();
+  useEffect(() => {
+    if (!company) return;
+    setSiteName(
+      getAllSitesOfThisOrg(company).find((entry) => entry.id === site)?.name,
+    );
+  }, [company, site]);
+
+  // The organization name is authoritative from the summary. Previously this
+  // came from getDummyOrganization(company) in the server component, keyed by
+  // the real organization id, so every company rendered as dummy org "1".
+  const subtitle = summary
+    ? [summary.organization.name, siteName].filter(Boolean).join(" · ")
+    : description;
 
   const kpiCards = useMemo(() => {
     if (!summary) return [];
@@ -115,7 +138,7 @@ export function AdminDashboardPage({
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title="Admin Dashboard"
-        description={description}
+        description={subtitle}
         actions={
           <>
             <Button

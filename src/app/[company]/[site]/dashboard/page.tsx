@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { AdminDashboardPage } from "@/components/features/dashboard/AdminDashboardPage";
-import { getDummyOrganization } from "@/lib/dummy-organizations";
 
 export default async function OrgSiteDashboardPage({
   params,
@@ -12,12 +11,14 @@ export default async function OrgSiteDashboardPage({
     redirect("/super/dashboard");
   }
 
-  const org = getDummyOrganization(company);
-  const siteName =
-    org?.sites.find((entry) => entry.id === site)?.name ?? `Site ${site}`;
-  const description = org
-    ? `${org.name} · ${siteName}`
-    : `Organization ${company} · Site ${site}`;
-
-  return <AdminDashboardPage description={description} />;
+  // The real company and site names come from the dashboard summary and the
+  // tenant context, both client-side. This server component supplies only the
+  // ids and a placeholder for first paint.
+  return (
+    <AdminDashboardPage
+      company={company}
+      site={site}
+      description={`Organization ${company} · Site ${site}`}
+    />
+  );
 }
