@@ -70,7 +70,6 @@ export function MfaVerifyForm({ flow }: MfaVerifyFormProps) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 pt-5">
         <OtpInput
-          label="Authentication code"
           value={code}
           onChange={setCode}
           autoFocus
