@@ -1,0 +1,16 @@
+---
+description: Neptune Admin FE stack & layout
+alwaysApply: true
+---
+
+# neptune-admin-fe
+
+Next 16 App Router `src/`, React 19, TS strict, TW v4 (`globals.css` `@theme`), RQ + axios, Iconify/sonner/recharts/libphonenumber-js. `@/*`→`./src/*`. React Compiler on — no gratuitous memo.
+
+Dirs: `inputs/` forms · `ui/` chrome (Button/Table/Modal/…) · `layouts/` shells · `utils/` `lib/` `providers/` `types/` · `dtos/req` + `dtos/res` (Payload/Response) · `public/sidebar/` Figma assets.
+
+Named exports. Barrel `components/*/index.ts`. `"use client"` only when needed. Tokens: `blue-normal` `#0891a6`, `darkest`, `gray`, `lightgray`, `green`/`red`/`yellow`. Glass: `bg-white/62`, `rounded-[20px]`, soft dual shadow.
+
+API DTOs: see `api-dtos.mdc` — request types end in `Payload`, responses in `Response`.
+
+Read `node_modules/next/dist/docs/` before new Next APIs.
