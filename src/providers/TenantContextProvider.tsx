@@ -123,7 +123,15 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
     }
   };
 
-  if (checking && isSuperAdminRole() && orgSite) {
+  // Deliberately does NOT consult isSuperAdminRole() here. That reads
+  // localStorage, which does not exist during SSR, so the server rendered the
+  // dashboard while the client's first render showed this placeholder and React
+  // discarded the whole tree. `checking` and `orgSite` are identical on both
+  // sides, so gating on them alone hydrates cleanly and still keeps children
+  // from mounting — and firing org-scoped queries — before select-company has
+  // minted the org token. ensureOrgContext clears `checking` immediately for
+  // anyone who is not a SuperAdmin, so they see this for a single tick.
+  if (checking && orgSite) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text5 text-gray">
         Preparing organization context…
