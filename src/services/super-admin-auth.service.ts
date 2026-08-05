@@ -18,7 +18,12 @@ import type {
   SuperAdminResetPasswordResponse,
   VerifyMfaResponse,
 } from "@/dtos/res/auth.res";
-import { setAuthRole, setAuthToken, setOrgToken } from "@/lib/auth-tokens";
+import {
+  setAuthEmail,
+  setAuthRole,
+  setAuthToken,
+  setOrgToken,
+} from "@/lib/auth-tokens";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiResponse } from "@/types/api.types";
 
@@ -28,6 +33,10 @@ export async function superAdminLogin(payload: LoginPayload) {
     "/SuperAdminAuth/login",
     payload,
   );
+  // Login never returns a session token, only an MFA challenge, and the session
+  // token that follows carries no identity claims. Remember the email now so the
+  // shell can show who is signed in.
+  setAuthEmail(payload.email);
   return data;
 }
 

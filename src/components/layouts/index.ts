@@ -46,6 +46,10 @@ export {
   PlaceholderPage,
   type PlaceholderPageProps,
 } from "./PlaceholderPage";
+export {
+  DashboardAuthGate,
+  type DashboardAuthGateProps,
+} from "./DashboardAuthGate";
 
 /** @deprecated Use AdminDashboardHeader or SuperAdminDashboardHeader */
 export { AdminDashboardHeader as DashboardHeader } from "./AdminDashboardHeader";

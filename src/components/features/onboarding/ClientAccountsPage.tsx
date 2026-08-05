@@ -165,6 +165,23 @@ function formatDate(value: string): string {
   }).format(date);
 }
 
+/**
+ * A company is active when it has no access window at all (permanent access) or
+ * its window has not yet lapsed. `daysRemaining` is computed server-side; the
+ * date comparison is a fallback for rows where only the expiry is present.
+ */
+function isAccessCurrent(company: {
+  accessExpiresAt?: string | null;
+  daysRemaining?: number | null;
+}): boolean {
+  if (company.daysRemaining != null) return company.daysRemaining > 0;
+  if (!company.accessExpiresAt) return true;
+
+  const expires = new Date(company.accessExpiresAt).getTime();
+  if (Number.isNaN(expires)) return true;
+  return expires > Date.now();
+}
+
 export function ClientAccountsPage() {
   const router = useRouter();
   const [trialDialog, setTrialDialog] = useState<TrialDialogState>(null);
@@ -183,7 +200,10 @@ export function ClientAccountsPage() {
         name: company.name,
         activatedModules: company.activatedModules,
         contractStart: formatDate(company.createdAt),
-        status: company.userCount > 0 ? "active" : "inactive",
+        // Access state, not headcount. A company whose trial lapsed yesterday is
+        // inactive even with users; a paying company that has not onboarded
+        // anyone yet is active. accessExpiresAt null means permanent access.
+        status: isAccessCurrent(company) ? "active" : "inactive",
         sites: company.siteCount,
         users: company.userCount,
         accessExpiresAt: company.accessExpiresAt,

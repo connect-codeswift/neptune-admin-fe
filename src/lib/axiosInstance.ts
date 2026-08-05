@@ -5,8 +5,9 @@ import {
   isOrgTokenReselectMessage,
 } from "@/lib/api-error";
 import {
-  AUTH_TOKEN_KEY,
   AUTH_ROLE_KEY,
+  AUTH_TOKEN_KEY,
+  forceLogoutRedirect,
   getMfaToken,
   ORG_TOKEN_KEY,
 } from "@/lib/auth-tokens";
@@ -125,18 +126,21 @@ axiosInstance.interceptors.response.use(
         dispatchOrgTokenReselect(message);
       } else if (
         status === 401 &&
+        hadOrgToken &&
+        !hadAuthToken &&
+        !isCredentialAuthRequest &&
+        !isOrgTokenReselectMessage(message)
+      ) {
+        forceLogoutRedirect("/login");
+      } else if (
+        status === 401 &&
         hadAuthToken &&
         !isCredentialAuthRequest &&
         !isOrgTokenReselectMessage(message)
       ) {
         const role = window.localStorage.getItem(AUTH_ROLE_KEY);
-        window.localStorage.removeItem(AUTH_TOKEN_KEY);
-        window.localStorage.removeItem(ORG_TOKEN_KEY);
-        window.localStorage.removeItem(AUTH_ROLE_KEY);
         const loginPath = role === "admin" ? "/login" : "/super/login";
-        if (!window.location.pathname.startsWith(loginPath)) {
-          window.location.assign(loginPath);
-        }
+        forceLogoutRedirect(loginPath);
       }
     }
 
