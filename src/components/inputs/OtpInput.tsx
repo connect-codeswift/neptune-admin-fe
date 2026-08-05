@@ -139,7 +139,10 @@ export function OtpInput({
           {label}
         </legend>
       ) : null}
-      <div className={`flex w-full items-center gap-2 ${className}`.trim()}>
+      <div
+        className={`grid w-full gap-2 ${className}`.trim()}
+        style={{ gridTemplateColumns: `repeat(${length}, minmax(0, 1fr))` }}
+      >
         {digits.map((digit, index) => (
           <input
             key={`${groupId}-digit-${index + 1}`}
@@ -159,7 +162,7 @@ export function OtpInput({
             onChange={(event) => handleChange(index, event)}
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPaste={handlePaste}
-            className={`aspect-square h-auto min-w-0 flex-1 rounded-[10px] border bg-white text-center text3 text-darkest shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+            className={`aspect-square h-auto w-full min-w-0 rounded-[10px] border bg-white text-center text3 text-darkest shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
               error
                 ? "border-red focus:border-red focus-visible:ring-red/30"
                 : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
