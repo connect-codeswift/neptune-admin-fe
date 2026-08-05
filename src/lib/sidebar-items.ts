@@ -44,6 +44,11 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/subscriptions",
     icon: "lucide:credit-card",
   },
+  {
+    label: "Writing Assistant",
+    href: "/chatbot",
+    icon: "lucide:sparkles",
+  },
 ];
 
 /** Org/site admin nav — lives under /{company}/{site}/… */
@@ -95,6 +100,7 @@ const STATIC_ROOT_SEGMENTS = new Set([
   "client-accounts",
   "pricing",
   "subscriptions",
+  "chatbot",
   "dashboard",
 ]);
 
