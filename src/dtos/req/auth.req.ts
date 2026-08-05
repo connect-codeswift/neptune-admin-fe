@@ -27,3 +27,22 @@ export type SuperAdminCreatePayload = {
   fullName: string;
   password: string;
 };
+
+/** Request body for POST /SuperAdminAuth/forgot-password */
+export type SuperAdminForgotPasswordPayload = {
+  email: string;
+};
+
+/** Request body for POST /SuperAdminAuth/reset-password */
+export type SuperAdminResetPasswordPayload = {
+  email: string;
+  otp: string;
+  newPassword: string;
+};
+
+/** Request body for POST /SuperAdminAuth/bootstrap */
+export type SuperAdminBootstrapPayload = {
+  email: string;
+  password: string;
+  bootstrapKey: string;
+};

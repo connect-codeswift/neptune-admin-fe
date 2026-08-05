@@ -1,7 +1,10 @@
 import type {
   LoginPayload,
+  SuperAdminBootstrapPayload,
   SuperAdminCreatePayload,
+  SuperAdminForgotPasswordPayload,
   SuperAdminMfaSetupPayload,
+  SuperAdminResetPasswordPayload,
   SuperAdminSelectCompanyPayload,
   VerifyMfaPayload,
 } from "@/dtos/req/auth.req";
@@ -10,6 +13,9 @@ import type {
   MfaEnableResponse,
   MfaSetupResponse,
   SelectCompanyResponse,
+  SuperAdminBootstrapResponse,
+  SuperAdminForgotPasswordResponse,
+  SuperAdminResetPasswordResponse,
   VerifyMfaResponse,
 } from "@/dtos/res/auth.res";
 import { setAuthRole, setAuthToken, setOrgToken } from "@/lib/auth-tokens";
@@ -103,6 +109,34 @@ export async function createSuperAdmin(payload: SuperAdminCreatePayload) {
     "/SuperAdminAuth/create",
     payload,
   );
+  return data;
+}
+
+/** POST /SuperAdminAuth/forgot-password */
+export async function superAdminForgotPassword(
+  payload: SuperAdminForgotPasswordPayload,
+) {
+  const { data } = await axiosInstance.post<
+    ApiResponse<SuperAdminForgotPasswordResponse>
+  >("/SuperAdminAuth/forgot-password", payload);
+  return data;
+}
+
+/** POST /SuperAdminAuth/reset-password */
+export async function superAdminResetPassword(
+  payload: SuperAdminResetPasswordPayload,
+) {
+  const { data } = await axiosInstance.post<
+    ApiResponse<SuperAdminResetPasswordResponse>
+  >("/SuperAdminAuth/reset-password", payload);
+  return data;
+}
+
+/** POST /SuperAdminAuth/bootstrap */
+export async function superAdminBootstrap(payload: SuperAdminBootstrapPayload) {
+  const { data } = await axiosInstance.post<
+    ApiResponse<SuperAdminBootstrapResponse>
+  >("/SuperAdminAuth/bootstrap", payload);
   return data;
 }
 

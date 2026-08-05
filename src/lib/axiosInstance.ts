@@ -6,6 +6,7 @@ import {
 } from "@/lib/api-error";
 import {
   AUTH_TOKEN_KEY,
+  AUTH_ROLE_KEY,
   getMfaToken,
   ORG_TOKEN_KEY,
 } from "@/lib/auth-tokens";
@@ -19,6 +20,9 @@ const BODY_CREDENTIAL_AUTH_PATHS = [
   "/SuperAdminAuth/verify-mfa",
   "/SuperAdminAuth/mfa/setup",
   "/SuperAdminAuth/mfa/enable",
+  "/SuperAdminAuth/forgot-password",
+  "/SuperAdminAuth/reset-password",
+  "/SuperAdminAuth/bootstrap",
 ] as const;
 
 const MFA_BEARER_AUTH_PATHS = ["/Auth/mfa/setup", "/Auth/mfa/enable"] as const;
@@ -107,7 +111,11 @@ axiosInstance.interceptors.response.use(
     );
 
     if (typeof window !== "undefined") {
+      const requestUrl = error.config?.url ?? "";
       const hadOrgToken = Boolean(window.localStorage.getItem(ORG_TOKEN_KEY));
+      const hadAuthToken = Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
+      const isCredentialAuthRequest = isBodyCredentialAuthPath(requestUrl);
+
       if (
         hadOrgToken &&
         (status === 401 || status === 400) &&
@@ -115,6 +123,20 @@ axiosInstance.interceptors.response.use(
       ) {
         window.localStorage.removeItem(ORG_TOKEN_KEY);
         dispatchOrgTokenReselect(message);
+      } else if (
+        status === 401 &&
+        hadAuthToken &&
+        !isCredentialAuthRequest &&
+        !isOrgTokenReselectMessage(message)
+      ) {
+        const role = window.localStorage.getItem(AUTH_ROLE_KEY);
+        window.localStorage.removeItem(AUTH_TOKEN_KEY);
+        window.localStorage.removeItem(ORG_TOKEN_KEY);
+        window.localStorage.removeItem(AUTH_ROLE_KEY);
+        const loginPath = role === "admin" ? "/login" : "/super/login";
+        if (!window.location.pathname.startsWith(loginPath)) {
+          window.location.assign(loginPath);
+        }
       }
     }
 

@@ -34,6 +34,8 @@ type ClientAccount = {
   status: Extract<TableStatus, "active" | "inactive">;
   sites: number;
   users: number;
+  accessExpiresAt?: string | null;
+  daysRemaining?: number | null;
 };
 
 type TrialDialogState = {
@@ -53,6 +55,12 @@ function ClientNameCell({ row }: Readonly<{ row: ClientAccount }>) {
     <div className="min-w-0">
       <p className="truncate text5 font-semibold text-darkest">{row.name}</p>
       <p className="truncate text7 text-[#b3bbc8]">ID {row.id}</p>
+      {row.accessExpiresAt && row.daysRemaining != null ? (
+        <p className="mt-0.5 truncate text7 text-yellow">
+          Access expires in {row.daysRemaining} day
+          {row.daysRemaining === 1 ? "" : "s"}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -178,6 +186,8 @@ export function ClientAccountsPage() {
         status: company.userCount > 0 ? "active" : "inactive",
         sites: company.siteCount,
         users: company.userCount,
+        accessExpiresAt: company.accessExpiresAt,
+        daysRemaining: company.daysRemaining,
       })),
     [companies],
   );

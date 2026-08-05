@@ -6332,6 +6332,71 @@
         }
       }
     },
+    "/api/Incident/GetHeaderKpi": {
+      "get": {
+        "tags": [
+          "Incident"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Incident/GetIncidentListKpis": {
+      "get": {
+        "tags": [
+          "Incident"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Incident/site-work-hours": {
+      "put": {
+        "tags": [
+          "Incident"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteWorkHoursDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteWorkHoursDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteWorkHoursDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Incident"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Incident/{incidentId}/closure": {
       "get": {
         "tags": [
@@ -8379,6 +8444,68 @@
         }
       }
     },
+    "/api/SuperAdminAuth/forgot-password": {
+      "post": {
+        "tags": [
+          "SuperAdminAuth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminForgotPasswordDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminForgotPasswordDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminAuth/reset-password": {
+      "post": {
+        "tags": [
+          "SuperAdminAuth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminResetPasswordDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminResetPasswordDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/SuperAdminAuth/bootstrap": {
       "post": {
         "tags": [
@@ -8534,6 +8661,232 @@
         }
       }
     },
+    "/api/SuperAdminCompanies/{organizationId}/access": {
+      "post": {
+        "tags": [
+          "SuperAdminCompanies"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAccessWindowDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAccessWindowDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAccessWindowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SuperAdminCompanies"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminCompanies/{organizationId}/access/history": {
+      "get": {
+        "tags": [
+          "SuperAdminCompanies"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminCompanies/{organizationId}": {
+      "get": {
+        "tags": [
+          "SuperAdminCompanies"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SuperAdminCompanies"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyProfileDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyProfileDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminCompanies/{organizationId}/modules": {
+      "put": {
+        "tags": [
+          "SuperAdminCompanies"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActivatedModulesDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActivatedModulesDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActivatedModulesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminDashboard/summary": {
+      "get": {
+        "tags": [
+          "SuperAdminDashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminDashboard/recent-activity": {
+      "get": {
+        "tags": [
+          "SuperAdminDashboard"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/SuperAdminRoles": {
       "get": {
         "tags": [
@@ -8654,6 +9007,141 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminSites": {
+      "get": {
+        "tags": [
+          "SuperAdminSites"
+        ],
+        "parameters": [
+          {
+            "name": "includeDeleted",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SuperAdminSites"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminCreateSiteDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminCreateSiteDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminCreateSiteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SuperAdminSites/{siteId}": {
+      "get": {
+        "tags": [
+          "SuperAdminSites"
+        ],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SuperAdminSites"
+        ],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminUpdateSiteDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminUpdateSiteDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuperAdminUpdateSiteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SuperAdminSites"
+        ],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -12997,6 +13485,27 @@
         },
         "additionalProperties": false
       },
+      "SetAccessWindowDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "note": {
+            "maxLength": 512,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SiteDto": {
         "required": [
           "industryType",
@@ -13025,6 +13534,34 @@
           "location": {
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SiteWorkHoursDto": {
+        "required": [
+          "hours",
+          "month",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "maximum": 2100,
+            "minimum": 2000,
+            "type": "integer",
+            "format": "int32"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "hours": {
+            "minimum": 0,
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -13163,6 +13700,55 @@
         },
         "additionalProperties": false
       },
+      "SuperAdminCreateSiteDto": {
+        "required": [
+          "location",
+          "siteName"
+        ],
+        "type": "object",
+        "properties": {
+          "siteName": {
+            "maxLength": 150,
+            "minLength": 1,
+            "type": "string"
+          },
+          "location": {
+            "maxLength": 250,
+            "minLength": 1,
+            "type": "string"
+          },
+          "industryType": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "siteSize": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "timeZoneId": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuperAdminForgotPasswordDto": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "additionalProperties": false
+      },
       "SuperAdminInviteUserDto": {
         "required": [
           "email",
@@ -13225,6 +13811,32 @@
         },
         "additionalProperties": false
       },
+      "SuperAdminResetPasswordDto": {
+        "required": [
+          "email",
+          "newPassword",
+          "otp"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "otp": {
+            "maxLength": 6,
+            "minLength": 6,
+            "pattern": "^[0-9]{6}$",
+            "type": "string"
+          },
+          "newPassword": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "SuperAdminSelectCompanyDto": {
         "required": [
           "organizationId",
@@ -13239,6 +13851,37 @@
           "siteId": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuperAdminUpdateSiteDto": {
+        "type": "object",
+        "properties": {
+          "siteName": {
+            "maxLength": 150,
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "maxLength": 250,
+            "type": "string",
+            "nullable": true
+          },
+          "industryType": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "siteSize": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "timeZoneId": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13370,6 +14013,16 @@
             "type": "string"
           },
           "fileType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateActivatedModulesDto": {
+        "type": "object",
+        "properties": {
+          "activatedModules": {
             "type": "string",
             "nullable": true
           }
@@ -13522,6 +14175,68 @@
             "items": {
               "$ref": "#/components/schemas/AddConditionalLogicDto"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateCompanyProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 150,
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "industry": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "legalName": {
+            "maxLength": 150,
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "maxLength": 250,
+            "type": "string",
+            "nullable": true
+          },
+          "employeeCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "complianceZone": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "primaryContactName": {
+            "maxLength": 150,
+            "type": "string",
+            "nullable": true
+          },
+          "primaryContactTitle": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "primaryContactEmail": {
+            "maxLength": 150,
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "primaryContactPhone": {
+            "maxLength": 50,
+            "type": "string",
             "nullable": true
           }
         },
@@ -13969,6 +14684,10 @@
             "items": {
               "$ref": "#/components/schemas/SiteDto"
             }
+          },
+          "activatedModules": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

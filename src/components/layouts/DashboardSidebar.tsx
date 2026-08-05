@@ -139,6 +139,11 @@ export function DashboardSidebar({
                         aria-hidden
                       />
                       <span>{item.label}</span>
+                      {item.preview ? (
+                        <span className="ml-auto rounded-full bg-darkest/6 px-2 py-0.5 text7 text-darkest/45">
+                          Preview
+                        </span>
+                      ) : null}
                     </Link>
                   </li>
                 );

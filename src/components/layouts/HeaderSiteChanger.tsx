@@ -12,6 +12,7 @@ import {
 import { parseOrgSitePath } from "@/lib/sidebar-items";
 import { switchOrganizationSite } from "@/lib/select-company-flow";
 import { getTenantContext } from "@/lib/tenant-context";
+import { isAdminRole } from "@/lib/auth-tokens";
 
 export function HeaderSiteChanger() {
   const pathname = usePathname();
@@ -28,7 +29,8 @@ export function HeaderSiteChanger() {
   const currentSite = orgSite
     ? (sites.find((site) => site.id === orgSite.site) ?? sites[0])
     : undefined;
-  const visible = orgSite !== null && sites.length > 0;
+  const visible =
+    !isAdminRole() && orgSite !== null && sites.length > 0;
 
   useEffect(() => {
     if (!open) return;
