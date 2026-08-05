@@ -6,6 +6,7 @@ import {
   getSuperAdminNavSections,
   getSuperAdminSidebarLogoHref,
 } from "@/lib/super-admin-sidebar-items";
+import { useSignedInUser } from "@/lib/signed-in-user";
 import { SidebarNavShell, type SidebarNavShellUser } from "./SidebarNavShell";
 import { SidebarSystemStatus } from "./SidebarSystemStatus";
 
@@ -19,19 +20,16 @@ export type SuperAdminSidebarProps = {
   className?: string;
 };
 
-const DEFAULT_USER: SuperAdminSidebarUser = {
-  name: "Ahmed Alsakkaf",
-  role: "Neptune Admin",
-};
-
 export function SuperAdminSidebar({
   sections,
-  user = DEFAULT_USER,
+  user,
   activeHref,
   logoHref,
   className = "",
 }: Readonly<SuperAdminSidebarProps>) {
   const pathname = usePathname();
+  const signedInUser = useSignedInUser();
+  const resolvedUser = user ?? signedInUser;
   const currentHref = activeHref ?? pathname;
   const navSections = sections ?? getSuperAdminNavSections();
   const resolvedLogoHref = logoHref ?? getSuperAdminSidebarLogoHref();
@@ -39,7 +37,7 @@ export function SuperAdminSidebar({
   return (
     <SidebarNavShell
       sections={navSections}
-      user={user}
+      user={resolvedUser}
       activeHref={currentHref}
       logoHref={resolvedLogoHref}
       footerSlot={<SidebarSystemStatus />}
