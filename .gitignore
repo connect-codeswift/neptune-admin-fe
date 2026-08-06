@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# FE guides live outside the repo: /home/ahad/CodeSwift/FEGuides
+*_FE_GUIDE.md
+FEGuides/
