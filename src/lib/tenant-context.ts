@@ -35,6 +35,13 @@ export function getTenantContext(): TenantContextState | null {
   }
 }
 
+/** True when the stored org token + tenant cache match this company id. */
+export function tenantContextMatchesOrg(organizationId: number): boolean {
+  if (typeof window === "undefined") return false;
+  const context = getTenantContext();
+  return context?.organizationId === organizationId;
+}
+
 export function clearTenantContext(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TENANT_CONTEXT_KEY);
@@ -59,4 +66,34 @@ export function getDefaultCachedSiteId(orgId: string | number): string | null {
   }
 
   return sites[0]?.id ?? null;
+}
+
+/** Keep cached tenant site labels in sync after metadata edits. */
+export function patchCachedSiteInTenantContext(
+  siteId: number,
+  patch: Partial<
+    Pick<CachedTenantSite, "name" | "location" | "industryType" | "siteSize">
+  >,
+): void {
+  const context = getTenantContext();
+  if (!context) return;
+
+  const sites = context.sites.map((site) =>
+    site.numericId === siteId
+      ? {
+          ...site,
+          name: patch.name ?? site.name,
+          location: patch.location ?? site.location,
+          industryType: patch.industryType ?? site.industryType,
+          siteSize: patch.siteSize ?? site.siteSize,
+        }
+      : site,
+  );
+
+  setTenantContext({
+    ...context,
+    sites,
+    siteName:
+      context.siteId === siteId && patch.name ? patch.name : context.siteName,
+  });
 }

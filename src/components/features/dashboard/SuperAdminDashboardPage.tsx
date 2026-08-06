@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { CreateSuperAdminModal } from "@/components/features/super-admin/CreateSuperAdminModal";
 import { PageHeader } from "@/components/layouts";
@@ -10,14 +9,12 @@ import {
   Button,
   KpiSummaryCard,
   KpiTrendCard,
-  RecentActivityCard,
   Table,
   TableStatusBadge,
   TableTextCell,
   type TableColumn,
 } from "@/components/ui";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminCompanies";
-import { SUPER_ADMIN_ACTIVITY_LOG } from "@/lib/super-admin-dashboard.dummy";
 
 type CompanyRow = {
   id: string;
@@ -211,13 +208,6 @@ export function SuperAdminDashboardPage() {
             >
               All Companies
             </Button>
-            <Button
-              size="sm"
-              leftIcon="lucide:download"
-              onClick={() => toast.info("Export is not available yet.")}
-            >
-              Export Report
-            </Button>
           </>
         }
       />
@@ -235,43 +225,34 @@ export function SuperAdminDashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <DetailCard
-          title="All Companies"
-          action={
-            <Link
-              href="/super/client-accounts"
-              className="text5 text-blue-normal hover:text-blue-deep"
-            >
-              View all
-            </Link>
-          }
-        >
-          {isLoading ? (
-            <p className="text5 text-gray">Loading companies…</p>
-          ) : null}
-          {isError ? (
-            <p className="text5 text-red">
-              {error instanceof Error ? error.message : "Failed to load companies."}
-            </p>
-          ) : null}
-          {!isLoading && !isError ? (
-            <Table
-              columns={COMPANY_COLUMNS}
-              data={companyRows}
-              getRowId={(row) => row.id}
-              emptyMessage="No companies on the platform yet."
-            />
-          ) : null}
-        </DetailCard>
-
-        <RecentActivityCard
-          title="Platform Activity"
-          items={SUPER_ADMIN_ACTIVITY_LOG}
-          viewHref="/super/client-accounts"
-          viewLabel="View all companies"
-        />
-      </div>
+      <DetailCard
+        title="All Companies"
+        action={
+          <Link
+            href="/super/client-accounts"
+            className="text5 text-blue-normal hover:text-blue-deep"
+          >
+            View all
+          </Link>
+        }
+      >
+        {isLoading ? (
+          <p className="text5 text-gray">Loading companies…</p>
+        ) : null}
+        {isError ? (
+          <p className="text5 text-red">
+            {error instanceof Error ? error.message : "Failed to load companies."}
+          </p>
+        ) : null}
+        {!isLoading && !isError ? (
+          <Table
+            columns={COMPANY_COLUMNS}
+            data={companyRows}
+            getRowId={(row) => row.id}
+            emptyMessage="No companies on the platform yet."
+          />
+        ) : null}
+      </DetailCard>
 
       <DetailCard
         title="Platform Overview"

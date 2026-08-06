@@ -16,6 +16,7 @@ import {
   type TableStatus,
 } from "@/components/ui";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminCompanies";
+import { useSetAccessWindowMutation } from "@/hooks/useClientAccountDetail";
 import {
   buildOrgDashboardPath,
   enterOrganization,
@@ -111,13 +112,7 @@ function buildColumns(
       header: "Client",
       cell: (row) => <ClientNameCell row={row} />,
     },
-    {
-      id: "modules",
-      header: "Activated Modules",
-      cell: (row) => (
-        <TableTextCell muted>{row.activatedModules || "—"}</TableTextCell>
-      ),
-    },
+    
     {
       id: "contractStart",
       header: "Created",
@@ -174,7 +169,7 @@ function isAccessCurrent(company: {
   accessExpiresAt?: string | null;
   daysRemaining?: number | null;
 }): boolean {
-  if (company.daysRemaining != null) return company.daysRemaining > 0;
+  if (company.daysRemaining != null) return company.daysRemaining >= 0;
   if (!company.accessExpiresAt) return true;
 
   const expires = new Date(company.accessExpiresAt).getTime();
@@ -185,6 +180,7 @@ function isAccessCurrent(company: {
 export function ClientAccountsPage() {
   const router = useRouter();
   const [trialDialog, setTrialDialog] = useState<TrialDialogState>(null);
+  const setAccessWindow = useSetAccessWindowMutation();
   const {
     data: companies = [],
     isLoading,
@@ -279,10 +275,6 @@ export function ClientAccountsPage() {
     onExtendTrial: (client) => setTrialDialog({ mode: "extend", client }),
   });
 
-  const dialogKey = trialDialog
-    ? `${trialDialog.mode}-${trialDialog.client.id}`
-    : "closed";
-
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
@@ -339,22 +331,35 @@ export function ClientAccountsPage() {
         />
       ) : null}
 
-      <TrialDaysModal
-        key={dialogKey}
-        open={trialDialog !== null}
-        mode={trialDialog?.mode ?? "start"}
-        clientName={trialDialog?.client.name ?? ""}
-        onClose={() => setTrialDialog(null)}
-        onConfirm={(days) => {
-          if (!trialDialog) return;
-          const action =
-            trialDialog.mode === "start" ? "started" : "extended";
-          toast.success(
-            `Trial ${action} for ${trialDialog.client.name} (${days} days).`,
-          );
-          setTrialDialog(null);
-        }}
-      />
+      {trialDialog ? (
+        <TrialDaysModal
+          open
+          mode={trialDialog.mode}
+          clientName={trialDialog.client.name}
+          loading={setAccessWindow.isPending}
+          onClose={() => setTrialDialog(null)}
+          onConfirm={(days) => {
+            const organizationId = Number(trialDialog.client.id);
+            void setAccessWindow
+              .mutateAsync({ organizationId, days })
+              .then(() => {
+                const action =
+                  trialDialog.mode === "start" ? "started" : "updated";
+                toast.success(
+                  `Trial ${action} for ${trialDialog.client.name} (${days} days from now).`,
+                );
+                setTrialDialog(null);
+              })
+              .catch((setError) => {
+                toast.error(
+                  setError instanceof Error
+                    ? setError.message
+                    : "Failed to set access window.",
+                );
+              });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -90,7 +90,8 @@ axiosInstance.interceptors.request.use((config) => {
 
   const orgToken = window.localStorage.getItem(ORG_TOKEN_KEY);
   const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
-  const useStaffToken = isStaffOnlyAuthPath(config.url);
+  const useStaffToken =
+    config.neptuneUseStaffToken === true || isStaffOnlyAuthPath(config.url);
   const token = useStaffToken ? authToken : orgToken || authToken;
 
   if (token) {

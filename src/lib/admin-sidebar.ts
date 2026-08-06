@@ -20,9 +20,6 @@ const STATIC_ROOT_SEGMENTS = new Set([
   "reset-password",
   "add-a-company",
   "client-accounts",
-  "pricing",
-  "subscriptions",
-  "chatbot",
   "dashboard",
 ]);
 
@@ -38,6 +35,11 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     label: "User Management",
     href: "/user-management",
     icon: "tabler:user",
+  },
+  {
+    label: "Site Management",
+    href: "/site-management",
+    icon: "lucide:map-pin",
   },
   {
     label: "Roles & Rights",

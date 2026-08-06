@@ -4,6 +4,7 @@ export type SuperAdminUserStatus = "Active" | "Pending" | "Suspended";
 export type SuperAdminUserResponse = {
   id: number;
   fullName?: string | null;
+  gender?: string | null;
   email: string;
   contactNo?: string | null;
   profileUrl?: string | null;
