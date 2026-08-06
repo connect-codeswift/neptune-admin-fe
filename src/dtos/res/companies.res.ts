@@ -8,6 +8,14 @@ export type SuperAdminCompanyResponse = {
   userCount: number;
   accessExpiresAt?: string | null;
   daysRemaining?: number | null;
+  maxSeats?: number | null;
+  maxSites?: number | null;
+  seatsUsed?: number;
+  sitesUsed?: number;
+  seatsAvailable?: number | null;
+  sitesAvailable?: number | null;
+  atSeatLimit?: boolean;
+  atSiteLimit?: boolean;
 };
 
 export type SuperAdminCompanyDetailResponse = SuperAdminCompanyResponse & {
@@ -53,6 +61,30 @@ export type AccessHistoryRow = {
   action: "Granted" | "Extended" | "Cleared" | string;
   previousExpiresAt?: string | null;
   newExpiresAt?: string | null;
+  note?: string | null;
+  superAdminId: number;
+  createdAt: string;
+};
+
+export type OrganizationLimitsResponse = {
+  id: number;
+  maxSeats?: number | null;
+  maxSites?: number | null;
+  seatsUsed: number;
+  sitesUsed: number;
+  seatsAvailable?: number | null;
+  sitesAvailable?: number | null;
+  atSeatLimit: boolean;
+  atSiteLimit: boolean;
+};
+
+export type LimitHistoryRow = {
+  id: number;
+  action: "Updated" | "Cleared" | string;
+  previousMaxSeats?: number | null;
+  newMaxSeats?: number | null;
+  previousMaxSites?: number | null;
+  newMaxSites?: number | null;
   note?: string | null;
   superAdminId: number;
   createdAt: string;

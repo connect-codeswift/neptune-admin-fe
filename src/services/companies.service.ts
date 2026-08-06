@@ -1,11 +1,14 @@
 import type {
   SetAccessWindowPayload,
+  SetOrganizationLimitsPayload,
   UpdateActivatedModulesPayload,
   UpdateCompanyProfilePayload,
 } from "@/dtos/req/companies.req";
 import type {
   AccessHistoryRow,
   AccessWindowResponse,
+  LimitHistoryRow,
+  OrganizationLimitsResponse,
   SuperAdminCompanyDetailResponse,
 } from "@/dtos/res/companies.res";
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
@@ -84,6 +87,27 @@ export async function clearCompanyAccessWindow(organizationId: number) {
 export async function getCompanyAccessHistory(organizationId: number) {
   const { data } = await axiosInstance.get<ApiResponse<AccessHistoryRow[]>>(
     `/SuperAdminCompanies/${organizationId}/access/history`,
+  );
+  return data;
+}
+
+/** PUT /SuperAdminCompanies/{organizationId}/limits */
+export async function setOrganizationLimits(
+  organizationId: number,
+  payload: SetOrganizationLimitsPayload,
+) {
+  const { data } = await axiosInstance.put<
+    ApiResponse<OrganizationLimitsResponse>
+  >(`/SuperAdminCompanies/${organizationId}/limits`, payload, {
+    neptuneUseStaffToken: true,
+  });
+  return data;
+}
+
+/** GET /SuperAdminCompanies/{organizationId}/limits/history */
+export async function getOrganizationLimitsHistory(organizationId: number) {
+  const { data } = await axiosInstance.get<ApiResponse<LimitHistoryRow[]>>(
+    `/SuperAdminCompanies/${organizationId}/limits/history`,
   );
   return data;
 }

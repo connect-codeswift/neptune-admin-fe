@@ -16,7 +16,7 @@ const TABS = [
   { id: "overview", label: "Overview" },
   { id: "sites", label: "Sites" },
   { id: "modules", label: "Modules" },
-  { id: "access", label: "Access" },
+  { id: "access", label: "Access & Limits" },
 ] as const;
 
 const SITES_TAB_INDEX = TABS.findIndex((tab) => tab.id === "sites");
@@ -86,6 +86,9 @@ export function ClientAccountDetailPage({
     tabContent = (
       <ClientSitesTab
         organizationId={company.id}
+        maxSites={company.maxSites}
+        sitesUsed={company.sitesUsed}
+        atSiteLimit={company.atSiteLimit}
         initialEditSiteId={pendingSiteEditId}
         onInitialEditConsumed={handleInitialEditConsumed}
       />
@@ -104,6 +107,14 @@ export function ClientAccountDetailPage({
         companyName={company.name}
         accessExpiresAt={company.accessExpiresAt}
         daysRemaining={company.daysRemaining}
+        maxSeats={company.maxSeats}
+        maxSites={company.maxSites}
+        seatsUsed={company.seatsUsed}
+        sitesUsed={company.sitesUsed}
+        seatsAvailable={company.seatsAvailable}
+        sitesAvailable={company.sitesAvailable}
+        atSeatLimit={company.atSeatLimit}
+        atSiteLimit={company.atSiteLimit}
       />
     );
   }

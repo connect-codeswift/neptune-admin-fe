@@ -22,6 +22,12 @@ export type SetAccessWindowPayload = {
   note?: string | null;
 };
 
+export type SetOrganizationLimitsPayload = {
+  maxSeats?: number | null;
+  maxSites?: number | null;
+  note?: string | null;
+};
+
 export type CreateSuperAdminSitePayload = {
   siteName: string;
   location: string;

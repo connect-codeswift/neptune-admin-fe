@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import { SubscriptionSeatLimitModal } from "@/components/features/user-management/SubscriptionSeatLimitModal";
 import {
   EmailInput,
   PhoneInput,
@@ -12,14 +13,29 @@ import {
 } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
+import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import { useInviteSuperAdminUser } from "@/hooks/useSuperAdminUserMutations";
 import { useUserFormOptions } from "@/hooks/useUserFormOptions";
 import { GENDER_OPTIONS } from "@/lib/gender-options";
+import { toSeatLimitInfo } from "@/lib/organization-limits";
+import { parseOrgSitePath } from "@/lib/sidebar-items";
 import { useUserManagementPaths } from "./useUserManagementPaths";
 
 export function AddUserPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { adminHref, basePath } = useUserManagementPaths();
+  const orgSite = parseOrgSitePath(pathname);
+  const organizationId = orgSite ? Number(orgSite.company) : undefined;
+  const { data: company } = useClientAccountDetail(
+    Number.isFinite(organizationId) && organizationId! > 0
+      ? organizationId
+      : undefined,
+  );
+  const seatInfo = company ? toSeatLimitInfo(company) : null;
+  const atSeatLimit = company?.atSeatLimit ?? false;
+  const [seatLimitModalOpen, setSeatLimitModalOpen] = useState(false);
+
   const inviteMutation = useInviteSuperAdminUser();
   const { roleOptions, siteOptions, defaultSiteId, rolesLoading } =
     useUserFormOptions();
@@ -31,7 +47,17 @@ export function AddUserPage() {
   const [roleId, setRoleId] = useState("");
   const [siteId, setSiteId] = useState(defaultSiteId);
 
+  useEffect(() => {
+    if (atSeatLimit && seatInfo) {
+      setSeatLimitModalOpen(true);
+    }
+  }, [atSeatLimit, seatInfo]);
+
   const handleCreate = async () => {
+    if (atSeatLimit && seatInfo) {
+      setSeatLimitModalOpen(true);
+      return;
+    }
     if (!email.trim()) {
       toast.error("Email is required.");
       return;
@@ -129,6 +155,21 @@ export function AddUserPage() {
           />
         </div>
       </DetailCard>
+
+      {seatInfo ? (
+        <SubscriptionSeatLimitModal
+          open={seatLimitModalOpen}
+          seatInfo={seatInfo}
+          onClose={() => {
+            setSeatLimitModalOpen(false);
+            router.push(basePath);
+          }}
+          onContactSales={() => {
+            toast.info("Contact CodeSwift to increase your seat allowance.");
+            setSeatLimitModalOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

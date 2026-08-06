@@ -13,6 +13,7 @@ import {
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
 import { useCompanySites } from "@/hooks/useClientAccountDetail";
 import { useSuperAdminSiteMutations } from "@/hooks/useSuperAdminSites";
+import { toSiteLimitInfo } from "@/lib/organization-limits";
 import { getIanaTimezoneSelectOptions } from "@/lib/iana-timezones";
 import {
   getSiteIndustryTypeSelectOptions,
@@ -25,15 +26,22 @@ import {
   toClientSiteFormState,
 } from "./ClientSiteFormModal";
 import { DetailCard } from "./DetailCard";
+import { SiteLimitModal } from "./SiteLimitModal";
 
 type ClientSitesTabProps = Readonly<{
   organizationId: number;
+  maxSites?: number | null;
+  sitesUsed?: number;
+  atSiteLimit?: boolean;
   initialEditSiteId?: number | null;
   onInitialEditConsumed?: () => void;
 }>;
 
 export function ClientSitesTab({
   organizationId,
+  maxSites = null,
+  sitesUsed = 0,
+  atSiteLimit = false,
   initialEditSiteId = null,
   onInitialEditConsumed,
 }: ClientSitesTabProps) {
@@ -44,6 +52,7 @@ export function ClientSitesTab({
     useSuperAdminSiteMutations(organizationId);
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [siteLimitModalOpen, setSiteLimitModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
   const [form, setForm] = useState(EMPTY_CLIENT_SITE_FORM);
 
@@ -61,9 +70,34 @@ export function ClientSitesTab({
   );
 
   const openCreate = () => {
+    const siteInfo =
+      maxSites != null
+        ? toSiteLimitInfo({
+            maxSites,
+            sitesUsed,
+            sitesAvailable: Math.max(0, maxSites - sitesUsed),
+            atSiteLimit,
+          })
+        : null;
+
+    if (atSiteLimit && siteInfo) {
+      setSiteLimitModalOpen(true);
+      return;
+    }
+
     setForm(EMPTY_CLIENT_SITE_FORM);
     setCreateModalOpen(true);
   };
+
+  const siteLimitInfo =
+    maxSites != null
+      ? toSiteLimitInfo({
+          maxSites,
+          sitesUsed,
+          sitesAvailable: Math.max(0, maxSites - sitesUsed),
+          atSiteLimit,
+        })
+      : null;
 
   const openEdit = (site: SuperAdminSiteRow) => {
     setEditingSite(site);
@@ -324,6 +358,18 @@ export function ClientSitesTab({
         siteSizeOptions={siteSizeOptions}
         timezoneOptions={timezoneOptions}
       />
+
+      {siteLimitInfo ? (
+        <SiteLimitModal
+          open={siteLimitModalOpen}
+          siteInfo={siteLimitInfo}
+          onClose={() => setSiteLimitModalOpen(false)}
+          onContactSales={() => {
+            toast.info("Contact CodeSwift to increase your site allowance.");
+            setSiteLimitModalOpen(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }
