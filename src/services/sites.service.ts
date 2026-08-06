@@ -13,6 +13,21 @@ export type GetSuperAdminSitesParams = {
   includeDeleted?: boolean;
 };
 
+export type SuperAdminSiteMutationOptions = {
+  organizationId?: number;
+  useStaffToken?: boolean;
+};
+
+function resolveMutationConfig(options?: SuperAdminSiteMutationOptions) {
+  const useStaffToken =
+    options?.useStaffToken ?? (options?.organizationId != null && options.organizationId > 0);
+
+  return {
+    useStaffToken,
+    organizationId: options?.organizationId,
+  };
+}
+
 /** GET /SuperAdminSites */
 export async function getSuperAdminSites(params?: GetSuperAdminSitesParams) {
   const { data } = await axiosInstance.get<
@@ -30,10 +45,20 @@ export async function getSuperAdminSite(siteId: number) {
 }
 
 /** POST /SuperAdminSites */
-export async function createSuperAdminSite(payload: CreateSuperAdminSitePayload) {
+export async function createSuperAdminSite(
+  payload: CreateSuperAdminSitePayload,
+  options?: SuperAdminSiteMutationOptions,
+) {
+  const { useStaffToken, organizationId } = resolveMutationConfig(options);
+  const body =
+    organizationId != null && organizationId > 0
+      ? { ...payload, organizationId }
+      : payload;
+
   const { data } = await axiosInstance.post<ApiResponse<SuperAdminSiteResponse>>(
     "/SuperAdminSites",
-    payload,
+    body,
+    { neptuneUseStaffToken: useStaffToken },
   );
   return data;
 }
@@ -42,18 +67,40 @@ export async function createSuperAdminSite(payload: CreateSuperAdminSitePayload)
 export async function updateSuperAdminSite(
   siteId: number,
   payload: UpdateSuperAdminSitePayload,
+  options?: SuperAdminSiteMutationOptions,
 ) {
+  const { useStaffToken, organizationId } = resolveMutationConfig(options);
+
   const { data } = await axiosInstance.put<ApiResponse<SuperAdminSiteResponse>>(
     `/SuperAdminSites/${siteId}`,
     payload,
+    {
+      neptuneUseStaffToken: useStaffToken,
+      params:
+        organizationId != null && organizationId > 0
+          ? { organizationId }
+          : undefined,
+    },
   );
   return data;
 }
 
 /** DELETE /SuperAdminSites/{siteId} */
-export async function deleteSuperAdminSite(siteId: number) {
+export async function deleteSuperAdminSite(
+  siteId: number,
+  options?: SuperAdminSiteMutationOptions,
+) {
+  const { useStaffToken, organizationId } = resolveMutationConfig(options);
+
   const { data } = await axiosInstance.delete<ApiResponse<unknown>>(
     `/SuperAdminSites/${siteId}`,
+    {
+      neptuneUseStaffToken: useStaffToken,
+      params:
+        organizationId != null && organizationId > 0
+          ? { organizationId }
+          : undefined,
+    },
   );
   return data;
 }

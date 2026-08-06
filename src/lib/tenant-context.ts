@@ -35,6 +35,13 @@ export function getTenantContext(): TenantContextState | null {
   }
 }
 
+/** True when the stored org token + tenant cache match this company id. */
+export function tenantContextMatchesOrg(organizationId: number): boolean {
+  if (typeof window === "undefined") return false;
+  const context = getTenantContext();
+  return context?.organizationId === organizationId;
+}
+
 export function clearTenantContext(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TENANT_CONTEXT_KEY);

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { TextInput } from "@/components/inputs";
+import { SelectInput, TextInput } from "@/components/inputs";
 import {
   Button,
   Modal,
@@ -15,6 +15,11 @@ import {
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
 import { useCompanySites } from "@/hooks/useClientAccountDetail";
 import { useSuperAdminSiteMutations } from "@/hooks/useSuperAdminSites";
+import { getIanaTimezoneSelectOptions } from "@/lib/iana-timezones";
+import {
+  getSiteIndustryTypeSelectOptions,
+  getSiteSizeSelectOptions,
+} from "@/lib/site-form-options";
 import { DetailCard } from "./DetailCard";
 
 type SiteFormState = {
@@ -46,19 +51,9 @@ function toFormState(site?: SuperAdminSiteRow): SiteFormState {
 
 type ClientSitesTabProps = Readonly<{
   organizationId: number;
-  orgContextReady: boolean;
-  orgContextError?: string | null;
-  onEnsureOrgContext: () => void;
-  ensuringOrgContext?: boolean;
 }>;
 
-export function ClientSitesTab({
-  organizationId,
-  orgContextReady,
-  orgContextError,
-  onEnsureOrgContext,
-  ensuringOrgContext = false,
-}: ClientSitesTabProps) {
+export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const { data: sites = [], isLoading, isError, error, refetch } =
     useCompanySites(organizationId, includeDeleted);
@@ -69,34 +64,32 @@ export function ClientSitesTab({
   const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
   const [form, setForm] = useState<SiteFormState>(EMPTY_FORM);
 
-  const canMutateSites = orgContextReady;
+  const industryTypeOptions = useMemo(
+    () => getSiteIndustryTypeSelectOptions(form.industryType),
+    [form.industryType],
+  );
+  const siteSizeOptions = useMemo(
+    () => getSiteSizeSelectOptions(form.siteSize),
+    [form.siteSize],
+  );
+  const timezoneOptions = useMemo(
+    () => getIanaTimezoneSelectOptions(form.timeZoneId),
+    [form.timeZoneId],
+  );
 
   const openCreate = () => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
     setEditingSite(null);
     setForm(EMPTY_FORM);
     setModalOpen(true);
   };
 
   const openEdit = (site: SuperAdminSiteRow) => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
     setEditingSite(site);
     setForm(toFormState(site));
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
-
     if (!form.siteName.trim() || !form.location.trim()) {
       toast.error("Site name and location are required.");
       return;
@@ -127,11 +120,6 @@ export function ClientSitesTab({
   };
 
   const handleDelete = async (site: SuperAdminSiteRow) => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
-
     if (site.userCount > 0) {
       toast.error(
         `Cannot delete this site: ${site.userCount} user(s) are still assigned. Reassign or deactivate them first.`,
@@ -237,26 +225,12 @@ export function ClientSitesTab({
               size="sm"
               leftIcon="lucide:plus"
               onClick={openCreate}
-              loading={ensuringOrgContext}
             >
               Add site
             </Button>
           </div>
         }
       >
-        {!orgContextReady && orgContextError ? (
-          <p className="mb-4 rounded-xl border border-red/20 bg-red/5 px-4 py-3 text6 text-red">
-            {orgContextError}
-          </p>
-        ) : null}
-
-        {!orgContextReady ? (
-          <p className="mb-4 text6 text-gray">
-            Site changes require organization context. It is being prepared
-            automatically; add or edit once ready.
-          </p>
-        ) : null}
-
         <label className="mb-4 inline-flex items-center gap-2 text6 text-gray">
           <input
             type="checkbox"
@@ -312,34 +286,33 @@ export function ClientSitesTab({
               setForm((current) => ({ ...current, location: event.target.value }))
             }
           />
-          <TextInput
+          <SelectInput
             label="Industry type"
+            placeholder="Select industry type"
+            options={industryTypeOptions}
             value={form.industryType}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                industryType: event.target.value,
-              }))
+            onChange={(value) =>
+              setForm((current) => ({ ...current, industryType: value }))
             }
           />
-          <TextInput
+          <SelectInput
             label="Site size"
+            placeholder="Select site size"
+            options={siteSizeOptions}
             value={form.siteSize}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, siteSize: event.target.value }))
+            onChange={(value) =>
+              setForm((current) => ({ ...current, siteSize: value }))
             }
           />
-          <TextInput
+          <SelectInput
             label="Timezone (IANA)"
-            placeholder="America/Chicago"
+            placeholder="Select timezone"
+            options={timezoneOptions}
             value={form.timeZoneId}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                timeZoneId: event.target.value,
-              }))
+            onChange={(value) =>
+              setForm((current) => ({ ...current, timeZoneId: value }))
             }
-            className="sm:col-span-2"
+            containerClassName="sm:col-span-2"
           />
         </div>
       </Modal>

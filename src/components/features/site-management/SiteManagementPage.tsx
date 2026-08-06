@@ -23,6 +23,10 @@ import { buildOrgSitePath } from "@/lib/org-sites";
 import { parseOrgSitePath } from "@/lib/sidebar-items";
 import { patchCachedSiteInTenantContext } from "@/lib/tenant-context";
 import { getIanaTimezoneSelectOptions } from "@/lib/iana-timezones";
+import {
+  getSiteIndustryTypeSelectOptions,
+  getSiteSizeSelectOptions,
+} from "@/lib/site-form-options";
 
 type SiteFormState = {
   siteName: string;
@@ -133,6 +137,14 @@ export function SiteManagementPage() {
   const timezoneOptions = useMemo(
     () => getIanaTimezoneSelectOptions(form?.timeZoneId),
     [form?.timeZoneId],
+  );
+  const industryTypeOptions = useMemo(
+    () => getSiteIndustryTypeSelectOptions(form?.industryType),
+    [form?.industryType],
+  );
+  const siteSizeOptions = useMemo(
+    () => getSiteSizeSelectOptions(form?.siteSize),
+    [form?.siteSize],
   );
 
   const closeModal = () => {
@@ -259,25 +271,25 @@ export function SiteManagementPage() {
                 )
               }
             />
-            <TextInput
+            <SelectInput
               label="Industry type"
+              placeholder="Select industry type"
+              options={industryTypeOptions}
               value={form.industryType}
-              onChange={(event) =>
+              onChange={(value) =>
                 setForm((current) =>
-                  current
-                    ? { ...current, industryType: event.target.value }
-                    : current,
+                  current ? { ...current, industryType: value } : current,
                 )
               }
             />
-            <TextInput
+            <SelectInput
               label="Site size"
+              placeholder="Select site size"
+              options={siteSizeOptions}
               value={form.siteSize}
-              onChange={(event) =>
+              onChange={(value) =>
                 setForm((current) =>
-                  current
-                    ? { ...current, siteSize: event.target.value }
-                    : current,
+                  current ? { ...current, siteSize: value } : current,
                 )
               }
             />
