@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { TextInput } from "@/components/inputs";
+import { SelectInput, TextInput } from "@/components/inputs";
 import {
   Button,
   Modal,
@@ -15,6 +15,11 @@ import {
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
 import { useCompanySites } from "@/hooks/useClientAccountDetail";
 import { useSuperAdminSiteMutations } from "@/hooks/useSuperAdminSites";
+import { getIanaTimezoneSelectOptions } from "@/lib/iana-timezones";
+import {
+  getSiteIndustryTypeSelectOptions,
+  getSiteSizeSelectOptions,
+} from "@/lib/site-form-options";
 import { DetailCard } from "./DetailCard";
 
 type SiteFormState = {
@@ -68,6 +73,19 @@ export function ClientSitesTab({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
   const [form, setForm] = useState<SiteFormState>(EMPTY_FORM);
+
+  const industryTypeOptions = useMemo(
+    () => getSiteIndustryTypeSelectOptions(form.industryType),
+    [form.industryType],
+  );
+  const siteSizeOptions = useMemo(
+    () => getSiteSizeSelectOptions(form.siteSize),
+    [form.siteSize],
+  );
+  const timezoneOptions = useMemo(
+    () => getIanaTimezoneSelectOptions(form.timeZoneId),
+    [form.timeZoneId],
+  );
 
   const canMutateSites = orgContextReady;
 
@@ -312,34 +330,33 @@ export function ClientSitesTab({
               setForm((current) => ({ ...current, location: event.target.value }))
             }
           />
-          <TextInput
+          <SelectInput
             label="Industry type"
+            placeholder="Select industry type"
+            options={industryTypeOptions}
             value={form.industryType}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                industryType: event.target.value,
-              }))
+            onChange={(value) =>
+              setForm((current) => ({ ...current, industryType: value }))
             }
           />
-          <TextInput
+          <SelectInput
             label="Site size"
+            placeholder="Select site size"
+            options={siteSizeOptions}
             value={form.siteSize}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, siteSize: event.target.value }))
+            onChange={(value) =>
+              setForm((current) => ({ ...current, siteSize: value }))
             }
           />
-          <TextInput
+          <SelectInput
             label="Timezone (IANA)"
-            placeholder="America/Chicago"
+            placeholder="Select timezone"
+            options={timezoneOptions}
             value={form.timeZoneId}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                timeZoneId: event.target.value,
-              }))
+            onChange={(value) =>
+              setForm((current) => ({ ...current, timeZoneId: value }))
             }
-            className="sm:col-span-2"
+            containerClassName="sm:col-span-2"
           />
         </div>
       </Modal>

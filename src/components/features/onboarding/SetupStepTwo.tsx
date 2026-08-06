@@ -3,22 +3,13 @@
 import { Icon } from "@iconify/react";
 import { SelectInput, TextInput } from "@/components/inputs";
 import { TextButton } from "@/components/ui";
+import {
+  SITE_INDUSTRY_TYPE_OPTIONS,
+  SITE_SIZE_OPTIONS,
+  siteIndustryTypeLabel,
+  siteSizeLabel,
+} from "@/lib/site-form-options";
 import { WizardSectionCard } from "./WizardSectionCard";
-
-const INDUSTRY_OPTIONS = [
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "oil-and-gas", label: "Oil & Gas" },
-  { value: "construction", label: "Construction" },
-  { value: "chemical", label: "Chemical" },
-  { value: "other", label: "Other" },
-];
-
-const COMPANY_SIZE_OPTIONS = [
-  { value: "1-50", label: "1-50 employees" },
-  { value: "51-200", label: "51-200" },
-  { value: "201-1000", label: "201-1,000" },
-  { value: "1001+", label: "1,001+" },
-];
 
 export type SiteDraft = {
   id: string;
@@ -29,11 +20,11 @@ export type SiteDraft = {
 };
 
 function industryLabel(value: string) {
-  return INDUSTRY_OPTIONS.find((option) => option.value === value)?.label ?? value;
+  return siteIndustryTypeLabel(value);
 }
 
 function companySizeLabel(value: string) {
-  return COMPANY_SIZE_OPTIONS.find((option) => option.value === value)?.label ?? value;
+  return siteSizeLabel(value);
 }
 
 export type SetupStepTwoProps = {
@@ -84,14 +75,14 @@ export function SetupStepTwo({
         <SelectInput
           label="Industry Type *"
           placeholder="Select industry type"
-          options={INDUSTRY_OPTIONS}
+          options={[...SITE_INDUSTRY_TYPE_OPTIONS]}
           value={industryType}
           onChange={onIndustryTypeChange}
         />
         <SelectInput
           label="Company Size *"
           placeholder="Select company size"
-          options={COMPANY_SIZE_OPTIONS}
+          options={[...SITE_SIZE_OPTIONS]}
           value={companySize}
           onChange={onCompanySizeChange}
         />
