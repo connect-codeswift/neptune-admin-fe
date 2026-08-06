@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { EmailInput, TextInput } from "@/components/inputs";
@@ -11,7 +11,10 @@ import {
   getModuleLabel,
   parseActivatedModuleCodes,
 } from "@/lib/ehs-modules";
-import { useUpdateCompanyProfile } from "@/hooks/useClientAccountDetail";
+import {
+  useCompanySites,
+  useUpdateCompanyProfile,
+} from "@/hooks/useClientAccountDetail";
 import { DetailCard } from "./DetailCard";
 
 function InfoField({
@@ -79,10 +82,20 @@ function toFormState(company: SuperAdminCompanyDetailResponse): ProfileFormState
 
 export function ClientOverviewTab({
   company,
-}: Readonly<{ company: SuperAdminCompanyDetailResponse }>) {
+  onEditSite,
+}: Readonly<{
+  company: SuperAdminCompanyDetailResponse;
+  onEditSite: (siteId: number) => void;
+}>) {
   const updateProfile = useUpdateCompanyProfile(company.id);
+  const { data: sites = [] } = useCompanySites(company.id);
   const [form, setForm] = useState(() => toFormState(company));
   const [dirty, setDirty] = useState(false);
+
+  const activeSites = useMemo(
+    () => sites.filter((site) => !site.isDrop),
+    [sites],
+  );
 
   const moduleCodes = parseActivatedModuleCodes(company.activatedModules);
   const moduleIds = activatedModuleCodesToIds(moduleCodes);
@@ -125,6 +138,11 @@ export function ClientOverviewTab({
     }
   };
 
+  const handleDiscard = () => {
+    setForm(toFormState(company));
+    setDirty(false);
+  };
+
   const websiteHref = form.website.startsWith("http")
     ? form.website
     : form.website
@@ -132,23 +150,31 @@ export function ClientOverviewTab({
       : "";
 
   return (
-    <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-      <div className="flex flex-col gap-5">
-        <DetailCard
-          title="Company Information"
-          action={
-            dirty ? (
-              <Button
-                type="button"
-                size="sm"
-                loading={updateProfile.isPending}
-                onClick={() => void handleSave()}
-              >
-                Save changes
-              </Button>
-            ) : null
-          }
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={!dirty || updateProfile.isPending}
+          onClick={handleDiscard}
         >
+          Discard
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!dirty}
+          loading={updateProfile.isPending}
+          onClick={() => void handleSave()}
+        >
+          Save changes
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+      <div className="flex flex-col gap-5">
+        <DetailCard title="Company Information">
           <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <TextInput
               label="Company name"
@@ -182,16 +208,12 @@ export function ClientOverviewTab({
                 handleChange("employeeCount", event.target.value)
               }
             />
-            <InfoField label="Number of sites">
-              {company.siteCount} sites
-              {company.sites && company.sites.length > 0 ? (
-                <ul className="mt-2 space-y-1 text6 font-normal text-gray">
-                  {company.sites.map((site) => (
-                    <li key={site.id}>{site.siteName}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </InfoField>
+            <TextInput
+              label="Number of sites"
+              value={`${company.siteCount} site${company.siteCount === 1 ? "" : "s"}`}
+              disabled
+              readOnly
+            />
             <TextInput
               label="Compliance zone"
               value={form.complianceZone}
@@ -199,11 +221,64 @@ export function ClientOverviewTab({
                 handleChange("complianceZone", event.target.value)
               }
             />
-            <InfoField label="Created">{formatDate(company.createdAt)}</InfoField>
-            <InfoField label="Last updated">
-              {formatDate(company.updatedAt)}
-            </InfoField>
+            <TextInput
+              label="Created"
+              value={formatDate(company.createdAt)}
+              disabled
+              readOnly
+            />
+            <TextInput
+              label="Last updated"
+              value={formatDate(company.updatedAt)}
+              disabled
+              readOnly
+            />
           </div>
+        </DetailCard>
+
+        <DetailCard
+          title="Sites"
+          description={`${activeSites.length} active site${activeSites.length === 1 ? "" : "s"}`}
+        >
+          {activeSites.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {activeSites.map((site) => (
+                <button
+                  key={site.id}
+                  type="button"
+                  onClick={() => onEditSite(site.id)}
+                  className="group flex min-h-28 flex-col justify-between rounded-2xl border border-darkest/10 bg-white p-4 text-left shadow-sm transition-colors hover:border-blue-normal/35 hover:bg-blue-normal/5 focus-visible:ring-2 focus-visible:ring-blue-normal/30 focus-visible:outline-none"
+                >
+                  <div className="min-w-0">
+                    <p className="text5 font-semibold text-darkest">
+                      {site.siteName}
+                    </p>
+                    <p className="mt-1 text6 text-gray">{site.location}</p>
+                    {site.timeZoneId ? (
+                      <p className="mt-0.5 text7 text-[#8892a3]">
+                        {site.timeZoneId}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="mt-3 inline-flex items-center gap-1 text7 font-semibold text-blue-normal">
+                    Edit site
+                    <Icon
+                      icon="lucide:arrow-right"
+                      width={12}
+                      height={12}
+                      className="transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text5 text-gray">No sites registered yet.</p>
+          )}
+          <p className="mt-3 text6 text-gray">
+            Click a site to edit. Add or remove sites on the Sites tab.
+          </p>
         </DetailCard>
 
         <DetailCard title="Activated Modules">
@@ -230,7 +305,7 @@ export function ClientOverviewTab({
 
       <div className="flex flex-col gap-5">
         <DetailCard title="Primary Contact">
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TextInput
               label="Full name"
               value={form.primaryContactName}
@@ -287,6 +362,8 @@ export function ClientOverviewTab({
             </div>
           </DetailCard>
         )}
+      </div>
+
       </div>
     </div>
   );

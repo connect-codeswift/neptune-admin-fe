@@ -2,7 +2,7 @@
 
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { TabBar } from "@/components/ui";
 import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import { clearOrgSession } from "@/lib/auth-tokens";
@@ -18,6 +18,8 @@ const TABS = [
   { id: "subscription", label: "Subscription" },
 ] as const;
 
+const SITES_TAB_INDEX = TABS.findIndex((tab) => tab.id === "sites");
+
 export function ClientAccountDetailPage({
   clientId,
 }: Readonly<{ clientId: string }>) {
@@ -32,12 +34,22 @@ export function ClientAccountDetailPage({
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pendingSiteEditId, setPendingSiteEditId] = useState<number | null>(null);
 
   const activeTab = TABS[activeIndex] ?? TABS[0];
 
   const handleTabChange = (index: number) => {
     setActiveIndex(index);
   };
+
+  const handleEditSiteFromOverview = (siteId: number) => {
+    setPendingSiteEditId(siteId);
+    setActiveIndex(SITES_TAB_INDEX);
+  };
+
+  const handleInitialEditConsumed = useCallback(() => {
+    setPendingSiteEditId(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -114,10 +126,17 @@ export function ClientAccountDetailPage({
       <ClientOverviewTab
         key={`${company.id}-${company.updatedAt}`}
         company={company}
+        onEditSite={handleEditSiteFromOverview}
       />
     );
   } else if (activeTab.id === "sites") {
-    tabContent = <ClientSitesTab organizationId={company.id} />;
+    tabContent = (
+      <ClientSitesTab
+        organizationId={company.id}
+        initialEditSiteId={pendingSiteEditId}
+        onInitialEditConsumed={handleInitialEditConsumed}
+      />
+    );
   } else if (activeTab.id === "modules") {
     tabContent = (
       <ClientModulesTab

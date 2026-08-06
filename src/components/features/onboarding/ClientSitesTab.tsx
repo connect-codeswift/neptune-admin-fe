@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { SelectInput, TextInput } from "@/components/inputs";
 import {
   Button,
-  Modal,
   Table,
   TableIconAction,
   TableStatusBadge,
@@ -20,49 +18,34 @@ import {
   getSiteIndustryTypeSelectOptions,
   getSiteSizeSelectOptions,
 } from "@/lib/site-form-options";
+import {
+  ClientSiteFormFields,
+  ClientSiteFormModal,
+  EMPTY_CLIENT_SITE_FORM,
+  toClientSiteFormState,
+} from "./ClientSiteFormModal";
 import { DetailCard } from "./DetailCard";
-
-type SiteFormState = {
-  siteName: string;
-  location: string;
-  industryType: string;
-  siteSize: string;
-  timeZoneId: string;
-};
-
-const EMPTY_FORM: SiteFormState = {
-  siteName: "",
-  location: "",
-  industryType: "",
-  siteSize: "",
-  timeZoneId: "",
-};
-
-function toFormState(site?: SuperAdminSiteRow): SiteFormState {
-  if (!site) return EMPTY_FORM;
-  return {
-    siteName: site.siteName,
-    location: site.location,
-    industryType: site.industryType ?? "",
-    siteSize: site.siteSize ?? "",
-    timeZoneId: site.timeZoneId ?? "",
-  };
-}
 
 type ClientSitesTabProps = Readonly<{
   organizationId: number;
+  initialEditSiteId?: number | null;
+  onInitialEditConsumed?: () => void;
 }>;
 
-export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
+export function ClientSitesTab({
+  organizationId,
+  initialEditSiteId = null,
+  onInitialEditConsumed,
+}: ClientSitesTabProps) {
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const { data: sites = [], isLoading, isError, error, refetch } =
     useCompanySites(organizationId, includeDeleted);
   const { createSite, updateSite, removeSite } =
     useSuperAdminSiteMutations(organizationId);
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
-  const [form, setForm] = useState<SiteFormState>(EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_CLIENT_SITE_FORM);
 
   const industryTypeOptions = useMemo(
     () => getSiteIndustryTypeSelectOptions(form.industryType),
@@ -78,16 +61,32 @@ export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
   );
 
   const openCreate = () => {
-    setEditingSite(null);
-    setForm(EMPTY_FORM);
-    setModalOpen(true);
+    setForm(EMPTY_CLIENT_SITE_FORM);
+    setCreateModalOpen(true);
   };
 
   const openEdit = (site: SuperAdminSiteRow) => {
     setEditingSite(site);
-    setForm(toFormState(site));
-    setModalOpen(true);
+    setForm(toClientSiteFormState(site));
   };
+
+  const closeEdit = () => {
+    setEditingSite(null);
+    setForm(EMPTY_CLIENT_SITE_FORM);
+  };
+
+  useEffect(() => {
+    if (initialEditSiteId == null || isLoading) return;
+
+    const site = sites.find(
+      (row) => row.id === initialEditSiteId && !row.isDrop,
+    );
+    if (site) {
+      setEditingSite(site);
+      setForm(toClientSiteFormState(site));
+    }
+    onInitialEditConsumed?.();
+  }, [initialEditSiteId, isLoading, sites, onInitialEditConsumed]);
 
   const handleSave = async () => {
     if (!form.siteName.trim() || !form.location.trim()) {
@@ -107,11 +106,12 @@ export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
       if (editingSite) {
         await updateSite.mutateAsync({ siteId: editingSite.id, payload });
         toast.success("Site updated.");
+        closeEdit();
       } else {
         await createSite.mutateAsync(payload);
         toast.success("Site created.");
+        setCreateModalOpen(false);
       }
-      setModalOpen(false);
     } catch (saveError) {
       toast.error(
         saveError instanceof Error ? saveError.message : "Failed to save site.",
@@ -139,6 +139,37 @@ export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
     }
   };
 
+  if (editingSite) {
+    return (
+      <DetailCard
+        title={`Edit site — ${editingSite.siteName}`}
+        description="Update site details for this client account."
+        action={
+          <Button type="button" variant="secondary" size="sm" onClick={closeEdit}>
+            Back to sites
+          </Button>
+        }
+      >
+        <ClientSiteFormFields
+          form={form}
+          onFormChange={setForm}
+          industryTypeOptions={industryTypeOptions}
+          siteSizeOptions={siteSizeOptions}
+          timezoneOptions={timezoneOptions}
+        />
+        <div className="mt-6 flex justify-end">
+          <Button
+            type="button"
+            loading={updateSite.isPending}
+            onClick={() => void handleSave()}
+          >
+            Save changes
+          </Button>
+        </div>
+      </DetailCard>
+    );
+  }
+
   const columns: TableColumn<SuperAdminSiteRow>[] = [
     {
       id: "name",
@@ -157,6 +188,18 @@ export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
       id: "location",
       header: "Location",
       cell: (row) => <TableTextCell muted>{row.location}</TableTextCell>,
+    },
+    {
+      id: "industry",
+      header: "Industry",
+      cell: (row) => (
+        <TableTextCell>{row.industryType?.trim() || "—"}</TableTextCell>
+      ),
+    },
+    {
+      id: "size",
+      header: "Site Size",
+      cell: (row) => <TableTextCell>{row.siteSize?.trim() || "—"}</TableTextCell>,
     },
     {
       id: "timezone",
@@ -183,13 +226,20 @@ export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
     {
       id: "actions",
       header: "Actions",
+      headerClassName: "w-36",
+      className: "w-36",
       cell: (row) => (
-        <div className="flex items-center gap-1">
-          <TableIconAction
-            label={`Edit ${row.siteName}`}
-            icon="lucide:pencil"
-            onClick={row.isDrop ? undefined : () => openEdit(row)}
-          />
+        <div className="flex items-center gap-1.5">
+          {!row.isDrop ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => openEdit(row)}
+            >
+              Edit
+            </Button>
+          ) : null}
           <TableIconAction
             label={`Delete ${row.siteName}`}
             icon="lucide:trash-2"
@@ -262,60 +312,18 @@ export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
         ) : null}
       </DetailCard>
 
-      <Modal
-        open={modalOpen}
-        title={editingSite ? "Edit site" : "Add site"}
-        onClose={() => setModalOpen(false)}
-        primaryLabel={editingSite ? "Save site" : "Create site"}
-        onPrimary={() => void handleSave()}
-        loading={createSite.isPending || updateSite.isPending}
-        size="lg"
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextInput
-            label="Site name *"
-            value={form.siteName}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, siteName: event.target.value }))
-            }
-          />
-          <TextInput
-            label="Location *"
-            value={form.location}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, location: event.target.value }))
-            }
-          />
-          <SelectInput
-            label="Industry type"
-            placeholder="Select industry type"
-            options={industryTypeOptions}
-            value={form.industryType}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, industryType: value }))
-            }
-          />
-          <SelectInput
-            label="Site size"
-            placeholder="Select site size"
-            options={siteSizeOptions}
-            value={form.siteSize}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, siteSize: value }))
-            }
-          />
-          <SelectInput
-            label="Timezone (IANA)"
-            placeholder="Select timezone"
-            options={timezoneOptions}
-            value={form.timeZoneId}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, timeZoneId: value }))
-            }
-            containerClassName="sm:col-span-2"
-          />
-        </div>
-      </Modal>
+      <ClientSiteFormModal
+        open={createModalOpen}
+        editingSite={null}
+        form={form}
+        onFormChange={setForm}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={() => void handleSave()}
+        loading={createSite.isPending}
+        industryTypeOptions={industryTypeOptions}
+        siteSizeOptions={siteSizeOptions}
+        timezoneOptions={timezoneOptions}
+      />
     </>
   );
 }
