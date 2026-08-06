@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { AUTH_SESSION_EVENT } from "@/lib/auth-tokens";
 import {
   canAccessDashboard,
   getFailedAccessRedirect,
@@ -18,17 +19,31 @@ export function DashboardAuthGate({ kind, children }: DashboardAuthGateProps) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let retryTimer: number | undefined;
+
+    const denyAccess = () => {
+      setAllowed(false);
+      router.replace(getFailedAccessRedirect());
+    };
+
     const checkAccess = () => {
       if (canAccessDashboard(kind)) {
         setAllowed(true);
-        return;
+        return true;
       }
-
-      setAllowed(false);
-      router.replace(getFailedAccessRedirect(kind));
+      return false;
     };
 
-    checkAccess();
+    if (checkAccess()) {
+      return;
+    }
+
+    // Tokens may have just been written before navigation completed.
+    retryTimer = window.setTimeout(() => {
+      if (!checkAccess()) {
+        denyAccess();
+      }
+    }, 150);
 
     const handleStorage = (event: StorageEvent) => {
       if (
@@ -40,8 +55,18 @@ export function DashboardAuthGate({ kind, children }: DashboardAuthGateProps) {
       }
     };
 
+    const handleSessionUpdate = () => {
+      checkAccess();
+    };
+
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener(AUTH_SESSION_EVENT, handleSessionUpdate);
+
+    return () => {
+      if (retryTimer) window.clearTimeout(retryTimer);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(AUTH_SESSION_EVENT, handleSessionUpdate);
+    };
   }, [kind, router]);
 
   if (allowed !== true) {

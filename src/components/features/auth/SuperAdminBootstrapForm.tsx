@@ -34,7 +34,7 @@ export function SuperAdminBootstrapForm() {
       });
       assertApiSuccess(response, "Bootstrap failed.");
       toast.success("Super admin password set. You can sign in now.");
-      router.replace("/super/login");
+      router.replace("/login");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Bootstrap failed.");
     } finally {
@@ -92,7 +92,7 @@ export function SuperAdminBootstrapForm() {
 
         <div className="flex justify-center">
           <Link
-            href="/super/login"
+            href="/login"
             className="text5 text-blue-normal hover:text-blue-deep"
           >
             Back to sign in

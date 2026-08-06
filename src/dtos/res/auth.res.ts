@@ -1,5 +1,6 @@
-/** Flat body from POST /Auth/login and POST /SuperAdminAuth/login. */
+/** Flat body from POST /Auth/login, POST /AdminPortalAuth/login, and POST /SuperAdminAuth/login. */
 export type LoginResponse = {
+  accountType?: "staff" | "tenant";
   mfaRequired?: boolean;
   mfaSetupRequired?: boolean;
   mfaToken?: string;

@@ -24,6 +24,7 @@ import {
   setAuthToken,
   setOrgToken,
 } from "@/lib/auth-tokens";
+import { extractAccessToken } from "@/lib/auth-response";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiResponse } from "@/types/api.types";
 
@@ -46,11 +47,12 @@ export async function superAdminVerifyMfa(payload: VerifyMfaPayload) {
     "/SuperAdminAuth/verify-mfa",
     payload,
   );
-  if (data.accessToken) {
-    setAuthToken(data.accessToken);
+  const accessToken = extractAccessToken(data);
+  if (accessToken) {
+    setAuthToken(accessToken);
     setAuthRole("super-admin");
   }
-  return data;
+  return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
 /** POST /SuperAdminAuth/mfa/setup */
@@ -68,11 +70,12 @@ export async function superAdminMfaEnable(payload: VerifyMfaPayload) {
     "/SuperAdminAuth/mfa/enable",
     payload,
   );
-  if (data.accessToken) {
-    setAuthToken(data.accessToken);
+  const accessToken = extractAccessToken(data);
+  if (accessToken) {
+    setAuthToken(accessToken);
     setAuthRole("super-admin");
   }
-  return data;
+  return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
 export type GetSuperAdminCompaniesParams = {

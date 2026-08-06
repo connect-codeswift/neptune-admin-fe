@@ -6,7 +6,7 @@ import { useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { EmailInput, OtpInput, PasswordInput } from "@/components/inputs";
 import { Button, TextButton } from "@/components/ui";
-import { getAuthFlow, type AuthFlowKind } from "@/lib/auth-flow";
+import { PORTAL_AUTH } from "@/lib/auth-flow";
 import { assertApiSuccess } from "@/lib/api-response";
 import {
   superAdminForgotPassword,
@@ -16,14 +16,9 @@ import { AuthFormHeader } from "./AuthFormChrome";
 
 const RESET_FAILURE_MESSAGE = "Invalid or expired verification code.";
 
-type ResetPasswordFormProps = Readonly<{
-  flow: AuthFlowKind;
-}>;
-
-export function ResetPasswordForm({ flow }: ResetPasswordFormProps) {
+export function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const authFlow = getAuthFlow(flow);
   const initialEmail = searchParams.get("email") ?? "";
 
   const [email, setEmail] = useState(initialEmail);
@@ -35,11 +30,6 @@ export function ResetPasswordForm({ flow }: ResetPasswordFormProps) {
 
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (flow !== "super") {
-      toast.message("Password update is not wired yet.");
-      return;
-    }
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
@@ -60,7 +50,7 @@ export function ResetPasswordForm({ flow }: ResetPasswordFormProps) {
       });
       assertApiSuccess(response, RESET_FAILURE_MESSAGE);
       toast.success("Password updated. Sign in with your new password.");
-      router.replace(authFlow.loginPath);
+      router.replace(PORTAL_AUTH.loginPath);
     } catch {
       toast.error(RESET_FAILURE_MESSAGE);
     } finally {
@@ -167,7 +157,7 @@ export function ResetPasswordForm({ flow }: ResetPasswordFormProps) {
 
         <div className="mt-4 flex justify-center">
           <Link
-            href={authFlow.loginPath}
+            href={PORTAL_AUTH.loginPath}
             className="text5 text-blue-normal hover:text-blue-deep"
           >
             Back to sign in
