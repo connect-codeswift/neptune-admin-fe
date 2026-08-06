@@ -6,57 +6,95 @@ import { useEffect, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { OtpInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
+import { extractAccessToken } from "@/lib/auth-response";
+import {
+  getAuthToken,
+  getOrgToken,
+  setAuthRole,
+  setAuthToken,
+  setOrgToken,
+} from "@/lib/auth-tokens";
 import {
   clearMfaToken,
-  getAuthFlow,
   getMfaToken,
-  type AuthFlowKind,
+  PORTAL_AUTH,
 } from "@/lib/auth-flow";
+import {
+  getPortalAccountType,
+  getPortalMfaConfig,
+  type PortalAccountType,
+} from "@/lib/portal-auth";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
-type MfaVerifyFormProps = Readonly<{
-  flow: AuthFlowKind;
-}>;
+function persistSession(accountType: PortalAccountType, accessToken: string) {
+  if (accountType === "staff") {
+    setAuthToken(accessToken);
+    setAuthRole("super-admin");
+    return;
+  }
 
-export function MfaVerifyForm({ flow }: MfaVerifyFormProps) {
+  setOrgToken(accessToken);
+  setAuthRole("admin");
+}
+
+function hasPersistedSession(accountType: PortalAccountType): boolean {
+  return accountType === "staff"
+    ? Boolean(getAuthToken())
+    : Boolean(getOrgToken());
+}
+
+export function MfaVerifyForm() {
   const router = useRouter();
-  const authFlow = getAuthFlow(flow);
   const [storedMfaToken] = useState(() => getMfaToken());
+  const [accountType] = useState(() => getPortalAccountType());
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!storedMfaToken) {
-      router.replace(authFlow.loginPath);
+    if (!storedMfaToken || !accountType) {
+      router.replace(PORTAL_AUTH.loginPath);
     }
-  }, [authFlow.loginPath, router, storedMfaToken]);
+  }, [accountType, router, storedMfaToken]);
 
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!storedMfaToken || code.length !== 6) return;
+    if (!storedMfaToken || !accountType || code.length !== 6) return;
+
+    const mfaConfig = getPortalMfaConfig(accountType);
 
     setLoading(true);
     try {
-      const response = await authFlow.verifyMfa({
+      const response = await mfaConfig.verifyMfa({
         mfaToken: storedMfaToken,
         code,
       });
+
+      const accessToken = extractAccessToken(response);
+      if (!accessToken) {
+        toast.error("Session was not issued. Please sign in again.");
+        return;
+      }
+
+      if (!hasPersistedSession(accountType)) {
+        persistSession(accountType, accessToken);
+      }
+
       clearMfaToken();
-      router.replace(authFlow.resolveDashboardPath(response.accessToken));
+      window.location.assign(mfaConfig.resolveDashboardPath(accessToken));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Verification failed.";
       toast.error(message);
       if (message.toLowerCase().includes("expired")) {
         clearMfaToken();
-        router.replace(authFlow.loginPath);
+        router.replace(PORTAL_AUTH.loginPath);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  if (!storedMfaToken) {
+  if (!storedMfaToken || !accountType) {
     return null;
   }
 
@@ -88,7 +126,7 @@ export function MfaVerifyForm({ flow }: MfaVerifyFormProps) {
         </Button>
 
         <Link
-          href={authFlow.loginPath}
+          href={PORTAL_AUTH.loginPath}
           onClick={() => clearMfaToken()}
           className="text-center text5 text-blue-normal hover:text-blue-deep"
         >

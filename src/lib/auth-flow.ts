@@ -1,76 +1,38 @@
-import type { LoginPayload, OrgEnableMfaPayload, VerifyMfaPayload } from "@/dtos/req/auth.req";
-import type {
-  LoginResponse,
-  MfaEnableResponse,
-  MfaSetupResponse,
-  VerifyMfaResponse,
-} from "@/dtos/res/auth.res";
-import { getOrgDashboardPath } from "@/lib/auth-redirect";
-import { clearAuthTokens, clearMfaToken, isSuperAdminRole } from "@/lib/auth-tokens";
-import {
-  orgLogin,
-  orgMfaEnable,
-  orgMfaSetup,
-  orgVerifyMfa,
-} from "@/services/org-auth.service";
-import {
-  superAdminLogin,
-  superAdminMfaEnable,
-  superAdminMfaSetup,
-  superAdminVerifyMfa,
-} from "@/services/super-admin-auth.service";
+import type { LoginPayload } from "@/dtos/req/auth.req";
+import type { LoginResponse } from "@/dtos/res/auth.res";
+import { clearAuthTokens, clearMfaToken as clearStoredMfaToken } from "@/lib/auth-tokens";
+import { clearPortalAccountType } from "@/lib/portal-auth";
+import { portalLogin } from "@/services/admin-portal-auth.service";
 
+export const PORTAL_AUTH = {
+  loginPath: "/login",
+  mfaPath: "/login/mfa",
+  mfaSetupPath: "/login/mfa-setup",
+  forgotPasswordPath: "/forgot-password",
+  resetPasswordPath: "/reset-password",
+  login: portalLogin,
+} as const;
+
+export type PortalAuthConfig = typeof PORTAL_AUTH & {
+  login: (payload: LoginPayload) => Promise<LoginResponse>;
+};
+
+/** @deprecated Use PORTAL_AUTH */
+export const AUTH_FLOWS = {
+  org: PORTAL_AUTH,
+  super: PORTAL_AUTH,
+} as const;
+
+/** @deprecated Use PortalAuthConfig */
 export type AuthFlowKind = "org" | "super";
 
-export type AuthFlowConfig = {
-  loginPath: string;
-  mfaPath: string;
-  mfaSetupPath: string;
-  forgotPasswordPath: string;
-  resetPasswordPath: string;
-  resolveDashboardPath: (accessToken: string) => string;
-  login: (payload: LoginPayload) => Promise<LoginResponse>;
-  verifyMfa: (payload: VerifyMfaPayload) => Promise<VerifyMfaResponse>;
-  mfaSetup: (mfaToken: string) => Promise<MfaSetupResponse>;
-  mfaEnable: (mfaToken: string, code: string) => Promise<MfaEnableResponse>;
-};
-
-export const AUTH_FLOWS: Record<AuthFlowKind, AuthFlowConfig> = {
-  org: {
-    loginPath: "/login",
-    mfaPath: "/login/mfa",
-    mfaSetupPath: "/login/mfa-setup",
-    forgotPasswordPath: "/forgot-password",
-    resetPasswordPath: "/reset-password",
-    resolveDashboardPath: getOrgDashboardPath,
-    login: orgLogin,
-    verifyMfa: orgVerifyMfa,
-    mfaSetup: orgMfaSetup,
-    mfaEnable: orgMfaEnable,
-  },
-  super: {
-    loginPath: "/super/login",
-    mfaPath: "/super/login/mfa",
-    mfaSetupPath: "/super/login/mfa-setup",
-    forgotPasswordPath: "/super/forgot-password",
-    resetPasswordPath: "/super/reset-password",
-    resolveDashboardPath: () => "/super/dashboard",
-    login: superAdminLogin,
-    verifyMfa: superAdminVerifyMfa,
-    mfaSetup: (mfaToken) => superAdminMfaSetup({ mfaToken }),
-    mfaEnable: (mfaToken, code) => superAdminMfaEnable({ mfaToken, code }),
-  },
-};
-
-export function getAuthFlow(kind: AuthFlowKind): AuthFlowConfig {
-  return AUTH_FLOWS[kind];
+/** @deprecated Use PORTAL_AUTH */
+export function getAuthFlow(): PortalAuthConfig {
+  return PORTAL_AUTH;
 }
 
-/** Login path after sign-out; read role before clearing tokens. */
 export function getLogoutLoginPath(): string {
-  return isSuperAdminRole()
-    ? AUTH_FLOWS.super.loginPath
-    : AUTH_FLOWS.org.loginPath;
+  return PORTAL_AUTH.loginPath;
 }
 
 export function logoutSession() {
@@ -78,8 +40,12 @@ export function logoutSession() {
   clearAuthTokens();
 }
 
+export function clearMfaToken() {
+  clearStoredMfaToken();
+  clearPortalAccountType();
+}
+
 export {
-  clearMfaToken,
   getMfaToken,
   setMfaToken,
 } from "@/lib/auth-tokens";

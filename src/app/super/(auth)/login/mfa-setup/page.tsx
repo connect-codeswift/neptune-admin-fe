@@ -1,5 +1,5 @@
-import { MfaSetupForm } from "@/components/features/auth/MfaSetupForm";
+import { redirect } from "next/navigation";
 
-export default function SuperAdminMfaSetupPage() {
-  return <MfaSetupForm flow="super" />;
+export default function SuperLoginMfaSetupRedirectPage() {
+  redirect("/login/mfa-setup");
 }

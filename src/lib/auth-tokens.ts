@@ -6,9 +6,17 @@ const AUTH_EMAIL_KEY = "neptune_admin_email";
 
 export type StoredAuthRole = "super-admin" | "admin";
 
+export const AUTH_SESSION_EVENT = "neptune:auth-session-updated";
+
+function notifyAuthSessionUpdated() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(AUTH_SESSION_EVENT));
+}
+
 export function setAuthToken(token: string) {
   if (typeof window === "undefined" || !token) return;
   window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+  notifyAuthSessionUpdated();
 }
 
 export function getAuthToken(): string | null {
@@ -19,6 +27,7 @@ export function getAuthToken(): string | null {
 export function setOrgToken(token: string) {
   if (typeof window === "undefined" || !token) return;
   window.localStorage.setItem(ORG_TOKEN_KEY, token);
+  notifyAuthSessionUpdated();
 }
 
 export function getOrgToken(): string | null {
@@ -61,6 +70,7 @@ export function forceLogoutRedirect(loginPath: string) {
 export function setAuthRole(role: StoredAuthRole) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(AUTH_ROLE_KEY, role);
+  notifyAuthSessionUpdated();
 }
 
 export function getAuthRole(): StoredAuthRole | null {
@@ -106,6 +116,7 @@ export function getMfaToken(): string | null {
 export function clearMfaToken() {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(MFA_TOKEN_KEY);
+  window.sessionStorage.removeItem("neptune_admin_portal_account_type");
 }
 
 export function getStoredBearerToken(): string | null {

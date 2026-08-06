@@ -6,23 +6,30 @@ import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { OtpInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
+import { extractAccessToken } from "@/lib/auth-response";
+import {
+  getAuthToken,
+  getOrgToken,
+  setAuthRole,
+  setAuthToken,
+  setOrgToken,
+} from "@/lib/auth-tokens";
 import {
   clearMfaToken,
-  getAuthFlow,
   getMfaToken,
-  type AuthFlowKind,
+  PORTAL_AUTH,
 } from "@/lib/auth-flow";
+import {
+  getPortalAccountType,
+  getPortalMfaConfig,
+} from "@/lib/portal-auth";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
-type MfaSetupFormProps = Readonly<{
-  flow: AuthFlowKind;
-}>;
-
-export function MfaSetupForm({ flow }: MfaSetupFormProps) {
+export function MfaSetupForm() {
   const router = useRouter();
-  const authFlow = getAuthFlow(flow);
   const setupStarted = useRef(false);
   const [storedMfaToken] = useState(() => getMfaToken());
+  const [accountType] = useState(() => getPortalAccountType());
   const [mfaSecret, setMfaSecret] = useState("");
   const [otpAuthUri, setOtpAuthUri] = useState("");
   const [code, setCode] = useState("");
@@ -31,17 +38,17 @@ export function MfaSetupForm({ flow }: MfaSetupFormProps) {
   const [setupError, setSetupError] = useState<string | null>(null);
 
   useEffect(() => {
-    const flowConfig = getAuthFlow(flow);
-
-    if (!storedMfaToken) {
-      router.replace(flowConfig.loginPath);
+    if (!storedMfaToken || !accountType) {
+      router.replace(PORTAL_AUTH.loginPath);
       return;
     }
 
     if (setupStarted.current) return;
     setupStarted.current = true;
 
-    flowConfig
+    const mfaConfig = getPortalMfaConfig(accountType);
+
+    mfaConfig
       .mfaSetup(storedMfaToken)
       .then((response) => {
         setMfaSecret(response.mfaSecret);
@@ -54,31 +61,48 @@ export function MfaSetupForm({ flow }: MfaSetupFormProps) {
         toast.error(message);
       })
       .finally(() => setLoadingSetup(false));
-  }, [flow, router, storedMfaToken]);
+  }, [accountType, router, storedMfaToken]);
 
   const handleEnable = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!storedMfaToken || code.length !== 6) return;
+    if (!storedMfaToken || !accountType || code.length !== 6) return;
+
+    const mfaConfig = getPortalMfaConfig(accountType);
 
     setLoadingEnable(true);
     try {
-      const response = await authFlow.mfaEnable(storedMfaToken, code);
+      const response = await mfaConfig.mfaEnable(storedMfaToken, code);
+      const accessToken = extractAccessToken(response);
+      if (!accessToken) {
+        toast.error("Session was not issued. Please sign in again.");
+        return;
+      }
+
+      if (accountType === "staff" && !getAuthToken()) {
+        setAuthToken(accessToken);
+        setAuthRole("super-admin");
+      }
+      if (accountType === "tenant" && !getOrgToken()) {
+        setOrgToken(accessToken);
+        setAuthRole("admin");
+      }
+
       clearMfaToken();
-      router.replace(authFlow.resolveDashboardPath(response.accessToken));
+      window.location.assign(mfaConfig.resolveDashboardPath(accessToken));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Could not enable MFA.";
       toast.error(message);
       if (message.toLowerCase().includes("expired")) {
         clearMfaToken();
-        router.replace(authFlow.loginPath);
+        router.replace(PORTAL_AUTH.loginPath);
       }
     } finally {
       setLoadingEnable(false);
     }
   };
 
-  if (!storedMfaToken) {
+  if (!storedMfaToken || !accountType) {
     return null;
   }
 
@@ -149,7 +173,7 @@ export function MfaSetupForm({ flow }: MfaSetupFormProps) {
         ) : null}
 
         <Link
-          href={authFlow.loginPath}
+          href={PORTAL_AUTH.loginPath}
           onClick={() => clearMfaToken()}
           className="text-center text5 text-blue-normal hover:text-blue-deep"
         >

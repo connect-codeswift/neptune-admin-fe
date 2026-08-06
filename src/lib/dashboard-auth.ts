@@ -1,11 +1,12 @@
 import {
-  getAuthRole,
   getAuthToken,
   getOrgToken,
   isSuperAdminRole,
 } from "@/lib/auth-tokens";
 
 export type DashboardKind = "super" | "org";
+
+const LOGIN_PATH = "/login";
 
 export function canAccessSuperDashboard(): boolean {
   return Boolean(getAuthToken()) && isSuperAdminRole();
@@ -18,16 +19,8 @@ export function canAccessOrgDashboard(): boolean {
   return Boolean(getOrgToken());
 }
 
-export function getDashboardLoginRedirect(kind: DashboardKind): string {
-  if (kind === "super") {
-    return "/super/login";
-  }
-
-  if (isSuperAdminRole()) {
-    return "/super/login";
-  }
-
-  return "/login";
+export function getDashboardLoginRedirect(): string {
+  return LOGIN_PATH;
 }
 
 export function canAccessDashboard(kind: DashboardKind): boolean {
@@ -37,15 +30,6 @@ export function canAccessDashboard(kind: DashboardKind): boolean {
 }
 
 /** Redirect target when access check fails for the given dashboard kind. */
-export function getFailedAccessRedirect(kind: DashboardKind): string {
-  if (kind === "super") {
-    return "/super/login";
-  }
-
-  const role = getAuthRole();
-  if (role === "super-admin") {
-    return "/super/login";
-  }
-
-  return "/login";
+export function getFailedAccessRedirect(): string {
+  return LOGIN_PATH;
 }

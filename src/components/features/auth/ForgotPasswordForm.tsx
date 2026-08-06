@@ -6,29 +6,19 @@ import { useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 import { EmailInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
-import { getAuthFlow, type AuthFlowKind } from "@/lib/auth-flow";
+import { PORTAL_AUTH } from "@/lib/auth-flow";
 import { assertApiSuccess } from "@/lib/api-response";
 import { superAdminForgotPassword } from "@/services/super-admin-auth.service";
 import { AuthFormHeader } from "./AuthFormChrome";
 
-type ForgotPasswordFormProps = Readonly<{
-  flow: AuthFlowKind;
-}>;
-
-export function ForgotPasswordForm({ flow }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm() {
   const router = useRouter();
-  const authFlow = getAuthFlow(flow);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (flow !== "super") {
-      toast.message("Password reset is not wired yet.");
-      return;
-    }
 
     setLoading(true);
     try {
@@ -46,7 +36,7 @@ export function ForgotPasswordForm({ flow }: ForgotPasswordFormProps) {
 
   const handleContinue = () => {
     const params = new URLSearchParams({ email: email.trim() });
-    router.push(`${authFlow.resetPasswordPath}?${params.toString()}`);
+    router.push(`${PORTAL_AUTH.resetPasswordPath}?${params.toString()}`);
   };
 
   if (submitted) {
@@ -71,7 +61,7 @@ export function ForgotPasswordForm({ flow }: ForgotPasswordFormProps) {
 
           <div className="flex justify-center">
             <Link
-              href={authFlow.loginPath}
+              href={PORTAL_AUTH.loginPath}
               className="text5 text-blue-normal hover:text-blue-deep"
             >
               Back to sign in
@@ -114,7 +104,7 @@ export function ForgotPasswordForm({ flow }: ForgotPasswordFormProps) {
 
         <div className="mt-4 flex justify-center">
           <Link
-            href={authFlow.loginPath}
+            href={PORTAL_AUTH.loginPath}
             className="text5 text-blue-normal hover:text-blue-deep"
           >
             Back to sign in
