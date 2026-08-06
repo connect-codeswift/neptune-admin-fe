@@ -27,21 +27,6 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/client-accounts",
     icon: "lucide:briefcase",
   },
-  {
-    label: "Pricing",
-    href: "/pricing",
-    icon: "lucide:tag",
-  },
-  {
-    label: "Subscriptions",
-    href: "/subscriptions",
-    icon: "lucide:credit-card",
-  },
-  {
-    label: "Writing Assistant",
-    href: "/chatbot",
-    icon: "lucide:sparkles",
-  },
 ];
 
 export function getSuperAdminNavSections(): SidebarNavSection[] {

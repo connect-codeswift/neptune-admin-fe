@@ -19,7 +19,9 @@ import {
   useSuperAdminUserStats,
   useSuperAdminUsers,
 } from "@/hooks/useSuperAdminUsers";
+import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import type { UserListItem } from "@/lib/mappers/users.mapper";
+import { toSeatLimitInfo } from "@/lib/organization-limits";
 import {
   buildOrgSitePath,
   getAllSitesOfThisOrg,
@@ -29,7 +31,6 @@ import {
   parseOrgSitePath,
 } from "@/lib/sidebar-items";
 import { SubscriptionSeatLimitModal } from "./SubscriptionSeatLimitModal";
-import { useSubscriptionSeats } from "./useSubscriptionSeats";
 
 const PAGE_SIZE = 20;
 
@@ -99,7 +100,14 @@ export function UserManagementPage() {
   const router = useRouter();
   const pathname = usePathname();
   const orgSite = parseOrgSitePath(pathname);
-  const { atSeatLimit, seatInfo } = useSubscriptionSeats();
+  const organizationId = orgSite ? Number(orgSite.company) : undefined;
+  const { data: company } = useClientAccountDetail(
+    Number.isFinite(organizationId) && organizationId! > 0
+      ? organizationId
+      : undefined,
+  );
+  const seatInfo = company ? toSeatLimitInfo(company) : null;
+  const atSeatLimit = company?.atSeatLimit ?? false;
   const [seatLimitModalOpen, setSeatLimitModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [siteFilter, setSiteFilter] = useState("");
@@ -285,11 +293,7 @@ export function UserManagementPage() {
           seatInfo={seatInfo}
           onClose={() => setSeatLimitModalOpen(false)}
           onContactSales={() => {
-            toast.info("Sales team will contact you shortly.");
-            setSeatLimitModalOpen(false);
-          }}
-          onManageSubscription={() => {
-            toast.info("Opening subscription management.");
+            toast.info("Contact CodeSwift to increase your seat allowance.");
             setSeatLimitModalOpen(false);
           }}
         />

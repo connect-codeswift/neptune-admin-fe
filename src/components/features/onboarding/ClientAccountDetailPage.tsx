@@ -2,7 +2,7 @@
 
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { TabBar } from "@/components/ui";
 import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import { clearOrgSession } from "@/lib/auth-tokens";
@@ -10,13 +10,16 @@ import { ClientModulesTab } from "./ClientModulesTab";
 import { ClientOverviewTab } from "./ClientOverviewTab";
 import { ClientSitesTab } from "./ClientSitesTab";
 import { ClientSubscriptionTab } from "./ClientSubscriptionTab";
+import { ClientAccessWindowActions } from "./ClientAccessWindowPanel";
 
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "sites", label: "Sites" },
   { id: "modules", label: "Modules" },
-  { id: "subscription", label: "Subscription" },
+  { id: "access", label: "Access & Limits" },
 ] as const;
+
+const SITES_TAB_INDEX = TABS.findIndex((tab) => tab.id === "sites");
 
 export function ClientAccountDetailPage({
   clientId,
@@ -32,12 +35,22 @@ export function ClientAccountDetailPage({
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pendingSiteEditId, setPendingSiteEditId] = useState<number | null>(null);
 
   const activeTab = TABS[activeIndex] ?? TABS[0];
 
   const handleTabChange = (index: number) => {
     setActiveIndex(index);
   };
+
+  const handleEditSiteFromOverview = (siteId: number) => {
+    setPendingSiteEditId(siteId);
+    setActiveIndex(SITES_TAB_INDEX);
+  };
+
+  const handleInitialEditConsumed = useCallback(() => {
+    setPendingSiteEditId(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -55,54 +68,6 @@ export function ClientAccountDetailPage({
     );
   }
 
-  const subscriptionClient = {
-    id: String(company.id),
-    name: company.name,
-    industry: company.industry ?? "—",
-    assignedCsm: "—",
-    code: company.code ?? String(company.id),
-    contractStart: company.createdAt,
-    legalName: company.legalName ?? company.name,
-    website: company.website ?? "",
-    employeeCount: company.employeeCount ?? 0,
-    siteCount: company.siteCount,
-    complianceZone: company.complianceZone ?? "—",
-    primaryContact: {
-      initials: (company.primaryContactName ?? company.name)
-        .split(/\s+/)
-        .map((part) => part.charAt(0))
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-      name: company.primaryContactName ?? "—",
-      title: company.primaryContactTitle ?? "—",
-      email: company.primaryContactEmail ?? "—",
-      phone: company.primaryContactPhone ?? "—",
-    },
-    contract: {
-      planType: "—",
-      period: "—",
-      licenseSeats: "—",
-      assignedCsm: "—",
-    },
-    employeeData: {
-      fileName: "—",
-      status: "Uploaded" as const,
-      lastUpdated: "—",
-    },
-    sites: [],
-    subscription: {
-      statusLabel: "No subscription",
-      planType: "—",
-      trialStartDate: "—",
-      trialEndDate: "—",
-      daysRemaining: company.daysRemaining ?? 0,
-      billingContact: "—",
-      seats: { used: company.userCount, total: company.userCount },
-      history: [],
-    },
-  };
-
   let tabContent = (
     <div className="rounded-[20px] border border-white bg-white/62 px-6 py-10 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
       {activeTab.label} content coming soon.
@@ -114,10 +79,20 @@ export function ClientAccountDetailPage({
       <ClientOverviewTab
         key={`${company.id}-${company.updatedAt}`}
         company={company}
+        onEditSite={handleEditSiteFromOverview}
       />
     );
   } else if (activeTab.id === "sites") {
-    tabContent = <ClientSitesTab organizationId={company.id} />;
+    tabContent = (
+      <ClientSitesTab
+        organizationId={company.id}
+        maxSites={company.maxSites}
+        sitesUsed={company.sitesUsed}
+        atSiteLimit={company.atSiteLimit}
+        initialEditSiteId={pendingSiteEditId}
+        onInitialEditConsumed={handleInitialEditConsumed}
+      />
+    );
   } else if (activeTab.id === "modules") {
     tabContent = (
       <ClientModulesTab
@@ -125,8 +100,23 @@ export function ClientAccountDetailPage({
         company={company}
       />
     );
-  } else if (activeTab.id === "subscription") {
-    tabContent = <ClientSubscriptionTab client={subscriptionClient} />;
+  } else if (activeTab.id === "access") {
+    tabContent = (
+      <ClientSubscriptionTab
+        organizationId={company.id}
+        companyName={company.name}
+        accessExpiresAt={company.accessExpiresAt}
+        daysRemaining={company.daysRemaining}
+        maxSeats={company.maxSeats}
+        maxSites={company.maxSites}
+        seatsUsed={company.seatsUsed}
+        sitesUsed={company.sitesUsed}
+        seatsAvailable={company.seatsAvailable}
+        sitesAvailable={company.sitesAvailable}
+        atSeatLimit={company.atSeatLimit}
+        atSiteLimit={company.atSiteLimit}
+      />
+    );
   }
 
   return (
@@ -146,6 +136,15 @@ export function ClientAccountDetailPage({
             .filter(Boolean)
             .join(" · ") || `Organization ID ${company.id}`}
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <ClientAccessWindowActions
+            organizationId={company.id}
+            companyName={company.name}
+            accessExpiresAt={company.accessExpiresAt}
+            daysRemaining={company.daysRemaining}
+            size="md"
+          />
+        </div>
       </header>
 
       <TabBar

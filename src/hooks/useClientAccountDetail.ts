@@ -1,13 +1,24 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { UpdateCompanyProfilePayload } from "@/dtos/req/companies.req";
-import type { SuperAdminCompanyDetailResponse } from "@/dtos/res/companies.res";
+import type { SetAccessWindowPayload, SetOrganizationLimitsPayload, UpdateCompanyProfilePayload } from "@/dtos/req/companies.req";
+import type {
+  AccessHistoryRow,
+  AccessWindowResponse,
+  LimitHistoryRow,
+  OrganizationLimitsResponse,
+  SuperAdminCompanyDetailResponse,
+} from "@/dtos/res/companies.res";
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
 import { assertApiSuccess, unwrapDataModel, unwrapList } from "@/lib/api-response";
 import {
+  clearCompanyAccessWindow,
+  getCompanyAccessHistory,
   getCompanyById,
   getCompanySites,
+  getOrganizationLimitsHistory,
+  setCompanyAccessWindow,
+  setOrganizationLimits,
   updateCompany,
   updateCompanyModules,
 } from "@/services/companies.service";
@@ -28,6 +39,40 @@ export function companySitesQueryKey(
     "sites",
     includeDeleted,
   ] as const;
+}
+
+export function companyAccessHistoryQueryKey(organizationId: number | string) {
+  return ["super-admin", "companies", organizationId, "access-history"] as const;
+}
+
+export function companyLimitsHistoryQueryKey(organizationId: number | string) {
+  return ["super-admin", "companies", organizationId, "limits-history"] as const;
+}
+
+function invalidateCompanyAccessQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  organizationId: number,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: clientAccountDetailQueryKey(organizationId),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: companyAccessHistoryQueryKey(organizationId),
+  });
+  void queryClient.invalidateQueries({ queryKey: SUPER_ADMIN_COMPANIES_KEY });
+}
+
+function invalidateCompanyLimitsQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  organizationId: number,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: clientAccountDetailQueryKey(organizationId),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: companyLimitsHistoryQueryKey(organizationId),
+  });
+  void queryClient.invalidateQueries({ queryKey: SUPER_ADMIN_COMPANIES_KEY });
 }
 
 async function fetchCompanyDetail(
@@ -108,6 +153,135 @@ export function useUpdateCompanyModules(organizationId: number) {
         queryKey: clientAccountDetailQueryKey(organizationId),
       });
       void queryClient.invalidateQueries({ queryKey: SUPER_ADMIN_COMPANIES_KEY });
+    },
+  });
+}
+
+async function fetchCompanyAccessHistory(
+  organizationId: number,
+): Promise<AccessHistoryRow[]> {
+  const response = await getCompanyAccessHistory(organizationId);
+  assertApiSuccess(response, "Failed to load access history.");
+  const model = response.dataModel;
+  if (Array.isArray(model)) {
+    return model;
+  }
+  return unwrapList<AccessHistoryRow>(response);
+}
+
+export function useCompanyAccessHistory(
+  organizationId?: number,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: companyAccessHistoryQueryKey(organizationId ?? "none"),
+    queryFn: () => fetchCompanyAccessHistory(organizationId!),
+    enabled:
+      (options?.enabled ?? true) &&
+      typeof organizationId === "number" &&
+      organizationId > 0,
+  });
+}
+
+export function useSetAccessWindow(organizationId?: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: SetAccessWindowPayload) => {
+      if (organizationId == null || organizationId <= 0) {
+        throw new Error("Organization id is required.");
+      }
+      const response = await setCompanyAccessWindow(organizationId, payload);
+      assertApiSuccess(response, "Failed to set access window.");
+      return unwrapDataModel<AccessWindowResponse>(response);
+    },
+    onSuccess: () => {
+      if (organizationId != null && organizationId > 0) {
+        invalidateCompanyAccessQueries(queryClient, organizationId);
+      }
+    },
+  });
+}
+
+export function useSetAccessWindowMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      organizationId,
+      ...payload
+    }: SetAccessWindowPayload & { organizationId: number }) => {
+      const response = await setCompanyAccessWindow(organizationId, payload);
+      assertApiSuccess(response, "Failed to set access window.");
+      return organizationId;
+    },
+    onSuccess: (organizationId) => {
+      invalidateCompanyAccessQueries(queryClient, organizationId);
+    },
+  });
+}
+
+export function useClearAccessWindow(organizationId?: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (organizationId == null || organizationId <= 0) {
+        throw new Error("Organization id is required.");
+      }
+      const response = await clearCompanyAccessWindow(organizationId);
+      assertApiSuccess(response, "Failed to clear access window.");
+    },
+    onSuccess: () => {
+      if (organizationId != null && organizationId > 0) {
+        invalidateCompanyAccessQueries(queryClient, organizationId);
+      }
+    },
+  });
+}
+
+async function fetchOrganizationLimitsHistory(
+  organizationId: number,
+): Promise<LimitHistoryRow[]> {
+  const response = await getOrganizationLimitsHistory(organizationId);
+  assertApiSuccess(response, "Failed to load limits history.");
+  const model = response.dataModel;
+  if (Array.isArray(model)) {
+    return model;
+  }
+  return unwrapList<LimitHistoryRow>(response);
+}
+
+export function useOrganizationLimitsHistory(
+  organizationId?: number,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: companyLimitsHistoryQueryKey(organizationId ?? "none"),
+    queryFn: () => fetchOrganizationLimitsHistory(organizationId!),
+    enabled:
+      (options?.enabled ?? true) &&
+      typeof organizationId === "number" &&
+      organizationId > 0,
+  });
+}
+
+export function useSetOrganizationLimits(organizationId?: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: SetOrganizationLimitsPayload) => {
+      if (organizationId == null || organizationId <= 0) {
+        throw new Error("Organization id is required.");
+      }
+      const response = await setOrganizationLimits(organizationId, payload);
+      assertApiSuccess(response, "Failed to update organization limits.");
+      return unwrapDataModel<OrganizationLimitsResponse>(response);
+    },
+    onSuccess: () => {
+      if (organizationId != null && organizationId > 0) {
+        invalidateCompanyLimitsQueries(queryClient, organizationId);
+      }
     },
   });
 }

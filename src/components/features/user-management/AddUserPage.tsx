@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import { SubscriptionSeatLimitModal } from "@/components/features/user-management/SubscriptionSeatLimitModal";
 import {
   EmailInput,
   PhoneInput,
@@ -12,14 +13,28 @@ import {
 } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
+import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import { useInviteSuperAdminUser } from "@/hooks/useSuperAdminUserMutations";
 import { useUserFormOptions } from "@/hooks/useUserFormOptions";
 import { GENDER_OPTIONS } from "@/lib/gender-options";
+import { toSeatLimitInfo } from "@/lib/organization-limits";
+import { parseOrgSitePath } from "@/lib/sidebar-items";
 import { useUserManagementPaths } from "./useUserManagementPaths";
 
 export function AddUserPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { adminHref, basePath } = useUserManagementPaths();
+  const orgSite = parseOrgSitePath(pathname);
+  const organizationId = orgSite ? Number(orgSite.company) : undefined;
+  const { data: company } = useClientAccountDetail(
+    Number.isFinite(organizationId) && organizationId! > 0
+      ? organizationId
+      : undefined,
+  );
+  const seatInfo = company ? toSeatLimitInfo(company) : null;
+  const atSeatLimit = company?.atSeatLimit ?? false;
+
   const inviteMutation = useInviteSuperAdminUser();
   const { roleOptions, siteOptions, defaultSiteId, rolesLoading } =
     useUserFormOptions();
@@ -32,6 +47,9 @@ export function AddUserPage() {
   const [siteId, setSiteId] = useState(defaultSiteId);
 
   const handleCreate = async () => {
+    if (atSeatLimit && seatInfo) {
+      return;
+    }
     if (!email.trim()) {
       toast.error("Email is required.");
       return;
@@ -77,7 +95,7 @@ export function AddUserPage() {
               size="sm"
               leftIcon="lucide:user-plus"
               onClick={() => void handleCreate()}
-              disabled={inviteMutation.isPending || rolesLoading}
+              disabled={inviteMutation.isPending || rolesLoading || atSeatLimit}
             >
               {inviteMutation.isPending ? "Adding…" : "Add User"}
             </Button>
@@ -129,6 +147,17 @@ export function AddUserPage() {
           />
         </div>
       </DetailCard>
+
+      {seatInfo && atSeatLimit ? (
+        <SubscriptionSeatLimitModal
+          open
+          seatInfo={seatInfo}
+          onClose={() => router.push(basePath)}
+          onContactSales={() => {
+            toast.info("Contact CodeSwift to increase your seat allowance.");
+          }}
+        />
+      ) : null}
     </div>
   );
 }
