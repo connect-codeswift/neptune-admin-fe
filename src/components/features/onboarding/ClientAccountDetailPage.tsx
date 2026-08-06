@@ -2,12 +2,10 @@
 
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { TabBar } from "@/components/ui";
 import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
-import { getOrgToken } from "@/lib/auth-tokens";
-import { enterOrganization } from "@/lib/select-company-flow";
+import { clearOrgSession } from "@/lib/auth-tokens";
 import { ClientModulesTab } from "./ClientModulesTab";
 import { ClientOverviewTab } from "./ClientOverviewTab";
 import { ClientSitesTab } from "./ClientSitesTab";
@@ -34,55 +32,12 @@ export function ClientAccountDetailPage({
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [establishedForOrgId, setEstablishedForOrgId] = useState<number | null>(
-    null,
-  );
-  const [orgContextError, setOrgContextError] = useState<string | null>(null);
-  const [ensuringOrgContext, setEnsuringOrgContext] = useState(false);
 
   const activeTab = TABS[activeIndex] ?? TABS[0];
-
-  const orgContextReady =
-    Boolean(getOrgToken()) ||
-    (company?.id != null && establishedForOrgId === company.id);
-
-  const ensureOrgContext = useCallback(async () => {
-    if (!company) return;
-
-    setEnsuringOrgContext(true);
-    setOrgContextError(null);
-    try {
-      await enterOrganization({
-        organizationId: company.id,
-        organizationName: company.name,
-      });
-      setEstablishedForOrgId(company.id);
-    } catch (contextError) {
-      const message =
-        contextError instanceof Error
-          ? contextError.message
-          : "Failed to select organization.";
-      setOrgContextError(message);
-      toast.error(message);
-    } finally {
-      setEnsuringOrgContext(false);
-    }
-  }, [company]);
 
   const handleTabChange = (index: number) => {
     setActiveIndex(index);
   };
-
-  useEffect(() => {
-    if (!company) return;
-    if (getOrgToken() || establishedForOrgId === company.id) return;
-
-    const frameId = requestAnimationFrame(() => {
-      void ensureOrgContext();
-    });
-
-    return () => cancelAnimationFrame(frameId);
-  }, [company, establishedForOrgId, ensureOrgContext]);
 
   if (isLoading) {
     return (
@@ -162,15 +117,7 @@ export function ClientAccountDetailPage({
       />
     );
   } else if (activeTab.id === "sites") {
-    tabContent = (
-      <ClientSitesTab
-        organizationId={company.id}
-        orgContextReady={orgContextReady}
-        orgContextError={orgContextError}
-        onEnsureOrgContext={() => void ensureOrgContext()}
-        ensuringOrgContext={ensuringOrgContext}
-      />
-    );
+    tabContent = <ClientSitesTab organizationId={company.id} />;
   } else if (activeTab.id === "modules") {
     tabContent = (
       <ClientModulesTab
@@ -187,6 +134,7 @@ export function ClientAccountDetailPage({
       <header className="rounded-2xl border border-darkest/8 bg-white/62 px-5.5 py-5 shadow-lg backdrop-blur-[10px]">
         <Link
           href="/super/client-accounts"
+          onClick={() => clearOrgSession()}
           className="inline-flex items-center gap-1.5 text6 text-[#8892a3] hover:text-darkest"
         >
           <Icon icon="lucide:arrow-left" width={12} height={12} aria-hidden />

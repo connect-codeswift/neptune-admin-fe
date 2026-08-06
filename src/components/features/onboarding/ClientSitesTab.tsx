@@ -51,19 +51,9 @@ function toFormState(site?: SuperAdminSiteRow): SiteFormState {
 
 type ClientSitesTabProps = Readonly<{
   organizationId: number;
-  orgContextReady: boolean;
-  orgContextError?: string | null;
-  onEnsureOrgContext: () => void;
-  ensuringOrgContext?: boolean;
 }>;
 
-export function ClientSitesTab({
-  organizationId,
-  orgContextReady,
-  orgContextError,
-  onEnsureOrgContext,
-  ensuringOrgContext = false,
-}: ClientSitesTabProps) {
+export function ClientSitesTab({ organizationId }: ClientSitesTabProps) {
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const { data: sites = [], isLoading, isError, error, refetch } =
     useCompanySites(organizationId, includeDeleted);
@@ -87,34 +77,19 @@ export function ClientSitesTab({
     [form.timeZoneId],
   );
 
-  const canMutateSites = orgContextReady;
-
   const openCreate = () => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
     setEditingSite(null);
     setForm(EMPTY_FORM);
     setModalOpen(true);
   };
 
   const openEdit = (site: SuperAdminSiteRow) => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
     setEditingSite(site);
     setForm(toFormState(site));
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
-
     if (!form.siteName.trim() || !form.location.trim()) {
       toast.error("Site name and location are required.");
       return;
@@ -145,11 +120,6 @@ export function ClientSitesTab({
   };
 
   const handleDelete = async (site: SuperAdminSiteRow) => {
-    if (!canMutateSites) {
-      onEnsureOrgContext();
-      return;
-    }
-
     if (site.userCount > 0) {
       toast.error(
         `Cannot delete this site: ${site.userCount} user(s) are still assigned. Reassign or deactivate them first.`,
@@ -255,26 +225,12 @@ export function ClientSitesTab({
               size="sm"
               leftIcon="lucide:plus"
               onClick={openCreate}
-              loading={ensuringOrgContext}
             >
               Add site
             </Button>
           </div>
         }
       >
-        {!orgContextReady && orgContextError ? (
-          <p className="mb-4 rounded-xl border border-red/20 bg-red/5 px-4 py-3 text6 text-red">
-            {orgContextError}
-          </p>
-        ) : null}
-
-        {!orgContextReady ? (
-          <p className="mb-4 text6 text-gray">
-            Site changes require organization context. It is being prepared
-            automatically; add or edit once ready.
-          </p>
-        ) : null}
-
         <label className="mb-4 inline-flex items-center gap-2 text6 text-gray">
           <input
             type="checkbox"

@@ -3,12 +3,14 @@ import {
   SuperAdminSidebar,
   DashboardAuthGate,
 } from "@/components/layouts";
+import { SuperAdminClientAccountsOrgSessionGuard } from "@/components/layouts/SuperAdminClientAccountsOrgSessionGuard";
 
 export default function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <DashboardAuthGate kind="super">
+      <SuperAdminClientAccountsOrgSessionGuard />
       <div className="grid h-screen min-h-0 w-full grid-cols-[auto_1fr] items-stretch overflow-hidden py-6 pl-6">
         <div className="flex h-full min-h-0">
           <SuperAdminSidebar />
