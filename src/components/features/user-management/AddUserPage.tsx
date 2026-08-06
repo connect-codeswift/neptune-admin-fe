@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import { useInviteSuperAdminUser } from "@/hooks/useSuperAdminUserMutations";
 import { useUserFormOptions } from "@/hooks/useUserFormOptions";
+import { GENDER_OPTIONS } from "@/lib/gender-options";
 import { useUserManagementPaths } from "./useUserManagementPaths";
 
 export function AddUserPage() {
@@ -24,6 +25,7 @@ export function AddUserPage() {
     useUserFormOptions();
 
   const [fullName, setFullName] = useState("");
+  const [gender, setGender] = useState("");
   const [email, setEmail] = useState("");
   const [contactNo, setContactNo] = useState("");
   const [roleId, setRoleId] = useState("");
@@ -43,6 +45,7 @@ export function AddUserPage() {
       await inviteMutation.mutateAsync({
         email: email.trim(),
         fullName: fullName.trim() || null,
+        gender: gender.trim() || null,
         roleId: Number(roleId),
         siteId: siteId ? Number(siteId) : null,
       });
@@ -59,7 +62,7 @@ export function AddUserPage() {
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title="Add New User"
-        description="Invite a user and assign their role and primary site"
+        description="Invite a user and assign their role and site"
         breadcrumbs={[
           { label: "Admin", href: adminHref },
           { label: "User Management", href: basePath },
@@ -76,7 +79,7 @@ export function AddUserPage() {
               onClick={() => void handleCreate()}
               disabled={inviteMutation.isPending || rolesLoading}
             >
-              {inviteMutation.isPending ? "Inviting…" : "Invite User"}
+              {inviteMutation.isPending ? "Adding…" : "Add User"}
             </Button>
           </>
         }
@@ -89,6 +92,13 @@ export function AddUserPage() {
             placeholder="e.g. Sarah Mitchell"
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
+          />
+          <SelectInput
+            label="Gender"
+            placeholder="Select gender"
+            options={[...GENDER_OPTIONS]}
+            value={gender}
+            onChange={setGender}
           />
           <EmailInput
             label="Email Address"
@@ -103,18 +113,19 @@ export function AddUserPage() {
             value={contactNo}
             onChange={setContactNo}
           />
+         
           <SelectInput
+            label="Site"
+            options={siteOptions}
+            value={siteId || siteOptions[0]?.value || ""}
+            onChange={setSiteId}
+          />
+           <SelectInput
             label="Role"
             options={roleOptions}
             value={roleId || roleOptions[0]?.value || ""}
             onChange={setRoleId}
             disabled={rolesLoading}
-          />
-          <SelectInput
-            label="Primary Site"
-            options={siteOptions}
-            value={siteId || siteOptions[0]?.value || ""}
-            onChange={setSiteId}
           />
         </div>
       </DetailCard>

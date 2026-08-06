@@ -181,7 +181,8 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
               <p className="mt-1 text5 text-gray">{user.email}</p>
               <div className="mt-4 grid grid-cols-1 gap-0 sm:grid-cols-2">
                 <ProfileField label="Role" value={formatRoleName(user.roleName)} />
-                <ProfileField label="Primary Site" value={user.siteName ?? "—"} />
+                <ProfileField label="Site" value={user.siteName ?? "—"} />
+                <ProfileField label="Gender" value={user.gender?.trim() || "—"} />
                 <ProfileField label="Location" value={user.siteLocation ?? "—"} />
                 <ProfileField
                   label="MFA"
