@@ -13,10 +13,8 @@ import {
   type TableColumn,
 } from "@/components/ui";
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
-import {
-  useSuperAdminSiteMutations,
-  useSuperAdminSites,
-} from "@/hooks/useSuperAdminSites";
+import { useCompanySites } from "@/hooks/useClientAccountDetail";
+import { useSuperAdminSiteMutations } from "@/hooks/useSuperAdminSites";
 import { DetailCard } from "./DetailCard";
 
 type SiteFormState = {
@@ -47,6 +45,7 @@ function toFormState(site?: SuperAdminSiteRow): SiteFormState {
 }
 
 type ClientSitesTabProps = Readonly<{
+  organizationId: number;
   orgContextReady: boolean;
   orgContextError?: string | null;
   onEnsureOrgContext: () => void;
@@ -54,6 +53,7 @@ type ClientSitesTabProps = Readonly<{
 }>;
 
 export function ClientSitesTab({
+  organizationId,
   orgContextReady,
   orgContextError,
   onEnsureOrgContext,
@@ -61,26 +61,42 @@ export function ClientSitesTab({
 }: ClientSitesTabProps) {
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const { data: sites = [], isLoading, isError, error, refetch } =
-    useSuperAdminSites(includeDeleted);
-  const { createSite, updateSite, removeSite } = useSuperAdminSiteMutations();
+    useCompanySites(organizationId, includeDeleted);
+  const { createSite, updateSite, removeSite } =
+    useSuperAdminSiteMutations(organizationId);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
   const [form, setForm] = useState<SiteFormState>(EMPTY_FORM);
 
+  const canMutateSites = orgContextReady;
+
   const openCreate = () => {
+    if (!canMutateSites) {
+      onEnsureOrgContext();
+      return;
+    }
     setEditingSite(null);
     setForm(EMPTY_FORM);
     setModalOpen(true);
   };
 
   const openEdit = (site: SuperAdminSiteRow) => {
+    if (!canMutateSites) {
+      onEnsureOrgContext();
+      return;
+    }
     setEditingSite(site);
     setForm(toFormState(site));
     setModalOpen(true);
   };
 
   const handleSave = async () => {
+    if (!canMutateSites) {
+      onEnsureOrgContext();
+      return;
+    }
+
     if (!form.siteName.trim() || !form.location.trim()) {
       toast.error("Site name and location are required.");
       return;
@@ -111,6 +127,11 @@ export function ClientSitesTab({
   };
 
   const handleDelete = async (site: SuperAdminSiteRow) => {
+    if (!canMutateSites) {
+      onEnsureOrgContext();
+      return;
+    }
+
     if (site.userCount > 0) {
       toast.error(
         `Cannot delete this site: ${site.userCount} user(s) are still assigned. Reassign or deactivate them first.`,
@@ -195,30 +216,6 @@ export function ClientSitesTab({
     },
   ];
 
-  if (!orgContextReady) {
-    return (
-      <DetailCard
-        title="Sites & Locations"
-        description="Sites are managed in the selected organization's context."
-      >
-        <div className="flex flex-col items-start gap-4 rounded-xl border border-darkest/8 bg-white/80 px-5 py-6">
-          <p className="text5 text-gray">
-            {orgContextError ??
-              "Select this organization to load and manage its sites."}
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            loading={ensuringOrgContext}
-            onClick={onEnsureOrgContext}
-          >
-            Load sites for this organization
-          </Button>
-        </div>
-      </DetailCard>
-    );
-  }
-
   return (
     <>
       <DetailCard
@@ -240,12 +237,26 @@ export function ClientSitesTab({
               size="sm"
               leftIcon="lucide:plus"
               onClick={openCreate}
+              loading={ensuringOrgContext}
             >
               Add site
             </Button>
           </div>
         }
       >
+        {!orgContextReady && orgContextError ? (
+          <p className="mb-4 rounded-xl border border-red/20 bg-red/5 px-4 py-3 text6 text-red">
+            {orgContextError}
+          </p>
+        ) : null}
+
+        {!orgContextReady ? (
+          <p className="mb-4 text6 text-gray">
+            Site changes require organization context. It is being prepared
+            automatically; add or edit once ready.
+          </p>
+        ) : null}
+
         <label className="mb-4 inline-flex items-center gap-2 text6 text-gray">
           <input
             type="checkbox"

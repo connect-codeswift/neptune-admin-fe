@@ -2,7 +2,7 @@
 
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { TabBar } from "@/components/ui";
 import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
@@ -34,11 +34,17 @@ export function ClientAccountDetailPage({
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [orgContextReady, setOrgContextReady] = useState(false);
+  const [establishedForOrgId, setEstablishedForOrgId] = useState<number | null>(
+    null,
+  );
   const [orgContextError, setOrgContextError] = useState<string | null>(null);
   const [ensuringOrgContext, setEnsuringOrgContext] = useState(false);
 
   const activeTab = TABS[activeIndex] ?? TABS[0];
+
+  const orgContextReady =
+    Boolean(getOrgToken()) ||
+    (company?.id != null && establishedForOrgId === company.id);
 
   const ensureOrgContext = useCallback(async () => {
     if (!company) return;
@@ -50,14 +56,13 @@ export function ClientAccountDetailPage({
         organizationId: company.id,
         organizationName: company.name,
       });
-      setOrgContextReady(true);
+      setEstablishedForOrgId(company.id);
     } catch (contextError) {
       const message =
         contextError instanceof Error
           ? contextError.message
           : "Failed to select organization.";
       setOrgContextError(message);
-      setOrgContextReady(false);
       toast.error(message);
     } finally {
       setEnsuringOrgContext(false);
@@ -66,13 +71,18 @@ export function ClientAccountDetailPage({
 
   const handleTabChange = (index: number) => {
     setActiveIndex(index);
-    const tab = TABS[index];
-    if (tab?.id === "sites" && company && !getOrgToken() && !orgContextReady) {
-      void ensureOrgContext();
-    } else if (tab?.id === "sites" && getOrgToken()) {
-      setOrgContextReady(true);
-    }
   };
+
+  useEffect(() => {
+    if (!company) return;
+    if (getOrgToken() || establishedForOrgId === company.id) return;
+
+    const frameId = requestAnimationFrame(() => {
+      void ensureOrgContext();
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [company, establishedForOrgId, ensureOrgContext]);
 
   if (isLoading) {
     return (
@@ -154,6 +164,7 @@ export function ClientAccountDetailPage({
   } else if (activeTab.id === "sites") {
     tabContent = (
       <ClientSitesTab
+        organizationId={company.id}
         orgContextReady={orgContextReady}
         orgContextError={orgContextError}
         onEnsureOrgContext={() => void ensureOrgContext()}

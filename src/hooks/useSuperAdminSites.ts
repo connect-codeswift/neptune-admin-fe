@@ -8,6 +8,9 @@ import type {
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
 import { assertApiSuccess, unwrapDataModel, unwrapList } from "@/lib/api-response";
 import {
+  clientAccountDetailQueryKey,
+} from "@/hooks/useClientAccountDetail";
+import {
   createSuperAdminSite,
   deleteSuperAdminSite,
   getSuperAdminSites,
@@ -33,11 +36,19 @@ export function useSuperAdminSites(includeDeleted = false) {
   });
 }
 
-export function useSuperAdminSiteMutations() {
+export function useSuperAdminSiteMutations(organizationId?: number) {
   const queryClient = useQueryClient();
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: SUPER_ADMIN_SITES_KEY });
+    if (organizationId != null && organizationId > 0) {
+      void queryClient.invalidateQueries({
+        queryKey: ["super-admin", "companies", organizationId, "sites"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: clientAccountDetailQueryKey(organizationId),
+      });
+    }
   };
 
   const createSite = useMutation({
