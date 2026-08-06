@@ -234,7 +234,7 @@ export function ClientOrganizationLimitsPanel({
             <Table
               columns={HISTORY_COLUMNS}
               data={history}
-              getRowId={(row) => row.id}
+              getRowId={(row) => String(row.id)}
               emptyMessage="No limit changes recorded yet."
             />
           )}

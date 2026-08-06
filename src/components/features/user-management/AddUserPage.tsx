@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { SubscriptionSeatLimitModal } from "@/components/features/user-management/SubscriptionSeatLimitModal";
@@ -34,7 +34,6 @@ export function AddUserPage() {
   );
   const seatInfo = company ? toSeatLimitInfo(company) : null;
   const atSeatLimit = company?.atSeatLimit ?? false;
-  const [seatLimitModalOpen, setSeatLimitModalOpen] = useState(false);
 
   const inviteMutation = useInviteSuperAdminUser();
   const { roleOptions, siteOptions, defaultSiteId, rolesLoading } =
@@ -47,15 +46,8 @@ export function AddUserPage() {
   const [roleId, setRoleId] = useState("");
   const [siteId, setSiteId] = useState(defaultSiteId);
 
-  useEffect(() => {
-    if (atSeatLimit && seatInfo) {
-      setSeatLimitModalOpen(true);
-    }
-  }, [atSeatLimit, seatInfo]);
-
   const handleCreate = async () => {
     if (atSeatLimit && seatInfo) {
-      setSeatLimitModalOpen(true);
       return;
     }
     if (!email.trim()) {
@@ -103,7 +95,7 @@ export function AddUserPage() {
               size="sm"
               leftIcon="lucide:user-plus"
               onClick={() => void handleCreate()}
-              disabled={inviteMutation.isPending || rolesLoading}
+              disabled={inviteMutation.isPending || rolesLoading || atSeatLimit}
             >
               {inviteMutation.isPending ? "Adding…" : "Add User"}
             </Button>
@@ -156,17 +148,13 @@ export function AddUserPage() {
         </div>
       </DetailCard>
 
-      {seatInfo ? (
+      {seatInfo && atSeatLimit ? (
         <SubscriptionSeatLimitModal
-          open={seatLimitModalOpen}
+          open
           seatInfo={seatInfo}
-          onClose={() => {
-            setSeatLimitModalOpen(false);
-            router.push(basePath);
-          }}
+          onClose={() => router.push(basePath)}
           onContactSales={() => {
             toast.info("Contact CodeSwift to increase your seat allowance.");
-            setSeatLimitModalOpen(false);
           }}
         />
       ) : null}
