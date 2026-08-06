@@ -40,6 +40,11 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     icon: "tabler:user",
   },
   {
+    label: "Site Management",
+    href: "/site-management",
+    icon: "lucide:map-pin",
+  },
+  {
     label: "Roles & Rights",
     href: "/roles-and-rights",
     icon: "lucide:shield-check",

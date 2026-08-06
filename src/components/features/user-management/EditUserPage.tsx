@@ -17,6 +17,7 @@ import {
   useUpdateSuperAdminUserStatus,
 } from "@/hooks/useSuperAdminUserMutations";
 import { useUserFormOptions } from "@/hooks/useUserFormOptions";
+import { GENDER_OPTIONS } from "@/lib/gender-options";
 import {
   formatRoleName,
   getUserInitials,
@@ -33,6 +34,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
   const { roleOptions, siteOptions, rolesLoading } = useUserFormOptions();
 
   const [fullName, setFullName] = useState("");
+  const [gender, setGender] = useState("");
   const [contactNo, setContactNo] = useState("");
   const [roleId, setRoleId] = useState("");
   const [siteId, setSiteId] = useState("");
@@ -41,6 +43,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
   useEffect(() => {
     if (!user) return;
     setFullName(user.fullName?.trim() ?? "");
+    setGender(user.gender?.trim() ?? "");
     setContactNo(user.contactNo?.trim() ?? "");
     setRoleId(String(user.roleId));
     setSiteId(user.siteId != null ? String(user.siteId) : "");
@@ -75,6 +78,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
     try {
       await updateMutation.mutateAsync({
         fullName: fullName.trim() || null,
+        gender: gender.trim() || null,
         contactNo: contactNo.trim() || null,
         roleId: roleId ? Number(roleId) : null,
         siteId: siteId ? Number(siteId) : null,
@@ -167,6 +171,13 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
                 label="Full Name"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
+              />
+              <SelectInput
+                label="Gender"
+                placeholder="Select gender"
+                options={[...GENDER_OPTIONS]}
+                value={gender}
+                onChange={setGender}
               />
               <TextInput label="Email" value={user.email} disabled />
               <PhoneInput
