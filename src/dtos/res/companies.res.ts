@@ -41,3 +41,19 @@ export type SuperAdminCompaniesPageResponse = {
   pageNumber?: number;
   pageSize?: number;
 };
+
+export type AccessWindowResponse = {
+  id: number;
+  accessExpiresAt: string;
+  accessNote?: string | null;
+};
+
+export type AccessHistoryRow = {
+  id: number;
+  action: "Granted" | "Extended" | "Cleared" | string;
+  previousExpiresAt?: string | null;
+  newExpiresAt?: string | null;
+  note?: string | null;
+  superAdminId: number;
+  createdAt: string;
+};

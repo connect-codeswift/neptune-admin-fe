@@ -16,6 +16,12 @@ export type UpdateActivatedModulesPayload = {
   activatedModules?: string | null;
 };
 
+export type SetAccessWindowPayload = {
+  days?: number;
+  expiresAt?: string;
+  note?: string | null;
+};
+
 export type CreateSuperAdminSitePayload = {
   siteName: string;
   location: string;

@@ -16,6 +16,7 @@ import {
   useUpdateCompanyProfile,
 } from "@/hooks/useClientAccountDetail";
 import { DetailCard } from "./DetailCard";
+import { ClientAccessWindowPanel } from "./ClientAccessWindowPanel";
 
 function InfoField({
   label,
@@ -347,24 +348,17 @@ export function ClientOverviewTab({
             ) : null}
           </div>
         </DetailCard>
-
-        {(company.accessExpiresAt || company.daysRemaining != null) && (
-          <DetailCard title="Access Window">
-            <div className="flex flex-col gap-2">
-              <InfoField label="Expires">
-                {formatDate(company.accessExpiresAt)}
-              </InfoField>
-              {company.daysRemaining != null ? (
-                <InfoField label="Days remaining">
-                  {company.daysRemaining} days
-                </InfoField>
-              ) : null}
-            </div>
-          </DetailCard>
-        )}
       </div>
 
       </div>
+
+      <ClientAccessWindowPanel
+        organizationId={company.id}
+        companyName={company.name}
+        accessExpiresAt={company.accessExpiresAt}
+        daysRemaining={company.daysRemaining}
+        showActions={false}
+      />
     </div>
   );
 }

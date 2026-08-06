@@ -20,9 +20,6 @@ const STATIC_ROOT_SEGMENTS = new Set([
   "reset-password",
   "add-a-company",
   "client-accounts",
-  "pricing",
-  "subscriptions",
-  "chatbot",
   "dashboard",
 ]);
 

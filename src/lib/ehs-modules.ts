@@ -1,6 +1,6 @@
 /**
- * Canonical EHS module catalog. Pricing, subscriptions, and client module
- * views all read from here so module ids never drift between screens.
+ * Canonical EHS module catalog. Client module views read from here so module
+ * ids never drift between screens.
  */
 export type EhsModule = {
   id: string;
