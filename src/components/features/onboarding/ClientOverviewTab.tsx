@@ -184,6 +184,13 @@ export function ClientOverviewTab({
             />
             <InfoField label="Number of sites">
               {company.siteCount} sites
+              {company.sites && company.sites.length > 0 ? (
+                <ul className="mt-2 space-y-1 text6 font-normal text-gray">
+                  {company.sites.map((site) => (
+                    <li key={site.id}>{site.siteName}</li>
+                  ))}
+                </ul>
+              ) : null}
             </InfoField>
             <TextInput
               label="Compliance zone"

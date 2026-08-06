@@ -21,6 +21,7 @@ export type SuperAdminCompanyDetailResponse = SuperAdminCompanyResponse & {
   primaryContactTitle?: string | null;
   primaryContactEmail?: string | null;
   primaryContactPhone?: string | null;
+  sites?: SuperAdminSiteResponse[];
 };
 
 export type SuperAdminSiteResponse = {
@@ -30,6 +31,8 @@ export type SuperAdminSiteResponse = {
   industryType: string;
   siteSize: string;
   userCount: number;
+  timeZoneId?: string | null;
+  isDrop?: boolean;
 };
 
 export type SuperAdminCompaniesPageResponse = {

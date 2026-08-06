@@ -111,13 +111,7 @@ function buildColumns(
       header: "Client",
       cell: (row) => <ClientNameCell row={row} />,
     },
-    {
-      id: "modules",
-      header: "Activated Modules",
-      cell: (row) => (
-        <TableTextCell muted>{row.activatedModules || "—"}</TableTextCell>
-      ),
-    },
+    
     {
       id: "contractStart",
       header: "Created",

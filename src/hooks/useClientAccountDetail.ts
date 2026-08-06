@@ -3,9 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UpdateCompanyProfilePayload } from "@/dtos/req/companies.req";
 import type { SuperAdminCompanyDetailResponse } from "@/dtos/res/companies.res";
-import { assertApiSuccess, unwrapDataModel } from "@/lib/api-response";
+import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
+import { assertApiSuccess, unwrapDataModel, unwrapList } from "@/lib/api-response";
 import {
   getCompanyById,
+  getCompanySites,
   updateCompany,
   updateCompanyModules,
 } from "@/services/companies.service";
@@ -13,6 +15,19 @@ import { SUPER_ADMIN_COMPANIES_KEY } from "./useSuperAdminCompanies";
 
 export function clientAccountDetailQueryKey(organizationId: number | string) {
   return ["super-admin", "companies", organizationId, "detail"] as const;
+}
+
+export function companySitesQueryKey(
+  organizationId: number | string,
+  includeDeleted = false,
+) {
+  return [
+    "super-admin",
+    "companies",
+    organizationId,
+    "sites",
+    includeDeleted,
+  ] as const;
 }
 
 async function fetchCompanyDetail(
@@ -31,6 +46,30 @@ export function useClientAccountDetail(organizationId?: number) {
   return useQuery({
     queryKey: clientAccountDetailQueryKey(organizationId ?? "none"),
     queryFn: () => fetchCompanyDetail(organizationId!),
+    enabled: typeof organizationId === "number" && organizationId > 0,
+  });
+}
+
+async function fetchCompanySites(
+  organizationId: number,
+  includeDeleted: boolean,
+) {
+  const response = await getCompanySites(organizationId, { includeDeleted });
+  assertApiSuccess(response, "Failed to load sites.");
+  const model = response.dataModel;
+  if (Array.isArray(model)) {
+    return model;
+  }
+  return unwrapList<SuperAdminSiteRow>(response);
+}
+
+export function useCompanySites(
+  organizationId?: number,
+  includeDeleted = false,
+) {
+  return useQuery({
+    queryKey: companySitesQueryKey(organizationId ?? "none", includeDeleted),
+    queryFn: () => fetchCompanySites(organizationId!, includeDeleted),
     enabled: typeof organizationId === "number" && organizationId > 0,
   });
 }
