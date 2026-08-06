@@ -79,7 +79,7 @@ export function AddUserPage() {
               onClick={() => void handleCreate()}
               disabled={inviteMutation.isPending || rolesLoading}
             >
-              {inviteMutation.isPending ? "Inviting…" : "Invite User"}
+              {inviteMutation.isPending ? "Adding…" : "Add User"}
             </Button>
           </>
         }
