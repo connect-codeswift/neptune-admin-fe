@@ -9,7 +9,7 @@ export default function SuperIndexPage() {
 
   useEffect(() => {
     router.replace(
-      canAccessSuperDashboard() ? "/super/dashboard" : "/super/login",
+      canAccessSuperDashboard() ? "/super/dashboard" : "/login",
     );
   }, [router]);
 

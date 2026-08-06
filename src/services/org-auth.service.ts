@@ -6,6 +6,7 @@ import type {
   VerifyMfaResponse,
 } from "@/dtos/res/auth.res";
 import { setAuthEmail, setAuthRole, setOrgToken } from "@/lib/auth-tokens";
+import { extractAccessToken } from "@/lib/auth-response";
 import axiosInstance from "@/lib/axiosInstance";
 
 /**
@@ -18,11 +19,12 @@ import axiosInstance from "@/lib/axiosInstance";
 export async function orgLogin(payload: LoginPayload) {
   const { data } = await axiosInstance.post<LoginResponse>("/Auth/login", payload);
   setAuthEmail(payload.email);
-  if (data.accessToken) {
-    setOrgToken(data.accessToken);
+  const accessToken = extractAccessToken(data);
+  if (accessToken) {
+    setOrgToken(accessToken);
     setAuthRole("admin");
   }
-  return data;
+  return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
 /** POST /Auth/verify-mfa */
@@ -31,11 +33,12 @@ export async function orgVerifyMfa(payload: VerifyMfaPayload) {
     "/Auth/verify-mfa",
     payload,
   );
-  if (data.accessToken) {
-    setOrgToken(data.accessToken);
+  const accessToken = extractAccessToken(data);
+  if (accessToken) {
+    setOrgToken(accessToken);
     setAuthRole("admin");
   }
-  return data;
+  return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
 /** POST /Auth/mfa/setup — bearer credential is the login mfaToken. */
@@ -60,9 +63,10 @@ export async function orgMfaEnable(mfaToken: string, code: string) {
       headers: { Authorization: `Bearer ${mfaToken}` },
     },
   );
-  if (data.accessToken) {
-    setOrgToken(data.accessToken);
+  const accessToken = extractAccessToken(data);
+  if (accessToken) {
+    setOrgToken(accessToken);
     setAuthRole("admin");
   }
-  return data;
+  return { ...data, accessToken: accessToken ?? data.accessToken };
 }

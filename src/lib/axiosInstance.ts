@@ -5,7 +5,6 @@ import {
   isOrgTokenReselectMessage,
 } from "@/lib/api-error";
 import {
-  AUTH_ROLE_KEY,
   AUTH_TOKEN_KEY,
   forceLogoutRedirect,
   getMfaToken,
@@ -17,6 +16,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 const BODY_CREDENTIAL_AUTH_PATHS = [
   "/Auth/login",
   "/Auth/verify-mfa",
+  "/AdminPortalAuth/login",
   "/SuperAdminAuth/login",
   "/SuperAdminAuth/verify-mfa",
   "/SuperAdminAuth/mfa/setup",
@@ -68,6 +68,22 @@ function extractErrorMessage(data: unknown, fallback: string): string {
     if (typeof record.error === "string") return record.error;
   }
   return fallback;
+}
+
+/** Only hard-logout on 401 when the server rejected the session itself. */
+function isSessionInvalidMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  if (isOrgTokenReselectMessage(message)) return false;
+  return (
+    normalized.includes("unauthorized") ||
+    normalized.includes("invalid token") ||
+    normalized.includes("token expired") ||
+    normalized.includes("expired token") ||
+    normalized.includes("invalid or expired") ||
+    normalized.includes("authentication failed") ||
+    normalized.includes("invalid credentials") ||
+    normalized.includes("please login")
+  );
 }
 
 axiosInstance.interceptors.request.use((config) => {
@@ -130,18 +146,18 @@ axiosInstance.interceptors.response.use(
         hadOrgToken &&
         !hadAuthToken &&
         !isCredentialAuthRequest &&
-        !isOrgTokenReselectMessage(message)
+        !isOrgTokenReselectMessage(message) &&
+        isSessionInvalidMessage(message)
       ) {
         forceLogoutRedirect("/login");
       } else if (
         status === 401 &&
         hadAuthToken &&
         !isCredentialAuthRequest &&
-        !isOrgTokenReselectMessage(message)
+        !isOrgTokenReselectMessage(message) &&
+        isSessionInvalidMessage(message)
       ) {
-        const role = window.localStorage.getItem(AUTH_ROLE_KEY);
-        const loginPath = role === "admin" ? "/login" : "/super/login";
-        forceLogoutRedirect(loginPath);
+        forceLogoutRedirect("/login");
       }
     }
 

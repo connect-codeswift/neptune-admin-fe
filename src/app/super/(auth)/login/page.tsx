@@ -1,5 +1,5 @@
-import { LoginForm } from "@/components/features/auth/LoginForm";
+import { redirect } from "next/navigation";
 
-export default function SuperAdminLoginPage() {
-  return <LoginForm flow="super" />;
+export default function SuperLoginRedirectPage() {
+  redirect("/login");
 }
