@@ -1,7 +1,16 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import type { PermissionGroup } from "@/lib/mappers/roles.mapper";
+import { useEffect, useMemo, useState } from "react";
+import { SearchInput } from "@/components/inputs";
+import {
+  countGroupSelection,
+  filterPermissionGroups,
+  getSelectablePermissionIds,
+  sortPermissionGroupsForDisplay,
+  type PermissionGroup,
+  type PermissionKindFilter,
+} from "@/lib/mappers/roles.mapper";
 
 type RightsSelectorProps = Readonly<{
   groups: PermissionGroup[];
@@ -11,7 +20,14 @@ type RightsSelectorProps = Readonly<{
   showHeader?: boolean;
 }>;
 
-function RightChip({
+const KIND_FILTERS: readonly { id: PermissionKindFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "api", label: "API" },
+  { id: "pages", label: "Pages" },
+  { id: "buttons", label: "Buttons" },
+];
+
+function PermissionCheckbox({
   label,
   selected,
   locked,
@@ -24,60 +40,62 @@ function RightChip({
 }>) {
   if (locked) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-darkest/10 bg-darkest/4 px-2.5 py-1 text6 text-[#8892a3]">
-        <Icon icon="lucide:lock" width={12} height={12} aria-hidden />
-        {label}
-      </span>
+      <div className="flex items-center gap-2 py-2 text6 text-[#8892a3]">
+        <Icon icon="lucide:lock" width={14} height={14} className="shrink-0" />
+        <span className="min-w-0 break-all font-mono">{label}</span>
+      </div>
     );
   }
 
-  let chipClass =
-    "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-darkest/15 bg-white px-2.5 py-1 text6 text-gray transition-colors hover:border-darkest/25";
-  if (selected) {
-    chipClass =
-      "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-green bg-green/8 px-2.5 py-1 text6 font-medium text-darkest transition-colors";
-  }
-
   return (
-    <button type="button" onClick={onToggle} className={chipClass}>
-      <Icon
-        icon={selected ? "lucide:circle-check" : "lucide:circle"}
-        width={12}
-        height={12}
-        className={selected ? "text-green" : "text-[#b3bbc8]"}
-        aria-hidden
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-darkest/4">
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={() => onToggle()}
+        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border border-darkest/20 accent-blue-normal"
       />
-      {label}
-    </button>
+      <span className="min-w-0 break-all font-mono text6 leading-snug text-darkest">
+        {label}
+      </span>
+    </label>
   );
 }
 
-function RightsGroupSection({
-  entry,
-  selectedSet,
-  onToggle,
+function CategoryNavItem({
+  group,
+  selectedCount,
+  totalCount,
+  active,
+  onClick,
 }: Readonly<{
-  entry: PermissionGroup;
-  selectedSet: Set<number>;
-  onToggle: (permissionId: number) => void;
+  group: string;
+  selectedCount: number;
+  totalCount: number;
+  active: boolean;
+  onClick: () => void;
 }>) {
   return (
-    <div>
-      <p className="mb-2 text6 font-semibold tracking-[0.4px] text-gray uppercase">
-        {entry.group}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {entry.permissions.map((permission) => (
-          <RightChip
-            key={permission.id}
-            label={permission.label}
-            selected={selectedSet.has(permission.id)}
-            locked={permission.locked}
-            onToggle={() => onToggle(permission.id)}
-          />
-        ))}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-between gap-2 border-b border-darkest/6 px-3 py-2.5 text-left transition-colors ${
+        active
+          ? "bg-blue-normal/10 text-blue-normal"
+          : "bg-transparent text-darkest hover:bg-darkest/4"
+      }`}
+    >
+      <span className="min-w-0 truncate text6 font-medium">{group}</span>
+      <span
+        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+          selectedCount > 0
+            ? "bg-green/15 text-green"
+            : "bg-darkest/8 text-gray"
+        }`}
+      >
+        {selectedCount}/{totalCount}
+      </span>
+    </button>
   );
 }
 
@@ -88,7 +106,61 @@ export function RightsSelector({
   grantedLabel = "granted",
   showHeader = true,
 }: RightsSelectorProps) {
-  const selectedSet = new Set(selectedIds);
+  const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState<PermissionKindFilter>("all");
+  const [selectedOnly, setSelectedOnly] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  const sortedGroups = useMemo(
+    () => sortPermissionGroupsForDisplay(groups),
+    [groups],
+  );
+
+  const filteredGroups = useMemo(
+    () =>
+      filterPermissionGroups(sortedGroups, {
+        query,
+        kind: kindFilter,
+        selectedOnly,
+        selectedIds,
+      }),
+    [sortedGroups, query, kindFilter, selectedOnly, selectedIds],
+  );
+
+  const flatResults = useMemo(
+    () =>
+      filteredGroups.flatMap((entry) =>
+        entry.permissions.map((permission) => ({
+          group: entry.group,
+          permission,
+        })),
+      ),
+    [filteredGroups],
+  );
+
+  const visiblePermissionCount = flatResults.length;
+  const browseMode = !query.trim() && !selectedOnly;
+
+  const activeEntry = useMemo(
+    () => filteredGroups.find((entry) => entry.group === activeGroup) ?? null,
+    [filteredGroups, activeGroup],
+  );
+
+  useEffect(() => {
+    if (filteredGroups.length === 0) {
+      setActiveGroup(null);
+      return;
+    }
+
+    if (
+      !activeGroup ||
+      !filteredGroups.some((entry) => entry.group === activeGroup)
+    ) {
+      setActiveGroup(filteredGroups[0].group);
+    }
+  }, [filteredGroups, activeGroup]);
 
   const togglePermission = (permissionId: number) => {
     const permission = groups
@@ -105,6 +177,32 @@ export function RightsSelector({
     onChange([...selectedIds, permissionId]);
   };
 
+  const selectAllInActiveGroup = () => {
+    if (!activeEntry) return;
+    const ids = getSelectablePermissionIds(activeEntry);
+    onChange([...new Set([...selectedIds, ...ids])]);
+  };
+
+  const clearActiveGroup = () => {
+    if (!activeEntry) return;
+    const groupIds = new Set(
+      activeEntry.permissions.map((permission) => permission.id),
+    );
+    onChange(selectedIds.filter((id) => !groupIds.has(id)));
+  };
+
+  const selectAllVisible = () => {
+    const idsToAdd = filteredGroups.flatMap((entry) =>
+      getSelectablePermissionIds(entry),
+    );
+    onChange([...new Set([...selectedIds, ...idsToAdd])]);
+  };
+
+  const clearAllVisible = () => {
+    const visibleIds = new Set(flatResults.map((entry) => entry.permission.id));
+    onChange(selectedIds.filter((id) => !visibleIds.has(id)));
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {showHeader ? (
@@ -116,20 +214,143 @@ export function RightsSelector({
         </div>
       ) : null}
 
+      <div className="flex flex-col gap-3">
+        <SearchInput
+          placeholder="Filter permissions…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label="Filter permissions"
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          {KIND_FILTERS.map((filter) => {
+            const active = kindFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setKindFilter(filter.id)}
+                className={`rounded-full border px-3 py-1 text6 font-medium transition-colors ${
+                  active
+                    ? "border-blue-normal bg-blue-normal text-white"
+                    : "border-darkest/12 bg-white text-darkest hover:border-darkest/20"
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+
+          <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text6 text-darkest">
+            <input
+              type="checkbox"
+              checked={selectedOnly}
+              onChange={(event) => setSelectedOnly(event.target.checked)}
+              className="size-4 cursor-pointer rounded border border-darkest/20 accent-blue-normal"
+            />
+            Selected only
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text6 text-gray">
+          <span>
+            {visiblePermissionCount} permission
+            {visiblePermissionCount === 1 ? "" : "s"}
+            {browseMode && activeEntry ? ` · ${activeEntry.group}` : ""}
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={browseMode ? selectAllInActiveGroup : selectAllVisible}
+              disabled={visiblePermissionCount === 0}
+              className="font-medium text-blue-normal disabled:opacity-40"
+            >
+              {browseMode ? "Select category" : "Select all shown"}
+            </button>
+            <button
+              type="button"
+              onClick={browseMode ? clearActiveGroup : clearAllVisible}
+              disabled={visiblePermissionCount === 0}
+              className="font-medium text-gray disabled:opacity-40"
+            >
+              {browseMode ? "Clear category" : "Clear all shown"}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {groups.length === 0 ? (
         <p className="text5 text-gray">No permissions returned by the API.</p>
-      ) : (
-        <div className="flex flex-col gap-6">
-          {groups.map((entry) => (
-            <RightsGroupSection
-              key={entry.group}
-              entry={entry}
-              selectedSet={selectedSet}
-              onToggle={togglePermission}
-            />
+      ) : null}
+
+      {groups.length > 0 && filteredGroups.length === 0 ? (
+        <p className="rounded-xl border border-darkest/10 bg-white/80 px-4 py-10 text-center text5 text-gray">
+          No permissions match your filters.
+        </p>
+      ) : null}
+
+      {filteredGroups.length > 0 && browseMode ? (
+        <div className="grid min-h-[420px] grid-cols-1 overflow-hidden rounded-xl border border-darkest/10 bg-white md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)]">
+          <nav
+            className="max-h-[min(60vh,560px)] overflow-y-auto border-b border-darkest/10 bg-darkest/3 md:border-r md:border-b-0"
+            aria-label="Permission categories"
+          >
+            {filteredGroups.map((entry) => {
+              const counts = countGroupSelection(entry, selectedIds);
+              return (
+                <CategoryNavItem
+                  key={entry.group}
+                  group={entry.group}
+                  selectedCount={counts.selected}
+                  totalCount={counts.selectable}
+                  active={entry.group === activeGroup}
+                  onClick={() => setActiveGroup(entry.group)}
+                />
+              );
+            })}
+          </nav>
+
+          <div className="max-h-[min(60vh,560px)] overflow-y-auto p-2">
+            {activeEntry ? (
+              <div className="flex flex-col">
+                <p className="sticky top-0 z-10 border-b border-darkest/8 bg-white/95 px-2 py-2 text6 font-semibold text-gray backdrop-blur-sm">
+                  {activeEntry.group} · {activeEntry.permissions.length} items
+                </p>
+                {activeEntry.permissions.map((permission) => (
+                  <PermissionCheckbox
+                    key={permission.id}
+                    label={permission.label}
+                    selected={selectedSet.has(permission.id)}
+                    locked={permission.locked}
+                    onToggle={() => togglePermission(permission.id)}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {filteredGroups.length > 0 && !browseMode ? (
+        <div className="max-h-[min(60vh,560px)] overflow-y-auto rounded-xl border border-darkest/10 bg-white p-2">
+          {filteredGroups.map((entry) => (
+            <section key={entry.group} className="mb-4 last:mb-0">
+              <p className="sticky top-0 z-10 border-b border-darkest/8 bg-white/95 px-2 py-2 text6 font-semibold text-gray backdrop-blur-sm">
+                {entry.group}
+              </p>
+              {entry.permissions.map((permission) => (
+                <PermissionCheckbox
+                  key={permission.id}
+                  label={permission.label}
+                  selected={selectedSet.has(permission.id)}
+                  locked={permission.locked}
+                  onToggle={() => togglePermission(permission.id)}
+                />
+              ))}
+            </section>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

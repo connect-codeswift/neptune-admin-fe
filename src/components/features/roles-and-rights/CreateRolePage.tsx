@@ -255,15 +255,21 @@ export function CreateRolePage() {
               {selectedPermissionIds.length}{" "}
               <span className="text4 font-normal text-gray">rights selected</span>
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {groupSummary.map((entry) => (
-                <span
-                  key={entry.group}
-                  className="inline-flex items-center rounded-md bg-darkest/6 px-2.5 py-1 text6 text-darkest"
-                >
-                  {entry.group}: {entry.count}
-                </span>
-              ))}
+            <div className="mt-4 flex max-h-40 flex-col gap-1.5 overflow-y-auto">
+              {groupSummary
+                .filter((entry) => entry.count > 0)
+                .map((entry) => (
+                  <div
+                    key={entry.group}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-darkest/6 px-2.5 py-1.5 text6 text-darkest"
+                  >
+                    <span className="truncate">{entry.group}</span>
+                    <span className="shrink-0 font-semibold">{entry.count}</span>
+                  </div>
+                ))}
+              {groupSummary.every((entry) => entry.count === 0) ? (
+                <p className="text6 text-gray">No rights selected yet.</p>
+              ) : null}
             </div>
           </DetailCard>
         </div>
