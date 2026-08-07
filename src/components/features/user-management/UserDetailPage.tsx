@@ -14,6 +14,7 @@ import {
   formatRoleName,
   getUserInitials,
   mapApiStatusToTableStatus,
+  readUserSiteNames,
 } from "@/lib/mappers/users.mapper";
 import { useUserManagementPaths } from "./useUserManagementPaths";
 
@@ -60,6 +61,7 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
   }
 
   const displayName = user.fullName?.trim() || user.email;
+  const siteNames = readUserSiteNames(user);
   const editHref = `${basePath}/${user.id}/edit`;
   const status = mapApiStatusToTableStatus(user.status, user.isDrop);
   const isSuspended = status === "suspended";
@@ -129,7 +131,7 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
       <div className="flex flex-col gap-6 pb-4">
         <PageHeader
           title={displayName}
-          description={`${formatRoleName(user.roleName)} · ${user.siteName ?? "—"}`}
+          description={`${formatRoleName(user.roleName)} · ${siteNames.join(", ") || "—"}`}
           breadcrumbs={[
             { label: "Admin", href: adminHref },
             { label: "User Management", href: basePath },
@@ -181,7 +183,10 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
               <p className="mt-1 text5 text-gray">{user.email}</p>
               <div className="mt-4 grid grid-cols-1 gap-0 sm:grid-cols-2">
                 <ProfileField label="Role" value={formatRoleName(user.roleName)} />
-                <ProfileField label="Site" value={user.siteName ?? "—"} />
+                <ProfileField
+                  label={siteNames.length > 1 ? "Sites" : "Site"}
+                  value={siteNames.join(", ") || "—"}
+                />
                 <ProfileField label="Gender" value={user.gender?.trim() || "—"} />
                 <ProfileField label="Location" value={user.siteLocation ?? "—"} />
                 <ProfileField

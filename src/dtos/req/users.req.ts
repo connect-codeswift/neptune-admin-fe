@@ -12,7 +12,10 @@ export type InviteSuperAdminUserPayload = {
   roleId: number;
   fullName?: string | null;
   gender?: string | null;
+  /** Legacy single-site field the API still accepts as a one-element `siteIds`. */
   siteId?: number | null;
+  /** Sites the invitee may work in. The first becomes their active site. */
+  siteIds?: number[];
 };
 
 /** Request body for PUT /SuperAdminUsers/{userId} */
@@ -21,5 +24,8 @@ export type UpdateSuperAdminUserPayload = {
   gender?: string | null;
   contactNo?: string | null;
   roleId?: number | null;
+  /** Legacy single-site field: moves the active site without dropping the others. */
   siteId?: number | null;
+  /** Full replace of the user's site assignments. */
+  siteIds?: number[];
 };
