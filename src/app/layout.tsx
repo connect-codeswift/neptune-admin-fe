@@ -19,15 +19,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
       {
         url: "/favicon-black.png",
         type: "image/png",
+        sizes: "512x512",
         media: "(prefers-color-scheme: light)",
       },
       {
         url: "/favicon-white.png",
         type: "image/png",
+        sizes: "512x512",
         media: "(prefers-color-scheme: dark)",
       },
     ],
