@@ -5,7 +5,9 @@ import type { SidebarNavSection } from "@/lib/admin-sidebar";
 import {
   getSuperAdminNavSections,
   getSuperAdminSidebarLogoHref,
+  withDeployAlertBadge,
 } from "@/lib/super-admin-sidebar-items";
+import { useDeployAlertBadgeCount } from "@/hooks/usePlatformOps";
 import { useSignedInUser } from "@/lib/signed-in-user";
 import { SidebarNavShell, type SidebarNavShellUser } from "./SidebarNavShell";
 import { SidebarSystemStatus } from "./SidebarSystemStatus";
@@ -31,7 +33,11 @@ export function SuperAdminSidebar({
   const signedInUser = useSignedInUser();
   const resolvedUser = user ?? signedInUser;
   const currentHref = activeHref ?? pathname;
-  const navSections = sections ?? getSuperAdminNavSections();
+  const alertCount = useDeployAlertBadgeCount();
+  const navSections = withDeployAlertBadge(
+    sections ?? getSuperAdminNavSections(),
+    alertCount,
+  );
   const resolvedLogoHref = logoHref ?? getSuperAdminSidebarLogoHref();
 
   return (

@@ -3,6 +3,8 @@
 export type TabBarTab = {
   id: string;
   label: string;
+  /** Count pill after the label — omitted when zero or undefined. */
+  badge?: number;
 };
 
 export type TabBarProps = {
@@ -37,15 +39,21 @@ export function TabBar({
             "cursor-pointer border-b-[3px] border-blue-normal px-4 pt-2 pb-3 text4 text-blue-normal";
         }
 
+        let badgeClass = "rounded-full bg-red px-1.5 py-0.5 text9 text-white";
+        if (!active) {
+          badgeClass = "rounded-full bg-red/12 px-1.5 py-0.5 text9 text-red";
+        }
+
         return (
           <button
             key={tab.id}
             type="button"
-            className={tabClass}
+            className={`inline-flex items-center gap-2 ${tabClass}`}
             aria-current={active ? "page" : undefined}
             onClick={() => onChange?.(index)}
           >
             {tab.label}
+            {tab.badge ? <span className={badgeClass}>{tab.badge}</span> : null}
           </button>
         );
       })}
