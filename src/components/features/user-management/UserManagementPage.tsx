@@ -70,8 +70,10 @@ function buildColumns(
     },
     {
       id: "site",
-      header: "Site",
-      cell: (row) => <TableTextCell>{row.site}</TableTextCell>,
+      header: "Sites",
+      cell: (row) => (
+        <TableTextCell>{row.sites.join(", ") || "—"}</TableTextCell>
+      ),
     },
     {
       id: "status",

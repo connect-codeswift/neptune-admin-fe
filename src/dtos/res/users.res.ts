@@ -1,5 +1,12 @@
 export type SuperAdminUserStatus = "Active" | "Pending" | "Suspended";
 
+/** One of a user's assigned sites, as returned in `sites[]`. */
+export type UserSiteResponse = {
+  id: number;
+  siteName?: string | null;
+  location?: string | null;
+};
+
 /** GET /SuperAdminUsers list item — shape from ADMIN_DASHBOARD_FE_GUIDE.md */
 export type SuperAdminUserResponse = {
   id: number;
@@ -10,9 +17,12 @@ export type SuperAdminUserResponse = {
   profileUrl?: string | null;
   roleId: number;
   roleName: string;
+  /** Active site — what the user's token carries until they switch. */
   siteId?: number | null;
   siteName?: string | null;
   siteLocation?: string | null;
+  /** Every site the user is assigned to, including the active one. */
+  sites?: UserSiteResponse[] | null;
   isDrop?: boolean;
   isInvited?: boolean;
   mfaEnabled?: boolean;

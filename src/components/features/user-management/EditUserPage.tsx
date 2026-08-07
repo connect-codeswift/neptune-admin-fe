@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
-import { PhoneInput, SelectInput, TextInput } from "@/components/inputs";
+import {
+  MultiSelectInput,
+  PhoneInput,
+  SelectInput,
+  TextInput,
+} from "@/components/inputs";
 import { PageHeader, PlaceholderPage } from "@/components/layouts";
 import {
   Button,
@@ -22,6 +27,8 @@ import {
   formatRoleName,
   getUserInitials,
   mapApiStatusToTableStatus,
+  readUserSiteIds,
+  readUserSiteNames,
 } from "@/lib/mappers/users.mapper";
 import { useUserManagementPaths } from "./useUserManagementPaths";
 
@@ -37,7 +44,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
   const [gender, setGender] = useState("");
   const [contactNo, setContactNo] = useState("");
   const [roleId, setRoleId] = useState("");
-  const [siteId, setSiteId] = useState("");
+  const [siteIds, setSiteIds] = useState<string[]>([]);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
 
   useEffect(() => {
@@ -46,7 +53,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
     setGender(user.gender?.trim() ?? "");
     setContactNo(user.contactNo?.trim() ?? "");
     setRoleId(String(user.roleId));
-    setSiteId(user.siteId != null ? String(user.siteId) : "");
+    setSiteIds(readUserSiteIds(user).map(String));
   }, [user]);
 
   if (isLoading) {
@@ -75,13 +82,22 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
   const isSuspended = status === "suspended";
 
   const handleSave = async () => {
+    const numericSiteIds = siteIds
+      .map(Number)
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (numericSiteIds.length === 0) {
+      toast.error("A user must be assigned to at least one site.");
+      return;
+    }
+
     try {
       await updateMutation.mutateAsync({
         fullName: fullName.trim() || null,
         gender: gender.trim() || null,
         contactNo: contactNo.trim() || null,
         roleId: roleId ? Number(roleId) : null,
-        siteId: siteId ? Number(siteId) : null,
+        siteIds: numericSiteIds,
       });
       toast.success("User updated.");
       router.push(detailHref);
@@ -130,7 +146,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
       <div className="flex flex-col gap-6 pb-4">
         <PageHeader
           title={`Edit: ${displayName}`}
-          description="Update user information, role, and site assignment."
+          description="Update user information, role, and site assignments."
           breadcrumbs={[
             { label: "Admin", href: adminHref },
             { label: "User Management", href: basePath },
@@ -192,11 +208,13 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
                 onChange={setRoleId}
                 disabled={rolesLoading}
               />
-              <SelectInput
-                label="Site"
+              <MultiSelectInput
+                label="Sites"
                 options={siteOptions}
-                value={siteId}
-                onChange={setSiteId}
+                value={siteIds}
+                onChange={setSiteIds}
+                placeholder="Select sites"
+                helperText="Removing their current site moves them to the first one that remains."
               />
             </div>
           </DetailCard>
@@ -221,7 +239,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
               <dl className="flex flex-col gap-3 border-t border-darkest/8 pt-4">
                 {[
                   ["Role", formatRoleName(user.roleName)],
-                  ["Site", user.siteName ?? "—"],
+                  ["Sites", readUserSiteNames(user).join(", ") || "—"],
                   ["MFA", user.mfaEnabled ? "Enabled" : "Disabled"],
                 ].map(([label, value]) => (
                   <div
