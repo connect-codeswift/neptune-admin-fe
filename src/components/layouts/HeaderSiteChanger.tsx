@@ -1,7 +1,8 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -10,27 +11,49 @@ import {
   replaceSiteInPath,
 } from "@/lib/org-sites";
 import { parseOrgSitePath } from "@/lib/sidebar-items";
-import { switchOrganizationSite } from "@/lib/select-company-flow";
-import { getTenantContext } from "@/lib/tenant-context";
-import { isAdminRole } from "@/lib/auth-tokens";
+import {
+  switchOrganizationSite,
+  switchTenantAdminSite,
+} from "@/lib/select-company-flow";
+import {
+  getTenantContext,
+  TENANT_CONTEXT_CHANGED_EVENT,
+} from "@/lib/tenant-context";
+import { isAdminRole, isSuperAdminRole } from "@/lib/auth-tokens";
 
 export function HeaderSiteChanger() {
   const pathname = usePathname();
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
+  // localStorage is empty on the server; seed after mount so tenant-admin
+  // hydration of Org/me can reveal the switcher without a full reload.
+  const [sitesVersion, setSitesVersion] = useState(0);
 
   const orgSite = parseOrgSitePath(pathname);
+  void sitesVersion;
   const sites = orgSite ? getAllSitesOfThisOrg(orgSite.company) : [];
   const companyLabel =
     getOrganizationName(orgSite?.company ?? "") ?? "organization";
   const currentSite = orgSite
     ? (sites.find((site) => site.id === orgSite.site) ?? sites[0])
     : undefined;
+  // SuperAdmin staff and multi-site tenant Admins both need this. Single-site
+  // Admins still see it when their cache has one entry — the menu is a no-op.
   const visible =
-    !isAdminRole() && orgSite !== null && sites.length > 0;
+    (isSuperAdminRole() || isAdminRole()) &&
+    orgSite !== null &&
+    sites.length > 0;
+
+  useEffect(() => {
+    const bump = () => setSitesVersion((version) => version + 1);
+    bump();
+    window.addEventListener(TENANT_CONTEXT_CHANGED_EVENT, bump);
+    return () =>
+      window.removeEventListener(TENANT_CONTEXT_CHANGED_EVENT, bump);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,13 +93,22 @@ export function HeaderSiteChanger() {
 
     setSwitching(true);
     try {
-      await switchOrganizationSite({
-        organizationId: context.organizationId,
-        organizationName: context.organizationName,
-        siteId: Number(siteId),
-        sites: context.sites,
-      });
-      router.push(replaceSiteInPath(pathname, orgSite.company, siteId));
+      if (isAdminRole()) {
+        await switchTenantAdminSite(Number(siteId));
+      } else {
+        await switchOrganizationSite({
+          organizationId: context.organizationId,
+          organizationName: context.organizationName,
+          siteId: Number(siteId),
+          sites: context.sites,
+        });
+      }
+      // Full navigation so no site-scoped React Query data or client state survives.
+      queryClient.clear();
+      window.location.assign(
+        replaceSiteInPath(pathname, orgSite.company, siteId),
+      );
+      return;
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to switch site.",
@@ -129,36 +161,36 @@ export function HeaderSiteChanger() {
             const isSelected = site.id === orgSite.site;
             return (
               <li key={site.id} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => void handleSelect(site.id)}
-                className={`flex w-full items-start justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-lightgray ${
-                  isSelected ? "bg-blue-normal/8" : ""
-                }`}
-              >
-                <div className="min-w-0">
-                  <p
-                    className={`truncate text5 ${
-                      isSelected
-                        ? "font-semibold text-blue-normal"
-                        : "text-darkest"
-                    }`}
-                  >
-                    {site.name}
-                  </p>
-                  <p className="truncate text7 text-gray">{site.type}</p>
-                </div>
-                {isSelected ? (
-                  <Icon
-                    icon="mdi:check"
-                    width={18}
-                    height={18}
-                    className="mt-0.5 shrink-0 text-blue-normal"
-                    aria-hidden
-                  />
-                ) : null}
-              </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => void handleSelect(site.id)}
+                  className={`flex w-full items-start justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-lightgray ${
+                    isSelected ? "bg-blue-normal/8" : ""
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p
+                      className={`truncate text5 ${
+                        isSelected
+                          ? "font-semibold text-blue-normal"
+                          : "text-darkest"
+                      }`}
+                    >
+                      {site.name}
+                    </p>
+                    <p className="truncate text7 text-gray">{site.type}</p>
+                  </div>
+                  {isSelected ? (
+                    <Icon
+                      icon="mdi:check"
+                      width={18}
+                      height={18}
+                      className="mt-0.5 shrink-0 text-blue-normal"
+                      aria-hidden
+                    />
+                  ) : null}
+                </button>
               </li>
             );
           })}

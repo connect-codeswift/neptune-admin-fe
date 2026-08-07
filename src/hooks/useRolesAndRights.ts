@@ -7,6 +7,7 @@ import type {
   RoleResponse,
   RoleWithPermissionsResponse,
 } from "@/dtos/res/roles.res";
+import { type TenantScope, useTenantScope } from "@/hooks/useTenantScope";
 import { assertApiSuccess, unwrapList } from "@/lib/api-response";
 import {
   extractCreatedRoleId,
@@ -23,12 +24,35 @@ import {
   getAllRolesPermissions,
 } from "@/services/roles.service";
 
+/**
+ * Base (prefix) keys. Mutations invalidate these directly — React Query matches
+ * by prefix, so `["super-admin","roles-permissions"]` still invalidates the
+ * tenant-scoped `["super-admin","roles-permissions","12","3"]` entries.
+ */
 export const ROLES_QUERY_KEY = ["super-admin", "roles"] as const;
 export const PERMISSIONS_QUERY_KEY = ["super-admin", "permissions"] as const;
 export const ROLES_PERMISSIONS_QUERY_KEY = [
   "super-admin",
   "roles-permissions",
 ] as const;
+
+/**
+ * Site-scoped key builders. The backend scopes tenant data by the SiteId inside
+ * the org token, so the same URL returns different payloads per site — the
+ * cache entries must be keyed by `[company, site]` or switching sites in the
+ * header replays stale rows.
+ */
+export function rolesQueryKey(scope: TenantScope) {
+  return [...ROLES_QUERY_KEY, ...scope.key] as const;
+}
+
+export function permissionsQueryKey(scope: TenantScope) {
+  return [...PERMISSIONS_QUERY_KEY, ...scope.key] as const;
+}
+
+export function rolesPermissionsQueryKey(scope: TenantScope) {
+  return [...ROLES_PERMISSIONS_QUERY_KEY, ...scope.key] as const;
+}
 
 type PermissionsCatalog = {
   permissions: PermissionResponse[];
@@ -77,16 +101,22 @@ async function fetchRolesWithPermissions(): Promise<RoleViewModel[]> {
 }
 
 export function useAllPermissions() {
+  const scope = useTenantScope();
+
   return useQuery({
-    queryKey: PERMISSIONS_QUERY_KEY,
+    queryKey: permissionsQueryKey(scope),
     queryFn: fetchPermissionsCatalog,
+    enabled: scope.ready,
   });
 }
 
 export function useRolesWithPermissions() {
+  const scope = useTenantScope();
+
   return useQuery({
-    queryKey: ROLES_PERMISSIONS_QUERY_KEY,
+    queryKey: rolesPermissionsQueryKey(scope),
     queryFn: fetchRolesWithPermissions,
+    enabled: scope.ready,
   });
 }
 

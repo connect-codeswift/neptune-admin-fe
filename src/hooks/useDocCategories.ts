@@ -8,6 +8,7 @@ import type {
   DocDashboardKpisResponse,
   UpdateDocCategoryPayload,
 } from "@/dtos/res/doc-categories.res";
+import { useTenantScope, type TenantScope } from "@/hooks/useTenantScope";
 import { assertApiSuccess, unwrapDataModel, unwrapList } from "@/lib/api-response";
 import {
   addCategory,
@@ -18,9 +19,26 @@ import {
   updateCategory,
 } from "@/services/docs.service";
 
+/**
+ * Prefixes. Categories are stored per site (`DocCategory.SiteId`) and every read is
+ * filtered by the SiteId inside the org token, so the same URL returns a different list
+ * per site. Mutations invalidate on the prefix, which covers every site's entry.
+ */
 export const DOC_CATEGORIES_KEY = ["document", "categories"] as const;
 export const DOC_CATEGORY_STATS_KEY = ["document", "category-stats"] as const;
 export const DOC_DASHBOARD_KPIS_KEY = ["document", "dashboard-kpis"] as const;
+
+export function docCategoriesQueryKey(scope: TenantScope) {
+  return [...DOC_CATEGORIES_KEY, ...scope.key] as const;
+}
+
+export function docCategoryStatsQueryKey(scope: TenantScope) {
+  return [...DOC_CATEGORY_STATS_KEY, ...scope.key] as const;
+}
+
+export function docDashboardKpisQueryKey(scope: TenantScope) {
+  return [...DOC_DASHBOARD_KPIS_KEY, ...scope.key] as const;
+}
 
 async function fetchCategories() {
   const response = await getAllCategories();
@@ -55,23 +73,32 @@ async function fetchDashboardKpis() {
 }
 
 export function useDocCategories() {
+  const scope = useTenantScope();
+
   return useQuery({
-    queryKey: DOC_CATEGORIES_KEY,
+    queryKey: docCategoriesQueryKey(scope),
     queryFn: fetchCategories,
+    enabled: scope.ready,
   });
 }
 
 export function useDocCategoryStats() {
+  const scope = useTenantScope();
+
   return useQuery({
-    queryKey: DOC_CATEGORY_STATS_KEY,
+    queryKey: docCategoryStatsQueryKey(scope),
     queryFn: fetchCategoryStats,
+    enabled: scope.ready,
   });
 }
 
 export function useDocDashboardKpis() {
+  const scope = useTenantScope();
+
   return useQuery({
-    queryKey: DOC_DASHBOARD_KPIS_KEY,
+    queryKey: docDashboardKpisQueryKey(scope),
     queryFn: fetchDashboardKpis,
+    enabled: scope.ready,
   });
 }
 

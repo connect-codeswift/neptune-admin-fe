@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
@@ -21,19 +21,22 @@ import { usePpeCatalogPaths } from "./usePpeCatalogPaths";
 
 export function PpeCatalogPage() {
   const { adminHref } = usePpeCatalogPaths();
-  const { data: items = [], isLoading, isError, error } = usePpeCatalog();
+  // `isPending` (not `isLoading`): the query is disabled until the `[company]/[site]`
+  // scope resolves, and a disabled query reports `isLoading === false` with no data,
+  // which would flash the empty state before the first fetch starts.
+  const { data: items = [], isPending, isError, error } = usePpeCatalog();
   const createPpeItem = useCreatePpeItem();
   const [activeCategory, setActiveCategory] = useState<PpeCategoryId | "all">(
     "all",
   );
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const categoryCounts = useMemo(() => getPpeCategoryCounts(items), [items]);
+  const categoryCounts = getPpeCategoryCounts(items);
 
-  const filteredItems = useMemo(() => {
-    if (activeCategory === "all") return items;
-    return items.filter((item) => item.categoryId === activeCategory);
-  }, [activeCategory, items]);
+  let filteredItems = items;
+  if (activeCategory !== "all") {
+    filteredItems = items.filter((item) => item.categoryId === activeCategory);
+  }
 
   const handleAddItem = async (draft: AddPpeItemDraft, categoryLabel: string) => {
     try {
@@ -94,7 +97,7 @@ export function PpeCatalogPage() {
         onChange={setActiveCategory}
       />
 
-      {isLoading ? (
+      {isPending && !isError ? (
         <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
           Loading PPE catalog…
         </p>
@@ -106,13 +109,13 @@ export function PpeCatalogPage() {
         </p>
       ) : null}
 
-      {!isLoading && !isError && filteredItems.length === 0 ? (
+      {!isPending && !isError && filteredItems.length === 0 ? (
         <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
           No PPE items in this category.
         </p>
       ) : null}
 
-      {!isLoading && !isError && filteredItems.length > 0 ? (
+      {!isPending && !isError && filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {filteredItems.map((item) => (
             <PpeCatalogCard key={item.id} item={item} />

@@ -21,7 +21,9 @@ function StatCard({
 
 export function RolesAndRightsPage() {
   const { adminHref, basePath } = useRolesAndRightsPaths();
-  const { data: roles = [], isLoading, isError, error } =
+  // `isPending` (not `isLoading`) so the query stays in its loading state while
+  // it is still gated on the tenant scope resolving.
+  const { data: roles = [], isPending, isError, error } =
     useRolesWithPermissions();
   const stats = getRoleStats(roles);
 
@@ -45,13 +47,19 @@ export function RolesAndRightsPage() {
         }
       />
 
+      <p className="rounded-xl border border-blue-normal/15 bg-blue-normal/5 px-4 py-3 text6 text-darkest/80">
+        Roles apply company-wide across every site. Changing the site switcher
+        does not change this list — a user keeps the same role wherever they
+        work in the organization.
+      </p>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard value={stats.totalRoles} label="Total Roles" />
         <StatCard value={stats.totalUsersAssigned} label="Total Users Assigned" />
         <StatCard value={stats.customRoles} label="Custom Roles" />
       </div>
 
-      {isLoading ? (
+      {isPending ? (
         <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
           Loading roles…
         </p>
@@ -63,7 +71,7 @@ export function RolesAndRightsPage() {
         </p>
       ) : null}
 
-      {!isLoading && !isError ? (
+      {!isPending && !isError ? (
         <div className="flex flex-col gap-4">
           {roles.length === 0 ? (
             <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
