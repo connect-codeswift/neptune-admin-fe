@@ -1,5 +1,5 @@
-import { ForgotPasswordForm } from "@/components/features/auth/ForgotPasswordForm";
+import { redirect } from "next/navigation";
 
-export default function ForgotPasswordPage() {
-  return <ForgotPasswordForm flow="super" />;
+export default function SuperForgotPasswordRedirectPage() {
+  redirect("/forgot-password");
 }

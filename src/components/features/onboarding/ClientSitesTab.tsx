@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { TextInput } from "@/components/inputs";
 import {
   Button,
-  Modal,
   Table,
   TableIconAction,
   TableStatusBadge,
@@ -13,72 +11,116 @@ import {
   type TableColumn,
 } from "@/components/ui";
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
+import { useCompanySites } from "@/hooks/useClientAccountDetail";
+import { useSuperAdminSiteMutations } from "@/hooks/useSuperAdminSites";
+import { toSiteLimitInfo } from "@/lib/organization-limits";
+import { getIanaTimezoneSelectOptions } from "@/lib/iana-timezones";
 import {
-  useSuperAdminSiteMutations,
-  useSuperAdminSites,
-} from "@/hooks/useSuperAdminSites";
+  getSiteIndustryTypeSelectOptions,
+  getSiteSizeSelectOptions,
+} from "@/lib/site-form-options";
+import {
+  ClientSiteFormFields,
+  ClientSiteFormModal,
+  EMPTY_CLIENT_SITE_FORM,
+  toClientSiteFormState,
+} from "./ClientSiteFormModal";
 import { DetailCard } from "./DetailCard";
-
-type SiteFormState = {
-  siteName: string;
-  location: string;
-  industryType: string;
-  siteSize: string;
-  timeZoneId: string;
-};
-
-const EMPTY_FORM: SiteFormState = {
-  siteName: "",
-  location: "",
-  industryType: "",
-  siteSize: "",
-  timeZoneId: "",
-};
-
-function toFormState(site?: SuperAdminSiteRow): SiteFormState {
-  if (!site) return EMPTY_FORM;
-  return {
-    siteName: site.siteName,
-    location: site.location,
-    industryType: site.industryType ?? "",
-    siteSize: site.siteSize ?? "",
-    timeZoneId: site.timeZoneId ?? "",
-  };
-}
+import { SiteLimitModal } from "./SiteLimitModal";
 
 type ClientSitesTabProps = Readonly<{
-  orgContextReady: boolean;
-  orgContextError?: string | null;
-  onEnsureOrgContext: () => void;
-  ensuringOrgContext?: boolean;
+  organizationId: number;
+  maxSites?: number | null;
+  sitesUsed?: number;
+  atSiteLimit?: boolean;
+  initialEditSiteId?: number | null;
+  onInitialEditConsumed?: () => void;
 }>;
 
 export function ClientSitesTab({
-  orgContextReady,
-  orgContextError,
-  onEnsureOrgContext,
-  ensuringOrgContext = false,
+  organizationId,
+  maxSites = null,
+  sitesUsed = 0,
+  atSiteLimit = false,
+  initialEditSiteId = null,
+  onInitialEditConsumed,
 }: ClientSitesTabProps) {
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const { data: sites = [], isLoading, isError, error, refetch } =
-    useSuperAdminSites(includeDeleted);
-  const { createSite, updateSite, removeSite } = useSuperAdminSiteMutations();
+    useCompanySites(organizationId, includeDeleted);
+  const { createSite, updateSite, removeSite } =
+    useSuperAdminSiteMutations(organizationId);
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [siteLimitModalOpen, setSiteLimitModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
-  const [form, setForm] = useState<SiteFormState>(EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_CLIENT_SITE_FORM);
+
+  const industryTypeOptions = useMemo(
+    () => getSiteIndustryTypeSelectOptions(form.industryType),
+    [form.industryType],
+  );
+  const siteSizeOptions = useMemo(
+    () => getSiteSizeSelectOptions(form.siteSize),
+    [form.siteSize],
+  );
+  const timezoneOptions = useMemo(
+    () => getIanaTimezoneSelectOptions(form.timeZoneId),
+    [form.timeZoneId],
+  );
 
   const openCreate = () => {
-    setEditingSite(null);
-    setForm(EMPTY_FORM);
-    setModalOpen(true);
+    const siteInfo =
+      maxSites != null
+        ? toSiteLimitInfo({
+            maxSites,
+            sitesUsed,
+            sitesAvailable: Math.max(0, maxSites - sitesUsed),
+            atSiteLimit,
+          })
+        : null;
+
+    if (atSiteLimit && siteInfo) {
+      setSiteLimitModalOpen(true);
+      return;
+    }
+
+    setForm(EMPTY_CLIENT_SITE_FORM);
+    setCreateModalOpen(true);
   };
+
+  const siteLimitInfo =
+    maxSites != null
+      ? toSiteLimitInfo({
+          maxSites,
+          sitesUsed,
+          sitesAvailable: Math.max(0, maxSites - sitesUsed),
+          atSiteLimit,
+        })
+      : null;
 
   const openEdit = (site: SuperAdminSiteRow) => {
     setEditingSite(site);
-    setForm(toFormState(site));
-    setModalOpen(true);
+    setForm(toClientSiteFormState(site));
   };
+
+  const closeEdit = () => {
+    setEditingSite(null);
+    setForm(EMPTY_CLIENT_SITE_FORM);
+  };
+
+  useEffect(() => {
+    if (initialEditSiteId == null || isLoading) return;
+
+    const site = sites.find(
+      (row) => row.id === initialEditSiteId && !row.isDrop,
+    );
+    if (site) {
+      setEditingSite(site);
+      setForm(toClientSiteFormState(site));
+    }
+    onInitialEditConsumed?.();
+  }, [initialEditSiteId, isLoading, sites, onInitialEditConsumed]);
 
   const handleSave = async () => {
     if (!form.siteName.trim() || !form.location.trim()) {
@@ -98,11 +140,12 @@ export function ClientSitesTab({
       if (editingSite) {
         await updateSite.mutateAsync({ siteId: editingSite.id, payload });
         toast.success("Site updated.");
+        closeEdit();
       } else {
         await createSite.mutateAsync(payload);
         toast.success("Site created.");
+        setCreateModalOpen(false);
       }
-      setModalOpen(false);
     } catch (saveError) {
       toast.error(
         saveError instanceof Error ? saveError.message : "Failed to save site.",
@@ -130,6 +173,37 @@ export function ClientSitesTab({
     }
   };
 
+  if (editingSite) {
+    return (
+      <DetailCard
+        title={`Edit site — ${editingSite.siteName}`}
+        description="Update site details for this client account."
+        action={
+          <Button type="button" variant="secondary" size="sm" onClick={closeEdit}>
+            Back to sites
+          </Button>
+        }
+      >
+        <ClientSiteFormFields
+          form={form}
+          onFormChange={setForm}
+          industryTypeOptions={industryTypeOptions}
+          siteSizeOptions={siteSizeOptions}
+          timezoneOptions={timezoneOptions}
+        />
+        <div className="mt-6 flex justify-end">
+          <Button
+            type="button"
+            loading={updateSite.isPending}
+            onClick={() => void handleSave()}
+          >
+            Save changes
+          </Button>
+        </div>
+      </DetailCard>
+    );
+  }
+
   const columns: TableColumn<SuperAdminSiteRow>[] = [
     {
       id: "name",
@@ -148,6 +222,18 @@ export function ClientSitesTab({
       id: "location",
       header: "Location",
       cell: (row) => <TableTextCell muted>{row.location}</TableTextCell>,
+    },
+    {
+      id: "industry",
+      header: "Industry",
+      cell: (row) => (
+        <TableTextCell>{row.industryType?.trim() || "—"}</TableTextCell>
+      ),
+    },
+    {
+      id: "size",
+      header: "Site Size",
+      cell: (row) => <TableTextCell>{row.siteSize?.trim() || "—"}</TableTextCell>,
     },
     {
       id: "timezone",
@@ -174,13 +260,20 @@ export function ClientSitesTab({
     {
       id: "actions",
       header: "Actions",
+      headerClassName: "w-36",
+      className: "w-36",
       cell: (row) => (
-        <div className="flex items-center gap-1">
-          <TableIconAction
-            label={`Edit ${row.siteName}`}
-            icon="lucide:pencil"
-            onClick={row.isDrop ? undefined : () => openEdit(row)}
-          />
+        <div className="flex items-center gap-1.5">
+          {!row.isDrop ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => openEdit(row)}
+            >
+              Edit
+            </Button>
+          ) : null}
           <TableIconAction
             label={`Delete ${row.siteName}`}
             icon="lucide:trash-2"
@@ -194,30 +287,6 @@ export function ClientSitesTab({
       ),
     },
   ];
-
-  if (!orgContextReady) {
-    return (
-      <DetailCard
-        title="Sites & Locations"
-        description="Sites are managed in the selected organization's context."
-      >
-        <div className="flex flex-col items-start gap-4 rounded-xl border border-darkest/8 bg-white/80 px-5 py-6">
-          <p className="text5 text-gray">
-            {orgContextError ??
-              "Select this organization to load and manage its sites."}
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            loading={ensuringOrgContext}
-            onClick={onEnsureOrgContext}
-          >
-            Load sites for this organization
-          </Button>
-        </div>
-      </DetailCard>
-    );
-  }
 
   return (
     <>
@@ -277,61 +346,30 @@ export function ClientSitesTab({
         ) : null}
       </DetailCard>
 
-      <Modal
-        open={modalOpen}
-        title={editingSite ? "Edit site" : "Add site"}
-        onClose={() => setModalOpen(false)}
-        primaryLabel={editingSite ? "Save site" : "Create site"}
-        onPrimary={() => void handleSave()}
-        loading={createSite.isPending || updateSite.isPending}
-        size="lg"
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextInput
-            label="Site name *"
-            value={form.siteName}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, siteName: event.target.value }))
-            }
-          />
-          <TextInput
-            label="Location *"
-            value={form.location}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, location: event.target.value }))
-            }
-          />
-          <TextInput
-            label="Industry type"
-            value={form.industryType}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                industryType: event.target.value,
-              }))
-            }
-          />
-          <TextInput
-            label="Site size"
-            value={form.siteSize}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, siteSize: event.target.value }))
-            }
-          />
-          <TextInput
-            label="Timezone (IANA)"
-            placeholder="America/Chicago"
-            value={form.timeZoneId}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                timeZoneId: event.target.value,
-              }))
-            }
-            className="sm:col-span-2"
-          />
-        </div>
-      </Modal>
+      <ClientSiteFormModal
+        open={createModalOpen}
+        editingSite={null}
+        form={form}
+        onFormChange={setForm}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={() => void handleSave()}
+        loading={createSite.isPending}
+        industryTypeOptions={industryTypeOptions}
+        siteSizeOptions={siteSizeOptions}
+        timezoneOptions={timezoneOptions}
+      />
+
+      {siteLimitInfo ? (
+        <SiteLimitModal
+          open={siteLimitModalOpen}
+          siteInfo={siteLimitInfo}
+          onClose={() => setSiteLimitModalOpen(false)}
+          onContactSales={() => {
+            toast.info("Contact CodeSwift to increase your site allowance.");
+            setSiteLimitModalOpen(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }

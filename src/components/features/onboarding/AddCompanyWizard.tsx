@@ -8,7 +8,6 @@ import { Button, SetupTabBar } from "@/components/ui";
 import type { RegisterPayload } from "@/dtos/req/onboarding.req";
 import { moduleIdsToActivatedModules } from "@/lib/ehs-modules";
 import { register } from "@/services/auth.service";
-import { SetupStepFour, type InviteDraft } from "./SetupStepFour";
 import { SetupStepOne } from "./SetupStepOne";
 import { SetupStepThree } from "./SetupStepThree";
 import { SetupStepTwo, type SiteDraft } from "./SetupStepTwo";
@@ -28,11 +27,6 @@ const SETUP_STEPS = [
     id: "admin-account",
     label: "Admin Account",
     icon: "lucide:key-round",
-  },
-  {
-    id: "invite-team",
-    label: "Invite Team",
-    icon: "lucide:user-cog",
   },
 ] as const;
 
@@ -99,25 +93,6 @@ export function AddCompanyWizard() {
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
 
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("");
-  const [inviteSiteId, setInviteSiteId] = useState("");
-  const [invites, setInvites] = useState<InviteDraft[]>([]);
-
-  const siteOptions = (() => {
-    const options = sites.map((site) => ({
-      value: site.id,
-      label: site.name,
-    }));
-    if (siteName.trim()) {
-      options.unshift({ value: "current", label: siteName.trim() });
-    }
-    if (options.length === 0) {
-      return [{ value: "demo-site", label: "Houston Plant" }];
-    }
-    return options;
-  })();
-
   const goBack = () => {
     if (stepIndex === 0) {
       router.push("/super/client-accounts");
@@ -183,8 +158,13 @@ export function AddCompanyWizard() {
   };
 
   const addSite = () => {
-    if (!siteName.trim()) {
-      toast.error("Enter a site name first.");
+    if (
+      !siteName.trim() ||
+      !region.trim() ||
+      !industryType ||
+      !companySize
+    ) {
+      toast.error("Complete the site form first.");
       return;
     }
     setSites((current) => [
@@ -203,27 +183,8 @@ export function AddCompanyWizard() {
     setCompanySize("");
   };
 
-  const addInvite = () => {
-    if (!inviteEmail.trim() || !inviteRole || !inviteSiteId) {
-      toast.error("Email, role, and site are required.");
-      return;
-    }
-    setInvites((current) => [
-      ...current,
-      {
-        id: createId(),
-        email: inviteEmail.trim(),
-        role: inviteRole,
-        siteId: inviteSiteId,
-      },
-    ]);
-    setInviteEmail("");
-    setInviteRole("");
-    setInviteSiteId("");
-  };
-
-  const removeInvite = (id: string) => {
-    setInvites((current) => current.filter((invite) => invite.id !== id));
+  const removeSite = (id: string) => {
+    setSites((current) => current.filter((site) => site.id !== id));
   };
 
   let stepContent = null;
@@ -250,9 +211,10 @@ export function AddCompanyWizard() {
         onCompanySizeChange={setCompanySize}
         sites={sites}
         onAddSite={addSite}
+        onRemoveSite={removeSite}
       />
     );
-  } else if (stepIndex === 2) {
+  } else {
     stepContent = (
       <SetupStepThree
         adminName={adminName}
@@ -261,21 +223,6 @@ export function AddCompanyWizard() {
         onAdminEmailChange={setAdminEmail}
         adminPassword={adminPassword}
         onAdminPasswordChange={setAdminPassword}
-      />
-    );
-  } else {
-    stepContent = (
-      <SetupStepFour
-        inviteEmail={inviteEmail}
-        onInviteEmailChange={setInviteEmail}
-        inviteRole={inviteRole}
-        onInviteRoleChange={setInviteRole}
-        inviteSiteId={inviteSiteId}
-        onInviteSiteIdChange={setInviteSiteId}
-        siteOptions={siteOptions}
-        invites={invites}
-        onAddInvite={addInvite}
-        onRemoveInvite={removeInvite}
       />
     );
   }

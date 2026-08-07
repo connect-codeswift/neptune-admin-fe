@@ -2,12 +2,21 @@ const AUTH_TOKEN_KEY = "neptune_admin_auth_token";
 const ORG_TOKEN_KEY = "neptune_admin_org_token";
 const MFA_TOKEN_KEY = "neptune_admin_mfa_token";
 const AUTH_ROLE_KEY = "neptune_admin_role";
+const AUTH_EMAIL_KEY = "neptune_admin_email";
 
 export type StoredAuthRole = "super-admin" | "admin";
+
+export const AUTH_SESSION_EVENT = "neptune:auth-session-updated";
+
+function notifyAuthSessionUpdated() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(AUTH_SESSION_EVENT));
+}
 
 export function setAuthToken(token: string) {
   if (typeof window === "undefined" || !token) return;
   window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+  notifyAuthSessionUpdated();
 }
 
 export function getAuthToken(): string | null {
@@ -18,6 +27,7 @@ export function getAuthToken(): string | null {
 export function setOrgToken(token: string) {
   if (typeof window === "undefined" || !token) return;
   window.localStorage.setItem(ORG_TOKEN_KEY, token);
+  notifyAuthSessionUpdated();
 }
 
 export function getOrgToken(): string | null {
@@ -43,12 +53,24 @@ export function clearAuthTokens() {
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(ORG_TOKEN_KEY);
   window.localStorage.removeItem(AUTH_ROLE_KEY);
+  window.localStorage.removeItem(AUTH_EMAIL_KEY);
   clearTenantContext();
+}
+
+/** Clears session storage and redirects to the given login path. */
+export function forceLogoutRedirect(loginPath: string) {
+  if (typeof window === "undefined") return;
+  clearMfaToken();
+  clearAuthTokens();
+  if (!window.location.pathname.startsWith(loginPath)) {
+    window.location.assign(loginPath);
+  }
 }
 
 export function setAuthRole(role: StoredAuthRole) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(AUTH_ROLE_KEY, role);
+  notifyAuthSessionUpdated();
 }
 
 export function getAuthRole(): StoredAuthRole | null {
@@ -56,6 +78,21 @@ export function getAuthRole(): StoredAuthRole | null {
   const role = window.localStorage.getItem(AUTH_ROLE_KEY);
   if (role === "super-admin" || role === "admin") return role;
   return null;
+}
+
+/**
+ * The signed-in email, remembered at login purely so the shell can identify the
+ * current user. A SuperAdmin session token carries only `id` and `purpose`, and
+ * no endpoint returns the account, so this is the only source available.
+ */
+export function setAuthEmail(email: string) {
+  if (typeof window === "undefined" || !email) return;
+  window.localStorage.setItem(AUTH_EMAIL_KEY, email);
+}
+
+export function getAuthEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(AUTH_EMAIL_KEY);
 }
 
 export function isSuperAdminRole(): boolean {
@@ -79,10 +116,17 @@ export function getMfaToken(): string | null {
 export function clearMfaToken() {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(MFA_TOKEN_KEY);
+  window.sessionStorage.removeItem("neptune_admin_portal_account_type");
 }
 
 export function getStoredBearerToken(): string | null {
   return getOrgToken() || getAuthToken();
 }
 
-export { AUTH_TOKEN_KEY, ORG_TOKEN_KEY, MFA_TOKEN_KEY, AUTH_ROLE_KEY };
+export {
+  AUTH_TOKEN_KEY,
+  ORG_TOKEN_KEY,
+  MFA_TOKEN_KEY,
+  AUTH_ROLE_KEY,
+  AUTH_EMAIL_KEY,
+};

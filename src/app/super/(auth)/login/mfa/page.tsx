@@ -1,5 +1,5 @@
-import { MfaVerifyForm } from "@/components/features/auth/MfaVerifyForm";
+import { redirect } from "next/navigation";
 
-export default function SuperAdminMfaVerifyPage() {
-  return <MfaVerifyForm flow="super" />;
+export default function SuperLoginMfaRedirectPage() {
+  redirect("/login/mfa");
 }

@@ -3,18 +3,15 @@
 import { Modal } from "@/components/ui";
 import {
   getSeatLimitMessage,
-  getSeatsAvailable,
   getSeatUsagePercent,
-  getTrialStatusLabel,
-  type SubscriptionSeatInfo,
-} from "@/lib/subscription-seats";
+  type OrganizationSeatLimitInfo,
+} from "@/lib/organization-limits";
 
 type SubscriptionSeatLimitModalProps = Readonly<{
   open: boolean;
-  seatInfo: SubscriptionSeatInfo;
+  seatInfo: OrganizationSeatLimitInfo;
   onClose: () => void;
   onContactSales?: () => void;
-  onManageSubscription?: () => void;
 }>;
 
 function DetailRow({
@@ -39,20 +36,18 @@ export function SubscriptionSeatLimitModal({
   seatInfo,
   onClose,
   onContactSales,
-  onManageSubscription,
 }: SubscriptionSeatLimitModalProps) {
   const usagePercent = getSeatUsagePercent(seatInfo);
-  const seatsAvailable = getSeatsAvailable(seatInfo);
 
   return (
     <Modal
       open={open}
-      title="Subscription Seat Limit"
+      title="Seat Limit Reached"
       onClose={onClose}
-      secondaryLabel="Contact Sales"
+      secondaryLabel="Contact CodeSwift"
       onSecondary={onContactSales ?? onClose}
-      primaryLabel="Manage Subscription"
-      onPrimary={onManageSubscription ?? onClose}
+      primaryLabel="Close"
+      onPrimary={onClose}
       size="md"
     >
       <div className="flex flex-col gap-5">
@@ -80,19 +75,13 @@ export function SubscriptionSeatLimitModal({
 
         <div className="rounded-xl bg-[#f4f6f9] px-4 py-3">
           <div className="flex flex-col gap-2.5">
-            <DetailRow label="Current Plan" value={seatInfo.planType} />
-            <DetailRow
-              label="Trial Status"
-              value={getTrialStatusLabel(seatInfo)}
-              valueClassName="text-blue-normal"
-            />
             <DetailRow
               label="Seats Used"
               value={`${seatInfo.seatsUsed} / ${seatInfo.seatsTotal}`}
             />
             <DetailRow
               label="Seats Available"
-              value={String(seatsAvailable)}
+              value={String(seatInfo.seatsAvailable)}
             />
           </div>
         </div>

@@ -11,12 +11,14 @@ export type InviteSuperAdminUserPayload = {
   email: string;
   roleId: number;
   fullName?: string | null;
+  gender?: string | null;
   siteId?: number | null;
 };
 
 /** Request body for PUT /SuperAdminUsers/{userId} */
 export type UpdateSuperAdminUserPayload = {
   fullName?: string | null;
+  gender?: string | null;
   contactNo?: string | null;
   roleId?: number | null;
   siteId?: number | null;

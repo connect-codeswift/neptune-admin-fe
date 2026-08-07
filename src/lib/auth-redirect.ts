@@ -41,14 +41,19 @@ export function getOrgDashboardPath(accessToken: string): string {
 
   const organizationId =
     readClaim(payload, [
+      "OrganizationId",
       "organizationId",
       "orgId",
       "organization_id",
       "tenantId",
     ]) ?? "1";
   const siteId =
-    readClaim(payload, ["siteId", "site_id", "subCompanyId"]) ??
-    getDefaultSiteIdForOrg(organizationId);
+    readClaim(payload, [
+      "SiteId",
+      "siteId",
+      "site_id",
+      "subCompanyId",
+    ]) ?? getDefaultSiteIdForOrg(organizationId);
 
   return buildOrgSitePath(organizationId, siteId);
 }

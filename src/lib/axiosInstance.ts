@@ -6,7 +6,7 @@ import {
 } from "@/lib/api-error";
 import {
   AUTH_TOKEN_KEY,
-  AUTH_ROLE_KEY,
+  forceLogoutRedirect,
   getMfaToken,
   ORG_TOKEN_KEY,
 } from "@/lib/auth-tokens";
@@ -16,6 +16,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 const BODY_CREDENTIAL_AUTH_PATHS = [
   "/Auth/login",
   "/Auth/verify-mfa",
+  "/AdminPortalAuth/login",
   "/SuperAdminAuth/login",
   "/SuperAdminAuth/verify-mfa",
   "/SuperAdminAuth/mfa/setup",
@@ -69,6 +70,22 @@ function extractErrorMessage(data: unknown, fallback: string): string {
   return fallback;
 }
 
+/** Only hard-logout on 401 when the server rejected the session itself. */
+function isSessionInvalidMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  if (isOrgTokenReselectMessage(message)) return false;
+  return (
+    normalized.includes("unauthorized") ||
+    normalized.includes("invalid token") ||
+    normalized.includes("token expired") ||
+    normalized.includes("expired token") ||
+    normalized.includes("invalid or expired") ||
+    normalized.includes("authentication failed") ||
+    normalized.includes("invalid credentials") ||
+    normalized.includes("please login")
+  );
+}
+
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window === "undefined") return config;
 
@@ -89,7 +106,8 @@ axiosInstance.interceptors.request.use((config) => {
 
   const orgToken = window.localStorage.getItem(ORG_TOKEN_KEY);
   const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
-  const useStaffToken = isStaffOnlyAuthPath(config.url);
+  const useStaffToken =
+    config.neptuneUseStaffToken === true || isStaffOnlyAuthPath(config.url);
   const token = useStaffToken ? authToken : orgToken || authToken;
 
   if (token) {
@@ -125,18 +143,21 @@ axiosInstance.interceptors.response.use(
         dispatchOrgTokenReselect(message);
       } else if (
         status === 401 &&
+        hadOrgToken &&
+        !hadAuthToken &&
+        !isCredentialAuthRequest &&
+        !isOrgTokenReselectMessage(message) &&
+        isSessionInvalidMessage(message)
+      ) {
+        forceLogoutRedirect("/login");
+      } else if (
+        status === 401 &&
         hadAuthToken &&
         !isCredentialAuthRequest &&
-        !isOrgTokenReselectMessage(message)
+        !isOrgTokenReselectMessage(message) &&
+        isSessionInvalidMessage(message)
       ) {
-        const role = window.localStorage.getItem(AUTH_ROLE_KEY);
-        window.localStorage.removeItem(AUTH_TOKEN_KEY);
-        window.localStorage.removeItem(ORG_TOKEN_KEY);
-        window.localStorage.removeItem(AUTH_ROLE_KEY);
-        const loginPath = role === "admin" ? "/login" : "/super/login";
-        if (!window.location.pathname.startsWith(loginPath)) {
-          window.location.assign(loginPath);
-        }
+        forceLogoutRedirect("/login");
       }
     }
 

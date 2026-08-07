@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import { ResetPasswordForm } from "@/components/features/auth/ResetPasswordForm";
+import { redirect } from "next/navigation";
 
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={null}>
-      <ResetPasswordForm flow="super" />
-    </Suspense>
-  );
+export default function SuperResetPasswordRedirectPage() {
+  redirect("/reset-password");
 }

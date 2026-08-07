@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button, type ButtonVariant } from "./Button";
 import { IconButton } from "./IconButton";
@@ -57,13 +57,16 @@ export function Modal({
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const showFooter =
     !hideFooter && Boolean(secondaryLabel || primaryLabel);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
+    if (!dialog || !mounted) return;
 
     if (open && !dialog.open) {
       dialog.showModal();
@@ -73,7 +76,7 @@ export function Modal({
     if (!open && dialog.open) {
       dialog.close();
     }
-  }, [open]);
+  }, [open, mounted]);
 
   useEffect(() => {
     if (!open) return;
@@ -106,13 +109,18 @@ export function Modal({
     };
   }, [open, closeOnBackdrop, loading, onClose]);
 
-  if (typeof document === "undefined") return null;
+  // `typeof document === "undefined"` alone is not enough: it makes the server
+  // render nothing while the client's very first render portals a <dialog> into
+  // document.body, which is a hydration mismatch and made React throw away and
+  // re-render the whole tree on every page that mounts a modal. Waiting for mount
+  // means the first client render matches the server's empty one.
+  if (!mounted) return null;
 
   return createPortal(
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      className={`fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border-0 bg-white p-0 shadow-lg backdrop:bg-darkest/50 open:flex open:flex-col ${SIZE_CLASS[size]} ${className}`.trim()}
+      className={`fixed top-1/2 left-1/2 z-[200] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-visible rounded-2xl border-0 bg-white p-0 shadow-lg backdrop:bg-darkest/50 open:flex open:flex-col ${SIZE_CLASS[size]} ${className}`.trim()}
     >
       <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-2">
         <h2 id={titleId} className="text2 text-darkest">
@@ -132,10 +140,14 @@ export function Modal({
         ) : null}
       </header>
 
-      <div className={`px-6 py-4 ${bodyClassName}`.trim()}>{children}</div>
+      <div
+        className={`relative z-10 overflow-visible px-6 py-4 ${bodyClassName}`.trim()}
+      >
+        {children}
+      </div>
 
       {showFooter ? (
-        <footer className="flex flex-wrap items-center justify-end gap-3 px-6 pt-2 pb-6">
+        <footer className="relative z-0 flex flex-wrap items-center justify-end gap-3 px-6 pt-2 pb-6">
           {secondaryLabel ? (
             <Button
               type="button"

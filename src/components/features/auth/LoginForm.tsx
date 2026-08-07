@@ -7,21 +7,20 @@ import { toast } from "sonner";
 import { EmailInput, PasswordInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
 import { clearAuthTokens } from "@/lib/auth-tokens";
+import { extractAccessToken } from "@/lib/auth-response";
 import {
   clearMfaToken,
-  getAuthFlow,
+  PORTAL_AUTH,
   setMfaToken,
-  type AuthFlowKind,
 } from "@/lib/auth-flow";
+import { getOrgDashboardPath } from "@/lib/auth-redirect";
+import {
+  setPortalAccountType,
+} from "@/lib/portal-auth";
 import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
 
-type LoginFormProps = Readonly<{
-  flow: AuthFlowKind;
-}>;
-
-export function LoginForm({ flow }: LoginFormProps) {
+export function LoginForm() {
   const router = useRouter();
-  const authFlow = getAuthFlow(flow);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +32,25 @@ export function LoginForm({ flow }: LoginFormProps) {
     try {
       clearMfaToken();
       clearAuthTokens();
-      const response = await authFlow.login({ email, password });
+      const response = await PORTAL_AUTH.login({ email, password });
+
+      if (response.accountType !== "staff" && response.accountType !== "tenant") {
+        toast.error("Unexpected login response. Please try again.");
+        return;
+      }
+
+      setPortalAccountType(response.accountType);
+
+      if (response.accessToken) {
+        const accessToken =
+          extractAccessToken(response) ?? response.accessToken;
+        const dashboardPath =
+          response.accountType === "staff"
+            ? "/super/dashboard"
+            : getOrgDashboardPath(accessToken);
+        window.location.assign(dashboardPath);
+        return;
+      }
 
       if (!response.mfaToken) {
         toast.error("Unexpected login response. Please try again.");
@@ -43,12 +60,12 @@ export function LoginForm({ flow }: LoginFormProps) {
       setMfaToken(response.mfaToken);
 
       if (response.mfaSetupRequired) {
-        router.push(authFlow.mfaSetupPath);
+        router.push(PORTAL_AUTH.mfaSetupPath);
         return;
       }
 
       if (response.mfaRequired) {
-        router.push(authFlow.mfaPath);
+        router.push(PORTAL_AUTH.mfaPath);
         return;
       }
 
@@ -62,16 +79,12 @@ export function LoginForm({ flow }: LoginFormProps) {
     }
   };
 
-  const title =
-    flow === "super" ? "Super admin sign in" : "Welcome back.";
-  const description =
-    flow === "super"
-      ? "Sign in to the Neptune super admin portal"
-      : "Sign in to your organization admin portal";
-
   return (
     <div>
-      <AuthFormHeader title={title} description={description} />
+      <AuthFormHeader
+        title="Welcome back."
+        description="Sign in to your organization admin portal"
+      />
       <AuthDivider />
 
       <form onSubmit={handleSubmit} className="pt-5">
@@ -97,7 +110,7 @@ export function LoginForm({ flow }: LoginFormProps) {
           />
           <div className="flex justify-end p-2">
             <Link
-              href={authFlow.forgotPasswordPath}
+              href={PORTAL_AUTH.forgotPasswordPath}
               className="text5 text-blue-normal hover:text-blue-deep"
             >
               Forgot Password?

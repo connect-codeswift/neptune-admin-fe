@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import { SubscriptionSeatLimitModal } from "@/components/features/user-management/SubscriptionSeatLimitModal";
 import {
   EmailInput,
   PhoneInput,
@@ -12,24 +13,43 @@ import {
 } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
+import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import { useInviteSuperAdminUser } from "@/hooks/useSuperAdminUserMutations";
 import { useUserFormOptions } from "@/hooks/useUserFormOptions";
+import { GENDER_OPTIONS } from "@/lib/gender-options";
+import { toSeatLimitInfo } from "@/lib/organization-limits";
+import { parseOrgSitePath } from "@/lib/sidebar-items";
 import { useUserManagementPaths } from "./useUserManagementPaths";
 
 export function AddUserPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { adminHref, basePath } = useUserManagementPaths();
+  const orgSite = parseOrgSitePath(pathname);
+  const organizationId = orgSite ? Number(orgSite.company) : undefined;
+  const { data: company } = useClientAccountDetail(
+    Number.isFinite(organizationId) && organizationId! > 0
+      ? organizationId
+      : undefined,
+  );
+  const seatInfo = company ? toSeatLimitInfo(company) : null;
+  const atSeatLimit = company?.atSeatLimit ?? false;
+
   const inviteMutation = useInviteSuperAdminUser();
   const { roleOptions, siteOptions, defaultSiteId, rolesLoading } =
     useUserFormOptions();
 
   const [fullName, setFullName] = useState("");
+  const [gender, setGender] = useState("");
   const [email, setEmail] = useState("");
   const [contactNo, setContactNo] = useState("");
   const [roleId, setRoleId] = useState("");
   const [siteId, setSiteId] = useState(defaultSiteId);
 
   const handleCreate = async () => {
+    if (atSeatLimit && seatInfo) {
+      return;
+    }
     if (!email.trim()) {
       toast.error("Email is required.");
       return;
@@ -43,6 +63,7 @@ export function AddUserPage() {
       await inviteMutation.mutateAsync({
         email: email.trim(),
         fullName: fullName.trim() || null,
+        gender: gender.trim() || null,
         roleId: Number(roleId),
         siteId: siteId ? Number(siteId) : null,
       });
@@ -59,7 +80,7 @@ export function AddUserPage() {
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title="Add New User"
-        description="Invite a user and assign their role and primary site"
+        description="Invite a user and assign their role and site"
         breadcrumbs={[
           { label: "Admin", href: adminHref },
           { label: "User Management", href: basePath },
@@ -74,9 +95,9 @@ export function AddUserPage() {
               size="sm"
               leftIcon="lucide:user-plus"
               onClick={() => void handleCreate()}
-              disabled={inviteMutation.isPending || rolesLoading}
+              disabled={inviteMutation.isPending || rolesLoading || atSeatLimit}
             >
-              {inviteMutation.isPending ? "Inviting…" : "Invite User"}
+              {inviteMutation.isPending ? "Adding…" : "Add User"}
             </Button>
           </>
         }
@@ -89,6 +110,13 @@ export function AddUserPage() {
             placeholder="e.g. Sarah Mitchell"
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
+          />
+          <SelectInput
+            label="Gender"
+            placeholder="Select gender"
+            options={[...GENDER_OPTIONS]}
+            value={gender}
+            onChange={setGender}
           />
           <EmailInput
             label="Email Address"
@@ -103,21 +131,33 @@ export function AddUserPage() {
             value={contactNo}
             onChange={setContactNo}
           />
+         
           <SelectInput
+            label="Site"
+            options={siteOptions}
+            value={siteId || siteOptions[0]?.value || ""}
+            onChange={setSiteId}
+          />
+           <SelectInput
             label="Role"
             options={roleOptions}
             value={roleId || roleOptions[0]?.value || ""}
             onChange={setRoleId}
             disabled={rolesLoading}
           />
-          <SelectInput
-            label="Primary Site"
-            options={siteOptions}
-            value={siteId || siteOptions[0]?.value || ""}
-            onChange={setSiteId}
-          />
         </div>
       </DetailCard>
+
+      {seatInfo && atSeatLimit ? (
+        <SubscriptionSeatLimitModal
+          open
+          seatInfo={seatInfo}
+          onClose={() => router.push(basePath)}
+          onContactSales={() => {
+            toast.info("Contact CodeSwift to increase your seat allowance.");
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { getDummyOrganization } from "@/lib/dummy-organizations";
+import { getOrganizationName } from "@/lib/org-sites";
 import {
   getOrgAdminNavSections,
   parseOrgSitePath,
@@ -27,21 +27,6 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/client-accounts",
     icon: "lucide:briefcase",
   },
-  {
-    label: "Pricing",
-    href: "/pricing",
-    icon: "lucide:tag",
-  },
-  {
-    label: "Subscriptions",
-    href: "/subscriptions",
-    icon: "lucide:credit-card",
-  },
-  {
-    label: "Writing Assistant",
-    href: "/chatbot",
-    icon: "lucide:sparkles",
-  },
 ];
 
 export function getSuperAdminNavSections(): SidebarNavSection[] {
@@ -60,8 +45,12 @@ export function getSuperAdminCombinedNavSections(
   const sections = getSuperAdminNavSections();
   const orgSite = parseOrgSitePath(pathname);
   if (orgSite) {
-    const companyName =
-      getDummyOrganization(orgSite.company)?.name ?? "Admin";
+    // Real name from the tenant context written at select-company.
+    // getDummyOrganization was keyed by the *real* organization id, so browsing
+    // organization 1 labelled the section with dummy org "1" — every company
+    // showed up as "Meridian Chemical Co.". Falls back to "Admin" before the
+    // context resolves, never to another company's name.
+    const companyName = getOrganizationName(orgSite.company) ?? "Admin";
     sections.push(...getOrgAdminNavSections(pathname, companyName));
   }
   return sections;

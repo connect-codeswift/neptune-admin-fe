@@ -24,14 +24,17 @@ Env: copy `.env.example` → `.env.local`. `NEXT_PUBLIC_API_URL` (the .NET backe
 
 | Route group | Audience | Auth token | Layout |
 | --- | --- | --- | --- |
-| `src/app/(auth)/` | org admin login/MFA/password | — | [(auth)/layout.tsx](<src/app/(auth)/layout.tsx>) |
+| `src/app/(auth)/` | unified login, MFA, password reset | — | [(auth)/layout.tsx](<src/app/(auth)/layout.tsx>) |
 | `src/app/[company]/[site]/` | org admin dashboard, tenant-scoped | org token | [layout.tsx](<src/app/[company]/[site]/layout.tsx>) wraps `TenantContextProvider` |
-| `src/app/super/(auth)/` | super admin login/MFA | — | [super/(auth)/layout.tsx](<src/app/super/(auth)/layout.tsx>) |
+| `src/app/super/(auth)/` | bootstrap only; old login URLs redirect to `(auth)/` | — | [super/(auth)/layout.tsx](<src/app/super/(auth)/layout.tsx>) |
 | `src/app/super/(dashboard)/` | super admin (companies, pricing, subscriptions, chatbot) | staff token | [super/(dashboard)/layout.tsx](<src/app/super/(dashboard)/layout.tsx>) |
 
-Both flows share one parameterized config object, `AUTH_FLOWS` in [src/lib/auth-flow.ts](src/lib/auth-flow.ts) (`org` | `super`): login path, MFA paths, service functions, and dashboard resolver. Auth screens are written once against a flow kind — add capability there, not by forking a page.
+One login screen at `/login` calls `POST /AdminPortalAuth/login`. The response includes `accountType` (`staff` | `tenant`), stored in sessionStorage for the MFA hop. MFA pages at `/login/mfa` and `/login/mfa-setup` branch on that value: staff continues on `SuperAdminAuth/*`, tenant on `Auth/*`. Config lives in [src/lib/portal-auth.ts](src/lib/portal-auth.ts) and [src/lib/auth-flow.ts](src/lib/auth-flow.ts) (`PORTAL_AUTH`).
 
-There is **no middleware**. Route protection and tenant resolution happen client-side in the layouts/providers below.
+There is **no middleware** (tokens are in `localStorage`, not cookies). Route protection is client-side:
+
+- **[DashboardAuthGate](src/components/layouts/DashboardAuthGate.tsx)** wraps both dashboard layouts — super admin requires staff token + `super-admin` role; org dashboard requires org token (org admin) or staff token (super admin viewing a tenant).
+- **[TenantContextProvider](src/providers/TenantContextProvider.tsx)** reconciles super-admin org tokens against the URL and opens `CompanySitePickerModal` when needed.
 
 ## Auth & multi-tenancy
 
@@ -50,7 +53,7 @@ This is the part that requires reading several files to understand. Three tokens
 
 Adding a backend endpoint that doesn't follow "org token if present" means adding it to the right list.
 
-The response interceptor rejects with `ApiError` and handles two cases: a stale-tenant message (`isOrgTokenReselectMessage`) clears the org token and fires the `neptune:org-token-reselect` window event; any other 401 clears all tokens and redirects to `/login` or `/super/login` by stored role.
+The response interceptor rejects with `ApiError` and handles three cases: a stale-tenant message (`isOrgTokenReselectMessage`) clears the org token and fires the `neptune:org-token-reselect` window event; a 401 with org token only (org admin) clears the session and redirects to `/login`; any other 401 with a staff token clears all tokens and redirects to `/login` (via `forceLogoutRedirect` in [auth-tokens.ts](src/lib/auth-tokens.ts)).
 
 [TenantContextProvider](src/providers/TenantContextProvider.tsx) listens for that event, reconciles the `[company]/[site]` URL segments against the cached tenant context ([src/lib/tenant-context.ts](src/lib/tenant-context.ts)), and opens `CompanySitePickerModal` when they disagree. Site lists come from that cache, not a fetch — see [src/lib/org-sites.ts](src/lib/org-sites.ts). After org login, the dashboard path is derived by decoding org/site claims out of the JWT in [src/lib/auth-redirect.ts](src/lib/auth-redirect.ts).
 
