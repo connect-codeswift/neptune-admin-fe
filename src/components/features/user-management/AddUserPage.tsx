@@ -7,6 +7,7 @@ import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { SubscriptionSeatLimitModal } from "@/components/features/user-management/SubscriptionSeatLimitModal";
 import {
   EmailInput,
+  MultiSelectInput,
   PhoneInput,
   SelectInput,
   TextInput,
@@ -36,7 +37,7 @@ export function AddUserPage() {
   const atSeatLimit = company?.atSeatLimit ?? false;
 
   const inviteMutation = useInviteSuperAdminUser();
-  const { roleOptions, siteOptions, defaultSiteId, rolesLoading } =
+  const { roleOptions, siteOptions, defaultSiteIds, rolesLoading } =
     useUserFormOptions();
 
   const [fullName, setFullName] = useState("");
@@ -44,7 +45,11 @@ export function AddUserPage() {
   const [email, setEmail] = useState("");
   const [contactNo, setContactNo] = useState("");
   const [roleId, setRoleId] = useState("");
-  const [siteId, setSiteId] = useState(defaultSiteId);
+  const [siteIds, setSiteIds] = useState<string[]>([]);
+
+  // The picker starts on the dashboard's current site, but only until the admin touches it —
+  // defaultSiteIds arrives from a cache read that can resolve after the first render.
+  const selectedSiteIds = siteIds.length > 0 ? siteIds : defaultSiteIds;
 
   const handleCreate = async () => {
     if (atSeatLimit && seatInfo) {
@@ -59,13 +64,22 @@ export function AddUserPage() {
       return;
     }
 
+    const numericSiteIds = selectedSiteIds
+      .map(Number)
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (numericSiteIds.length === 0) {
+      toast.error("Select at least one site.");
+      return;
+    }
+
     try {
       await inviteMutation.mutateAsync({
         email: email.trim(),
         fullName: fullName.trim() || null,
         gender: gender.trim() || null,
         roleId: Number(roleId),
-        siteId: siteId ? Number(siteId) : null,
+        siteIds: numericSiteIds,
       });
       toast.success("User invited.");
       router.push(basePath);
@@ -80,7 +94,7 @@ export function AddUserPage() {
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title="Add New User"
-        description="Invite a user and assign their role and site"
+        description="Invite a user and assign their role and sites"
         breadcrumbs={[
           { label: "Admin", href: adminHref },
           { label: "User Management", href: basePath },
@@ -132,11 +146,13 @@ export function AddUserPage() {
             onChange={setContactNo}
           />
          
-          <SelectInput
-            label="Site"
+          <MultiSelectInput
+            label="Sites"
             options={siteOptions}
-            value={siteId || siteOptions[0]?.value || ""}
-            onChange={setSiteId}
+            value={selectedSiteIds}
+            onChange={setSiteIds}
+            placeholder="Select sites"
+            helperText="The first site selected becomes their starting site; they can switch between the rest."
           />
            <SelectInput
             label="Role"

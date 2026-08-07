@@ -7,9 +7,42 @@ export type UserListItem = {
   email: string;
   initials: string;
   role: string;
+  /** Active site, for places that show a single one. */
   site: string;
+  /** Every site the user is assigned to. */
+  sites: string[];
   status: TableStatus;
 };
+
+/**
+ * A user's site names. Falls back to the active site when `sites` is absent, so rows written
+ * before the membership backfill still read as one site rather than none.
+ */
+export function readUserSiteNames(user: SuperAdminUserResponse): string[] {
+  const assigned = (user.sites ?? [])
+    .map((site) => site.siteName?.trim())
+    .filter((name): name is string => Boolean(name));
+
+  if (assigned.length > 0) {
+    return assigned;
+  }
+
+  const active = user.siteName?.trim();
+  return active ? [active] : [];
+}
+
+/** A user's site ids, same fallback as {@link readUserSiteNames}. */
+export function readUserSiteIds(user: SuperAdminUserResponse): number[] {
+  const assigned = (user.sites ?? [])
+    .map((site) => site.id)
+    .filter((id) => Number.isFinite(id));
+
+  if (assigned.length > 0) {
+    return assigned;
+  }
+
+  return user.siteId != null ? [user.siteId] : [];
+}
 
 export function formatRoleName(roleName: string): string {
   return roleName
@@ -55,6 +88,7 @@ export function mapSuperAdminUserToListItem(
     initials: getUserInitials(name, user.email),
     role: formatRoleName(user.roleName),
     site: user.siteName?.trim() || "—",
+    sites: readUserSiteNames(user),
     status: mapApiStatusToTableStatus(user.status, user.isDrop),
   };
 }

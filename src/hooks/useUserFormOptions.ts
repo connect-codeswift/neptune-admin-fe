@@ -35,10 +35,17 @@ export function useUserFormOptions() {
       ? String(context.siteId)
       : (siteOptions[0]?.value ?? "");
 
+  /** Pre-selection for the multi-site picker: the dashboard's current site, nothing more. */
+  const defaultSiteIds = useMemo(
+    () => (defaultSiteId ? [defaultSiteId] : []),
+    [defaultSiteId],
+  );
+
   return {
     roleOptions,
     siteOptions,
     defaultSiteId,
+    defaultSiteIds,
     rolesLoading,
   };
 }
