@@ -8,6 +8,28 @@ import type {
 import { setAuthEmail, setAuthRole, setOrgToken } from "@/lib/auth-tokens";
 import { extractAccessToken } from "@/lib/auth-response";
 import axiosInstance from "@/lib/axiosInstance";
+import type { ApiResponse } from "@/types/api.types";
+
+export type OrgMeSite = {
+  id: number;
+  siteName: string;
+  location?: string | null;
+  industryType?: string | null;
+  siteSize?: string | null;
+};
+
+export type OrgMeResponse = {
+  id: number;
+  name: string;
+  sites?: OrgMeSite[] | null;
+};
+
+export type SelectSiteResponse = {
+  accessToken: string;
+  refreshToken?: string | null;
+  siteId: number;
+  siteName: string;
+};
 
 /**
  * POST /Auth/login
@@ -69,4 +91,32 @@ export async function orgMfaEnable(mfaToken: string, code: string) {
     setAuthRole("admin");
   }
   return { ...data, accessToken: accessToken ?? data.accessToken };
+}
+
+/** GET /Auth/Org/me — org context + the sites this tenant admin may switch to. */
+export async function getOrgMe() {
+  const { data } = await axiosInstance.get<ApiResponse<OrgMeResponse>>(
+    "/Auth/Org/me",
+  );
+  return data;
+}
+
+/**
+ * POST /Auth/select-site — reissues the org token with a new SiteId. Same contract
+ * the EHSS app uses; required for multi-site tenant Admins in this portal.
+ */
+export async function selectOrgSite(siteId: number) {
+  const { data } = await axiosInstance.post<ApiResponse<SelectSiteResponse>>(
+    "/Auth/select-site",
+    { siteId },
+  );
+
+  const accessToken =
+    extractAccessToken(data) ?? data.dataModel?.accessToken ?? undefined;
+  if (accessToken) {
+    setOrgToken(accessToken);
+    setAuthRole("admin");
+  }
+
+  return data;
 }
