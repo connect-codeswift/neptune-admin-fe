@@ -126,6 +126,14 @@ export function SidebarNavShell({
                           Preview
                         </span>
                       ) : null}
+                      {item.badge ? (
+                        <span
+                          className="ml-auto min-w-4.5 rounded-full bg-red px-1.5 py-0.5 text-center text9 text-white"
+                          aria-label={item.badgeLabel}
+                        >
+                          {item.badge}
+                        </span>
+                      ) : null}
                     </Link>
                   </li>
                 );
