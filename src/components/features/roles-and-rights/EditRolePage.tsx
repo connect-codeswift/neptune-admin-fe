@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { PageHeader, PlaceholderPage } from "@/components/layouts";
@@ -47,72 +47,28 @@ function RoleSummaryCard({
   );
 }
 
-export function EditRolePage({ roleId }: EditRolePageProps) {
+function EditRoleEditor({
+  role,
+  permissionsCatalog,
+  permissionsLoading,
+  permissionsError,
+  permissionsLoadError,
+  adminHref,
+  basePath,
+}: Readonly<{
+  role: RoleViewModel;
+  permissionsCatalog: ReturnType<typeof useAllPermissions>["data"];
+  permissionsLoading: boolean;
+  permissionsError: boolean;
+  permissionsLoadError: Error | null;
+  adminHref: string;
+  basePath: string;
+}>) {
   const router = useRouter();
-  const { adminHref, basePath } = useRolesAndRightsPaths();
-  const {
-    data: roles = [],
-    isLoading: rolesLoading,
-    isError: rolesError,
-    error: rolesLoadError,
-  } = useRolesWithPermissions();
-  const {
-    data: permissionsCatalog,
-    isLoading: permissionsLoading,
-    isError: permissionsError,
-    error: permissionsLoadError,
-  } = useAllPermissions();
   const assignPermissionsMutation = useAssignRolePermissions();
-
-  const role = roles.find((entry) => entry.id === roleId);
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>(
-    [],
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState(
+    () => role.permissionIds,
   );
-
-  useEffect(() => {
-    if (!role) return;
-    setSelectedPermissionIds(role.permissionIds);
-  }, [role]);
-
-  if (rolesLoading) {
-    return (
-      <PlaceholderPage
-        title="Loading Role"
-        description="Fetching role details from the API…"
-      />
-    );
-  }
-
-  if (rolesError) {
-    return (
-      <PlaceholderPage
-        title="Failed to Load Role"
-        description={
-          rolesLoadError instanceof Error
-            ? rolesLoadError.message
-            : "Could not load role details."
-        }
-      />
-    );
-  }
-
-  if (!role) {
-    return (
-      <PlaceholderPage
-        title="Role Not Found"
-        description={`No role exists with id "${roleId}".`}
-      />
-    );
-  }
-
-  if (role.isSystem) {
-    return (
-      <PlaceholderPage
-        title="System Role"
-        description="System roles cannot be edited."
-      />
-    );
-  }
 
   const handleSave = async () => {
     if (selectedPermissionIds.length === 0) {
@@ -175,9 +131,7 @@ export function EditRolePage({ roleId }: EditRolePageProps) {
 
           {permissionsError ? (
             <p className="text5 text-red">
-              {permissionsLoadError instanceof Error
-                ? permissionsLoadError.message
-                : "Failed to load permissions."}
+              {permissionsLoadError?.message ?? "Failed to load permissions."}
             </p>
           ) : null}
 
@@ -197,5 +151,80 @@ export function EditRolePage({ roleId }: EditRolePageProps) {
         />
       </div>
     </div>
+  );
+}
+
+export function EditRolePage({ roleId }: EditRolePageProps) {
+  const { adminHref, basePath } = useRolesAndRightsPaths();
+  // `isPending` (not `isLoading`) so a query still gated on the tenant scope
+  // renders the loading state instead of falling through to "Role Not Found".
+  const {
+    data: roles = [],
+    isPending: rolesLoading,
+    isError: rolesError,
+    error: rolesLoadError,
+  } = useRolesWithPermissions();
+  const {
+    data: permissionsCatalog,
+    isPending: permissionsLoading,
+    isError: permissionsError,
+    error: permissionsLoadError,
+  } = useAllPermissions();
+
+  const role = roles.find((entry) => entry.id === roleId);
+
+  if (rolesLoading) {
+    return (
+      <PlaceholderPage
+        title="Loading Role"
+        description="Fetching role details from the API…"
+      />
+    );
+  }
+
+  if (rolesError) {
+    return (
+      <PlaceholderPage
+        title="Failed to Load Role"
+        description={
+          rolesLoadError instanceof Error
+            ? rolesLoadError.message
+            : "Could not load role details."
+        }
+      />
+    );
+  }
+
+  if (!role) {
+    return (
+      <PlaceholderPage
+        title="Role Not Found"
+        description={`No role exists with id "${roleId}".`}
+      />
+    );
+  }
+
+  if (role.isSystem) {
+    return (
+      <PlaceholderPage
+        title="System Role"
+        description="System roles cannot be edited."
+      />
+    );
+  }
+
+  return (
+    <EditRoleEditor
+      key={role.id}
+      role={role}
+      permissionsCatalog={permissionsCatalog}
+      permissionsLoading={permissionsLoading}
+      permissionsError={permissionsError}
+      permissionsLoadError={
+        permissionsLoadError instanceof Error ? permissionsLoadError : null
+      }
+      adminHref={adminHref}
+      basePath={basePath}
+    />
   );
 }

@@ -182,6 +182,10 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
               </div>
               <p className="mt-1 text5 text-gray">{user.email}</p>
               <div className="mt-4 grid grid-cols-1 gap-0 sm:grid-cols-2">
+                <ProfileField
+                  label="Job Title"
+                  value={user.jobTitle?.trim() || "—"}
+                />
                 <ProfileField label="Role" value={formatRoleName(user.roleName)} />
                 <ProfileField
                   label={siteNames.length > 1 ? "Sites" : "Site"}

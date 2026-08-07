@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SelectInput } from "@/components/inputs";
@@ -43,6 +44,7 @@ export function CompanySitePickerModal({
   onClose,
   onSuccess,
 }: CompanySitePickerModalProps) {
+  const queryClient = useQueryClient();
   const { data: companies = [], isLoading: companiesLoading } =
     useSuperAdminCompanies();
   const [organizationId, setOrganizationId] = useState<number | undefined>(
@@ -81,6 +83,9 @@ export function CompanySitePickerModal({
         organizationName: selectedCompany.name,
         siteId,
       });
+      // enterOrganization mints a fresh org token; anything cached under the
+      // previous org/site is now the wrong tenant's data.
+      queryClient.clear();
       const path = buildOrgDashboardPath(organizationId, siteId);
       onSuccess?.(path);
     } catch (error) {

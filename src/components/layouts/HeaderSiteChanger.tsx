@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import { isAdminRole } from "@/lib/auth-tokens";
 export function HeaderSiteChanger() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -76,6 +78,11 @@ export function HeaderSiteChanger() {
         siteId: Number(siteId),
         sites: context.sites,
       });
+      // switchOrganizationSite mints a new org token, so every cached tenant
+      // response now belongs to the previous site. Drop the whole cache rather
+      // than trusting each hook to have scoped its key — otherwise screens that
+      // are not site-scoped keep rendering the old site's rows.
+      queryClient.clear();
       router.push(replaceSiteInPath(pathname, orgSite.company, siteId));
     } catch (error) {
       toast.error(

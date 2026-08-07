@@ -21,7 +21,9 @@ function StatCard({
 
 export function RolesAndRightsPage() {
   const { adminHref, basePath } = useRolesAndRightsPaths();
-  const { data: roles = [], isLoading, isError, error } =
+  // `isPending` (not `isLoading`) so the query stays in its loading state while
+  // it is still gated on the tenant scope resolving.
+  const { data: roles = [], isPending, isError, error } =
     useRolesWithPermissions();
   const stats = getRoleStats(roles);
 
@@ -51,7 +53,7 @@ export function RolesAndRightsPage() {
         <StatCard value={stats.customRoles} label="Custom Roles" />
       </div>
 
-      {isLoading ? (
+      {isPending ? (
         <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
           Loading roles…
         </p>
@@ -63,7 +65,7 @@ export function RolesAndRightsPage() {
         </p>
       ) : null}
 
-      {!isLoading && !isError ? (
+      {!isPending && !isError ? (
         <div className="flex flex-col gap-4">
           {roles.length === 0 ? (
             <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
