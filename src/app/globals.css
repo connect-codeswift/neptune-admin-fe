@@ -59,3 +59,13 @@ body {
     @apply text-[9px] lg:text-[10px] lg:tracking-tight font-bold lg:leading-tight;
   }
 }
+
+/* Indeterminate progress sweep — deploy-in-progress strip. */
+@keyframes deploy-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}

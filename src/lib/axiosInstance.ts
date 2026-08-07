@@ -33,6 +33,7 @@ const STAFF_ONLY_AUTH_PATHS = [
   "/SuperAdminCompanies",
   "/SuperAdminAuth/select-company",
   "/SuperAdminAuth/create",
+  "/PlatformOps",
 ] as const;
 
 const axiosInstance = axios.create({
