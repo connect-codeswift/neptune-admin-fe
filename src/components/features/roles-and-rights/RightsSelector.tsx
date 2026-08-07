@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { SearchInput } from "@/components/inputs";
 import {
   countGroupSelection,
@@ -109,7 +109,7 @@ export function RightsSelector({
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState<PermissionKindFilter>("all");
   const [selectedOnly, setSelectedOnly] = useState(false);
-  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [pickedGroup, setPickedGroup] = useState<string | null>(null);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
@@ -143,24 +143,21 @@ export function RightsSelector({
   const visiblePermissionCount = flatResults.length;
   const browseMode = !query.trim() && !selectedOnly;
 
+  const activeGroup = useMemo(() => {
+    if (filteredGroups.length === 0) return null;
+    if (
+      pickedGroup &&
+      filteredGroups.some((entry) => entry.group === pickedGroup)
+    ) {
+      return pickedGroup;
+    }
+    return filteredGroups[0].group;
+  }, [filteredGroups, pickedGroup]);
+
   const activeEntry = useMemo(
     () => filteredGroups.find((entry) => entry.group === activeGroup) ?? null,
     [filteredGroups, activeGroup],
   );
-
-  useEffect(() => {
-    if (filteredGroups.length === 0) {
-      setActiveGroup(null);
-      return;
-    }
-
-    if (
-      !activeGroup ||
-      !filteredGroups.some((entry) => entry.group === activeGroup)
-    ) {
-      setActiveGroup(filteredGroups[0].group);
-    }
-  }, [filteredGroups, activeGroup]);
 
   const togglePermission = (permissionId: number) => {
     const permission = groups
@@ -290,9 +287,9 @@ export function RightsSelector({
       ) : null}
 
       {filteredGroups.length > 0 && browseMode ? (
-        <div className="grid min-h-[420px] grid-cols-1 overflow-hidden rounded-xl border border-darkest/10 bg-white md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)]">
+        <div className="grid min-h-[480px] grid-cols-1 overflow-hidden rounded-xl border border-darkest/10 bg-white md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)]">
           <nav
-            className="max-h-[min(60vh,560px)] overflow-y-auto border-b border-darkest/10 bg-darkest/3 md:border-r md:border-b-0"
+            className="max-h-[min(64vh,560px)] overflow-y-auto border-b border-darkest/10 bg-darkest/3 md:border-r md:border-b-0"
             aria-label="Permission categories"
           >
             {filteredGroups.map((entry) => {
@@ -304,13 +301,13 @@ export function RightsSelector({
                   selectedCount={counts.selected}
                   totalCount={counts.selectable}
                   active={entry.group === activeGroup}
-                  onClick={() => setActiveGroup(entry.group)}
+                  onClick={() => setPickedGroup(entry.group)}
                 />
               );
             })}
           </nav>
 
-          <div className="max-h-[min(60vh,560px)] overflow-y-auto p-2">
+          <div className="max-h-[min(60vh,560px)] overflow-y-auto">
             {activeEntry ? (
               <div className="flex flex-col">
                 <p className="sticky top-0 z-10 border-b border-darkest/8 bg-white/95 px-2 py-2 text6 font-semibold text-gray backdrop-blur-sm">

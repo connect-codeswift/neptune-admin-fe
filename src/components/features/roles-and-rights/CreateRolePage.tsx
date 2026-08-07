@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { TextAreaInput, TextInput } from "@/components/inputs";
@@ -31,9 +31,9 @@ export function CreateRolePage() {
   const [activePresetId, setActivePresetId] = useState(DEFAULT_PRESET_ID);
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>(
-    [],
-  );
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<
+    number[] | null
+  >(null);
 
   const {
     data: permissionsCatalog,
@@ -47,21 +47,22 @@ export function CreateRolePage() {
   const permissionGroups = permissionsCatalog?.groups ?? [];
   const allPermissions = permissionsCatalog?.permissions ?? [];
 
-  useEffect(() => {
-    if (allPermissions.length === 0) return;
-    setSelectedPermissionIds((current) =>
-      current.length > 0
-        ? current
-        : matchPermissionIdsByLabels(
+  const presetDefaultIds = useMemo(
+    () =>
+      allPermissions.length > 0
+        ? matchPermissionIdsByLabels(
             allPermissions,
             getPresetRights(DEFAULT_PRESET_ID),
-          ),
-    );
-  }, [allPermissions.length]);
+          )
+        : [],
+    [allPermissions],
+  );
+
+  const resolvedSelectedIds = selectedPermissionIds ?? presetDefaultIds;
 
   const groupSummary = countSelectedByPermissionGroup(
     permissionGroups,
-    selectedPermissionIds,
+    resolvedSelectedIds,
   );
 
   const handlePresetSelect = (presetId: string) => {
@@ -84,7 +85,7 @@ export function CreateRolePage() {
       return;
     }
 
-    if (selectedPermissionIds.length === 0) {
+    if (resolvedSelectedIds.length === 0) {
       toast.error("Select at least one permission.");
       return;
     }
@@ -93,7 +94,7 @@ export function CreateRolePage() {
       await createRoleMutation.mutateAsync({
         roleName: trimmedName,
         description: description.trim() || null,
-        permissionIds: selectedPermissionIds,
+        permissionIds: resolvedSelectedIds,
       });
       toast.success("Role created.");
       router.push(basePath);
@@ -160,7 +161,7 @@ export function CreateRolePage() {
             title="Rights"
             action={
               <span className="text5 text-gray">
-                {selectedPermissionIds.length} granted
+                {resolvedSelectedIds.length} granted
               </span>
             }
           >
@@ -179,7 +180,7 @@ export function CreateRolePage() {
             {!permissionsLoading && !permissionsError ? (
               <RightsSelector
                 groups={permissionGroups}
-                selectedIds={selectedPermissionIds}
+                selectedIds={resolvedSelectedIds}
                 onChange={setSelectedPermissionIds}
                 showHeader={false}
               />
@@ -252,7 +253,7 @@ export function CreateRolePage() {
 
           <DetailCard title="Summary">
             <p className="text2 text-darkest">
-              {selectedPermissionIds.length}{" "}
+              {resolvedSelectedIds.length}{" "}
               <span className="text4 font-normal text-gray">rights selected</span>
             </p>
             <div className="mt-4 flex max-h-40 flex-col gap-1.5 overflow-y-auto">
