@@ -169,7 +169,7 @@ export const DUMMY_PPE_ITEMS: DummyPpeItem[] = [
   },
 ];
 
-export function getPpeCatalogStats(items: DummyPpeItem[] = DUMMY_PPE_ITEMS) {
+export function getPpeCatalogStats(items: DummyPpeItem[]) {
   const categoryIds = new Set(items.map((item) => item.categoryId));
 
   return {
@@ -180,7 +180,7 @@ export function getPpeCatalogStats(items: DummyPpeItem[] = DUMMY_PPE_ITEMS) {
   };
 }
 
-export function getPpeCategoryCounts(items: DummyPpeItem[] = DUMMY_PPE_ITEMS) {
+export function getPpeCategoryCounts(items: DummyPpeItem[]) {
   const counts = new Map<PpeCategoryId | "all", number>();
   counts.set("all", items.length);
 

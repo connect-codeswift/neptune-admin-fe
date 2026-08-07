@@ -233,7 +233,7 @@ export function UserManagementPage() {
           aria-label="Search users"
         />
         <SelectInput
-          label="Site"
+          label=""
           options={siteOptions}
           value={siteFilter}
           onChange={handleSiteFilterChange}

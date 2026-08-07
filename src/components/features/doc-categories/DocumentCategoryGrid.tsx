@@ -16,7 +16,10 @@ import {
 } from "./DocumentCategoryCard";
 
 export function DocumentCategoryGrid() {
-  const { data: categories = [], isLoading, isError, error } =
+  // `isPending` (not `isLoading`) so the query stays in its loading state while
+  // it is still gated on the tenant scope — a disabled query reports
+  // `isLoading === false` with no data, which would flash the empty state.
+  const { data: categories = [], isPending, isError, error } =
     useDocCategories();
   const updateMutation = useUpdateDocCategory();
   const deleteMutation = useDeleteDocCategory();
@@ -72,7 +75,7 @@ export function DocumentCategoryGrid() {
     }
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
         Loading categories…
