@@ -15,6 +15,8 @@ export type SuperAdminUserResponse = {
   email: string;
   contactNo?: string | null;
   profileUrl?: string | null;
+  /** What the person does. Null until someone sets it. */
+  jobTitle?: string | null;
   roleId: number;
   roleName: string;
   /** Active site — what the user's token carries until they switch. */

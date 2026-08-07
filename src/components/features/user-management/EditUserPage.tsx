@@ -43,6 +43,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState("");
   const [contactNo, setContactNo] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [roleId, setRoleId] = useState("");
   const [siteIds, setSiteIds] = useState<string[]>([]);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
@@ -52,6 +53,7 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
     setFullName(user.fullName?.trim() ?? "");
     setGender(user.gender?.trim() ?? "");
     setContactNo(user.contactNo?.trim() ?? "");
+    setJobTitle(user.jobTitle?.trim() ?? "");
     setRoleId(String(user.roleId));
     setSiteIds(readUserSiteIds(user).map(String));
   }, [user]);
@@ -96,6 +98,9 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
         fullName: fullName.trim() || null,
         gender: gender.trim() || null,
         contactNo: contactNo.trim() || null,
+        // Empty string rather than null so clearing the field actually clears it — the API
+        // treats null as "not sent".
+        jobTitle: jobTitle.trim(),
         roleId: roleId ? Number(roleId) : null,
         siteIds: numericSiteIds,
       });
@@ -200,6 +205,12 @@ export function EditUserPage({ userId }: Readonly<{ userId: string }>) {
                 label="Phone"
                 value={contactNo}
                 onChange={setContactNo}
+              />
+              <TextInput
+                label="Job Title"
+                placeholder="e.g. Site Safety Officer"
+                value={jobTitle}
+                onChange={(event) => setJobTitle(event.target.value)}
               />
               <SelectInput
                 label="Role"

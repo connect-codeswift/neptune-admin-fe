@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   NumberInput,
@@ -47,10 +47,7 @@ export function AddPpeItemModal({
 }: AddPpeItemModalProps) {
   const [draft, setDraft] = useState<AddPpeItemDraft>(EMPTY_DRAFT);
 
-  const categoryLabel = useMemo(
-    () => getCategoryLabel(draft.categoryId),
-    [draft.categoryId],
-  );
+  const categoryLabel = getCategoryLabel(draft.categoryId);
 
   const resetAndClose = () => {
     setDraft(EMPTY_DRAFT);

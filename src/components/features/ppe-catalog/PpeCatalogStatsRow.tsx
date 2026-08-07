@@ -1,8 +1,4 @@
-import {
-  DUMMY_PPE_ITEMS,
-  getPpeCatalogStats,
-  type DummyPpeItem,
-} from "@/lib/dummy-ppe-catalog";
+import { getPpeCatalogStats, type DummyPpeItem } from "@/lib/dummy-ppe-catalog";
 
 function StatCard({
   value,
@@ -16,13 +12,15 @@ function StatCard({
   );
 }
 
+/**
+ * `items` is required on purpose — it previously defaulted to `DUMMY_PPE_ITEMS`,
+ * which rendered identical stats for every site regardless of the real catalog.
+ */
 type PpeCatalogStatsRowProps = Readonly<{
-  items?: DummyPpeItem[];
+  items: DummyPpeItem[];
 }>;
 
-export function PpeCatalogStatsRow({
-  items = DUMMY_PPE_ITEMS,
-}: PpeCatalogStatsRowProps) {
+export function PpeCatalogStatsRow({ items }: PpeCatalogStatsRowProps) {
   const stats = getPpeCatalogStats(items);
 
   return (

@@ -52,11 +52,6 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     icon: "lucide:layers",
   },
   {
-    label: "Version History",
-    href: "/version-history",
-    icon: "lucide:file-clock",
-  },
-  {
     label: "PPE Catalog",
     href: "/ppe-catalog",
     icon: "lucide:hard-hat",

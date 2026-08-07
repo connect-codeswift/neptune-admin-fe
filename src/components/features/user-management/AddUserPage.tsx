@@ -44,6 +44,7 @@ export function AddUserPage() {
   const [gender, setGender] = useState("");
   const [email, setEmail] = useState("");
   const [contactNo, setContactNo] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [roleId, setRoleId] = useState("");
   const [siteIds, setSiteIds] = useState<string[]>([]);
 
@@ -78,6 +79,7 @@ export function AddUserPage() {
         email: email.trim(),
         fullName: fullName.trim() || null,
         gender: gender.trim() || null,
+        jobTitle: jobTitle.trim() || null,
         roleId: Number(roleId),
         siteIds: numericSiteIds,
       });
@@ -144,6 +146,12 @@ export function AddUserPage() {
             placeholder="+1 (555) 000-0000"
             value={contactNo}
             onChange={setContactNo}
+          />
+          <TextInput
+            label="Job Title"
+            placeholder="e.g. Site Safety Officer"
+            value={jobTitle}
+            onChange={(event) => setJobTitle(event.target.value)}
           />
          
           <MultiSelectInput

@@ -156,15 +156,17 @@ function EditRoleEditor({
 
 export function EditRolePage({ roleId }: EditRolePageProps) {
   const { adminHref, basePath } = useRolesAndRightsPaths();
+  // `isPending` (not `isLoading`) so a query still gated on the tenant scope
+  // renders the loading state instead of falling through to "Role Not Found".
   const {
     data: roles = [],
-    isLoading: rolesLoading,
+    isPending: rolesLoading,
     isError: rolesError,
     error: rolesLoadError,
   } = useRolesWithPermissions();
   const {
     data: permissionsCatalog,
-    isLoading: permissionsLoading,
+    isPending: permissionsLoading,
     isError: permissionsError,
     error: permissionsLoadError,
   } = useAllPermissions();

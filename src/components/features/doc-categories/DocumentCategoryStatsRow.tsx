@@ -15,9 +15,12 @@ function StatCard({
 }
 
 export function DocumentCategoryStatsRow() {
-  const { data: stats, isLoading } = useDocCategoryStats();
+  // `isPending` (not `isLoading`) so the row keeps its loading skeleton while
+  // the query is still gated on the tenant scope — a disabled query reports
+  // `isLoading === false` with no data, which would flash zeroed stats.
+  const { data: stats, isPending } = useDocCategoryStats();
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {[1, 2, 3].map((key) => (

@@ -33,7 +33,10 @@ function matchesSearch(
 export function RegulationLibraryPage() {
   const { adminHref, basePath } = useRegulationLibraryPaths();
   const [search, setSearch] = useState("");
-  const { data: regulations = [], isLoading, isError, error } =
+  // `isPending` (not `isLoading`) so the list keeps its loading state while the
+  // query is still gated on the tenant scope — a disabled query reports
+  // `isLoading === false` with no data, which would flash the empty list.
+  const { data: regulations = [], isPending, isError, error } =
     useRegulationLibrary();
 
   const filteredRegulations = useMemo(() => {
@@ -69,7 +72,7 @@ export function RegulationLibraryPage() {
         aria-label="Search regulations"
       />
 
-      {isLoading ? (
+      {isPending ? (
         <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
           Loading regulations…
         </p>
@@ -83,7 +86,7 @@ export function RegulationLibraryPage() {
         </p>
       ) : null}
 
-      {!isLoading && !isError ? (
+      {!isPending && !isError ? (
         <RegulationList regulations={filteredRegulations} />
       ) : null}
     </div>

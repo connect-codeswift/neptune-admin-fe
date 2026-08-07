@@ -35,9 +35,11 @@ export function CreateRolePage() {
     number[] | null
   >(null);
 
+  // `isPending` (not `isLoading`) so the form stays disabled while the query is
+  // still gated on the tenant scope resolving.
   const {
     data: permissionsCatalog,
-    isLoading: permissionsLoading,
+    isPending: permissionsLoading,
     isError: permissionsError,
     error: permissionsLoadError,
   } = useAllPermissions();
