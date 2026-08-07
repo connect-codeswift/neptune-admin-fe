@@ -8,10 +8,12 @@ import { ORG_TOKEN_RESELECT_EVENT } from "@/lib/api-error";
 import {
   getAuthRole,
   getOrgToken,
+  isAdminRole,
   isSuperAdminRole,
 } from "@/lib/auth-tokens";
 import { parseOrgSitePath } from "@/lib/sidebar-items";
 import {
+  ensureTenantAdminContext,
   enterOrganization,
   fetchCompanies,
 } from "@/lib/select-company-flow";
@@ -41,11 +43,6 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
   );
 
   const ensureOrgContext = useCallback(async () => {
-    if (!isSuperAdminRole()) {
-      setChecking(false);
-      return;
-    }
-
     if (!orgSite) {
       setChecking(false);
       return;
@@ -54,6 +51,40 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
     const organizationId = Number(orgSite.company);
     const siteId = Number(orgSite.site);
     if (!Number.isFinite(organizationId) || !Number.isFinite(siteId)) {
+      setChecking(false);
+      return;
+    }
+
+    // Tenant Admins never call select-company; hydrate their site list from
+    // Org/me so the header switcher can offer every site they are assigned to.
+    if (isAdminRole()) {
+      const context = getTenantContext();
+      const contextReady =
+        context?.organizationId === organizationId &&
+        context.sites.length > 0 &&
+        Boolean(getOrgToken());
+
+      if (contextReady) {
+        setChecking(false);
+        return;
+      }
+
+      setChecking(true);
+      try {
+        await ensureTenantAdminContext();
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not load your organization sites.",
+        );
+      } finally {
+        setChecking(false);
+      }
+      return;
+    }
+
+    if (!isSuperAdminRole()) {
       setChecking(false);
       return;
     }

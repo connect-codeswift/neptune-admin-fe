@@ -47,6 +47,12 @@ export function RolesAndRightsPage() {
         }
       />
 
+      <p className="rounded-xl border border-blue-normal/15 bg-blue-normal/5 px-4 py-3 text6 text-darkest/80">
+        Roles apply company-wide across every site. Changing the site switcher
+        does not change this list — a user keeps the same role wherever they
+        work in the organization.
+      </p>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard value={stats.totalRoles} label="Total Roles" />
         <StatCard value={stats.totalUsersAssigned} label="Total Users Assigned" />

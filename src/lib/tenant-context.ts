@@ -18,9 +18,13 @@ export type TenantContextState = {
 
 const TENANT_CONTEXT_KEY = "neptune_tenant_context";
 
+/** Fired in the same tab after setTenantContext — StorageEvent only crosses tabs. */
+export const TENANT_CONTEXT_CHANGED_EVENT = "neptune-tenant-context-changed";
+
 export function setTenantContext(context: TenantContextState): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(TENANT_CONTEXT_KEY, JSON.stringify(context));
+  window.dispatchEvent(new Event(TENANT_CONTEXT_CHANGED_EVENT));
 }
 
 export function getTenantContext(): TenantContextState | null {
@@ -45,6 +49,7 @@ export function tenantContextMatchesOrg(organizationId: number): boolean {
 export function clearTenantContext(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TENANT_CONTEXT_KEY);
+  window.dispatchEvent(new Event(TENANT_CONTEXT_CHANGED_EVENT));
 }
 
 export function getCachedSitesForOrg(orgId: string | number): CachedTenantSite[] {
