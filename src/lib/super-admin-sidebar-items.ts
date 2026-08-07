@@ -27,7 +27,33 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/client-accounts",
     icon: "lucide:briefcase",
   },
+  {
+    label: "Deployments",
+    href: "/deployments",
+    icon: "lucide:rocket",
+  },
 ];
+
+export const SUPER_ADMIN_DEPLOYMENTS_HREF = `${SUPER_ADMIN_BASE_PATH}/deployments`;
+
+/**
+ * Stamps the unresolved deploy-alert count onto the Deployments item. Kept out
+ * of the nav definition so the sidebar stays a pure function of the pathname.
+ */
+export function withDeployAlertBadge(
+  sections: SidebarNavSection[],
+  count: number,
+): SidebarNavSection[] {
+  if (count <= 0) return sections;
+
+  return sections.map((section) => ({
+    ...section,
+    items: section.items.map((item) => {
+      if (item.href !== SUPER_ADMIN_DEPLOYMENTS_HREF) return item;
+      return { ...item, badge: count, badgeLabel: `${count} unresolved deploy alerts` };
+    }),
+  }));
+}
 
 export function getSuperAdminNavSections(): SidebarNavSection[] {
   return [

@@ -6,6 +6,10 @@ export type SidebarNavItem = {
   exact?: boolean;
   /** Shows a subtle preview badge — route has no backend yet. */
   preview?: boolean;
+  /** Live count pill (e.g. unresolved deploy alerts). Hidden when zero. */
+  badge?: number;
+  /** Accessible description for the count, e.g. "2 unresolved deploy alerts". */
+  badgeLabel?: string;
 };
 
 export type SidebarNavSection = {
