@@ -113,8 +113,10 @@ function readJwtNumber(
 }
 
 /**
- * Loads Org/me into the tenant cache for a signed-in tenant Admin so the header
- * site switcher has the sites they may switch to (not every company site).
+ * Loads Org/me into the tenant cache for a signed-in tenant `Ehs_Director`
+ * admin so the header site switcher has the sites they may switch to (not every
+ * company site). `Ehs_Lead` is rejected by the admin portal login gate and
+ * never reaches this path.
  */
 export async function ensureTenantAdminContext(): Promise<void> {
   if (!isAdminRole() || !getOrgToken()) return;
@@ -177,8 +179,9 @@ export async function switchOrganizationSite(input: {
 }
 
 /**
- * Tenant Admin path: POST /Auth/select-site, replace the org token, update cache.
- * Falls back to refreshing Org/me for the site list when the cache is empty.
+ * Tenant `Ehs_Director` admin path: POST /Auth/select-site, replace the org
+ * token, update cache. Falls back to refreshing Org/me for the site list when
+ * the cache is empty. `Ehs_Lead` is rejected by the admin portal login gate.
  */
 export async function switchTenantAdminSite(siteId: number): Promise<void> {
   const response = await selectOrgSite(siteId);
