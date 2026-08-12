@@ -1,13 +1,14 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { RoleEditor } from "@/components/features/roles";
 
-type Props = { params: Promise<{ id: string }> };
-
-export default async function EditRolePage({ params }: Props) {
+export default async function EditRolePage({
+  params,
+}: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
+
   return (
-    <PlaceholderPage
-      title="Edit Role"
-      description={`Placeholder for editing role ${id}.`}
-    />
+    <div className="flex flex-col gap-6 p-6">
+      <h1 className="text-xl font-semibold text-slate-900">Edit role</h1>
+      <RoleEditor roleId={Number(id)} />
+    </div>
   );
 }
