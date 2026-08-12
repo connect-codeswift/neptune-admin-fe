@@ -8,6 +8,8 @@ const VISIBLE_RIGHTS_COUNT = 6;
 type RoleCardProps = Readonly<{
   role: RoleViewModel;
   basePath: string;
+  /** Omitted where deletion is not offered. */
+  onDelete?: (role: RoleViewModel) => void;
 }>;
 
 function RightTag({ label }: Readonly<{ label: string }>) {
@@ -18,7 +20,7 @@ function RightTag({ label }: Readonly<{ label: string }>) {
   );
 }
 
-export function RoleCard({ role, basePath }: RoleCardProps) {
+export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
   const visibleRights = role.permissionLabels.slice(0, VISIBLE_RIGHTS_COUNT);
   const hiddenCount = role.permissionLabels.length - visibleRights.length;
 
@@ -72,6 +74,21 @@ export function RoleCard({ role, basePath }: RoleCardProps) {
                 label={`Edit ${role.name}`}
                 size="sm"
                 href={`${basePath}/${role.id}/edit`}
+              />
+            ) : null}
+            {/*
+              A system role gets no delete control at all rather than one that errors: a
+              preset is a single row shared by every company, so removing it here would
+              remove it everywhere, and the backend refuses. Ehs_Director is refused even
+              as a company's own copy — it owns the company, and deleting it would leave
+              nobody able to administer it.
+            */}
+            {!role.isSystem && onDelete ? (
+              <IconButton
+                icon="lucide:trash-2"
+                label={`Delete ${role.name}`}
+                size="sm"
+                onClick={() => onDelete(role)}
               />
             ) : null}
           </div>

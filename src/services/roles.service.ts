@@ -71,3 +71,16 @@ export async function assignPermissions(input: {
     permissionIds: input.permissionIds,
   });
 }
+
+/**
+ * DELETE /SuperAdminRoles/{roleId}
+ *
+ * Anyone holding the role is moved to No_Permission and has no access at all until they
+ * are given another one. The backend refuses Ehs_Director and the shared preset roles.
+ */
+export async function deleteRole(roleId: number) {
+  const { data } = await axiosInstance.delete<ApiResponse>(
+    `/SuperAdminRoles/${roleId}`,
+  );
+  return data;
+}

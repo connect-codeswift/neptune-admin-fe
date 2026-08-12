@@ -1,9 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
 import { PageHeader } from "@/components/layouts";
-import { Button } from "@/components/ui";
-import { useRolesWithPermissions } from "@/hooks/useRolesAndRights";
-import { getRoleStats } from "@/lib/mappers/roles.mapper";
+import { Button, ConfirmDialog } from "@/components/ui";
+import {
+  useDeleteRole,
+  useRolesWithPermissions,
+} from "@/hooks/useRolesAndRights";
+import { getRoleStats, type RoleViewModel } from "@/lib/mappers/roles.mapper";
 import { RoleCard } from "./RoleCard";
 import { useRolesAndRightsPaths } from "./useRolesAndRightsPaths";
 
@@ -26,6 +31,9 @@ export function RolesAndRightsPage() {
   const { data: roles = [], isPending, isError, error } =
     useRolesWithPermissions();
   const stats = getRoleStats(roles);
+
+  const [pendingDelete, setPendingDelete] = useState<RoleViewModel | null>(null);
+  const removeRole = useDeleteRole();
 
   return (
     <div className="flex flex-col gap-6 pb-4">
@@ -79,11 +87,39 @@ export function RolesAndRightsPage() {
             </p>
           ) : (
             roles.map((role) => (
-              <RoleCard key={role.id} role={role} basePath={basePath} />
+              <RoleCard
+                key={role.id}
+                role={role}
+                basePath={basePath}
+                onDelete={setPendingDelete}
+              />
             ))
           )}
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={`Delete ${pendingDelete?.name ?? "role"}?`}
+        // State the consequence rather than asking "are you sure": these people keep
+        // their accounts and can do nothing at all until someone assigns them a role.
+        description={
+          pendingDelete && pendingDelete.userCount > 0
+            ? `${pendingDelete.userCount} user${pendingDelete.userCount === 1 ? "" : "s"} will be moved to No_Permission and will have no access until you assign them a new role.`
+            : "This role has no users assigned. It will be removed permanently."
+        }
+        confirmLabel="Delete role"
+        confirmVariant="danger"
+        loading={removeRole.isPending}
+        onConfirm={() => {
+          if (pendingDelete) {
+            removeRole.mutate(pendingDelete.numericId, {
+              onSuccess: () => setPendingDelete(null),
+            });
+          }
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
