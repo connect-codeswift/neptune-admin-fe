@@ -16,9 +16,7 @@ export {
 } from "@/lib/admin-sidebar";
 import {
   getSuperAdminCombinedNavSections,
-  getSuperAdminNavSections,
   getSuperAdminSidebarLogoHref,
-  SUPER_ADMIN_NAV_ITEMS,
 } from "@/lib/super-admin-sidebar-items";
 
 export function getSidebarNavSections(
@@ -29,6 +27,9 @@ export function getSidebarNavSections(
     return getSuperAdminCombinedNavSections(pathname);
   }
 
+  // The local role "admin" represents the tenant `Ehs_Director` role.
+  // `Ehs_Lead` is rejected by the backend at `/AdminPortalAuth/login` and is
+  // therefore never passed here as "admin".
   if (role === "admin") return getOrgAdminNavSections(pathname);
   return [];
 }

@@ -16,6 +16,9 @@ import axiosInstance from "@/lib/axiosInstance";
  * Unified admin portal entry: resolves staff (SuperAdmin) vs tenant admin
  * server-side. Staff always continue through SuperAdmin MFA; tenant admins
  * follow the org Auth flow.
+ *
+ * The backend gate rejects `Ehs_Lead` (site authority) — only `Ehs_Director`
+ * tenant admins and CodeSwift staff reach this portal.
  */
 export async function portalLogin(payload: LoginPayload) {
   const { data } = await axiosInstance.post<LoginResponse>(
@@ -32,6 +35,9 @@ export async function portalLogin(payload: LoginPayload) {
     const accessToken = extractAccessToken(data);
     if (accessToken) {
       setOrgToken(accessToken);
+      // The backend only returns `accountType: "tenant"` for the `Ehs_Director`
+      // role; `Ehs_Lead` is rejected at `/AdminPortalAuth/login`. The frontend
+      // stores the tenant admin role locally as "admin".
       setAuthRole("admin");
     }
   }

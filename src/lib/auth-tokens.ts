@@ -4,6 +4,12 @@ const MFA_TOKEN_KEY = "neptune_admin_mfa_token";
 const AUTH_ROLE_KEY = "neptune_admin_role";
 const AUTH_EMAIL_KEY = "neptune_admin_email";
 
+// Local-storage role names differ from the API role names:
+// - "admin"       corresponds to the API role `Ehs_Director` (tenant admin).
+// - "super-admin" corresponds to CodeSwift staff.
+//
+// `Ehs_Lead` is a site authority and is rejected by the backend at
+// `/AdminPortalAuth/login`; it is never stored here as "admin".
 export type StoredAuthRole = "super-admin" | "admin";
 
 export const AUTH_SESSION_EVENT = "neptune:auth-session-updated";
@@ -99,6 +105,10 @@ export function isSuperAdminRole(): boolean {
   return getAuthRole() === "super-admin";
 }
 
+// Returns true when the stored role is "admin", i.e. the current session is a
+// tenant `Ehs_Director` admin (not CodeSwift staff, not `Ehs_Lead`).
+// Note: this checks localStorage only; for access decisions also verify the
+// org token does not carry the `Ehs_Lead` role (see dashboard-auth.ts).
 export function isAdminRole(): boolean {
   return getAuthRole() === "admin";
 }
