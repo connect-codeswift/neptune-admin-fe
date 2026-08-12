@@ -37,6 +37,10 @@ export type SelectSiteResponse = {
  * Unlike the SuperAdmin flow this can return a full session immediately: when
  * the account has MFA disabled the response carries `accessToken` and there is
  * no `mfaToken` at all. Store it here so an MFA-off admin is not stranded.
+ *
+ * In the admin portal this endpoint is only reached by `Ehs_Director` tenant
+ * admins; `Ehs_Lead` is rejected at `/AdminPortalAuth/login` and cannot browse
+ * the admin portal.
  */
 export async function orgLogin(payload: LoginPayload) {
   const { data } = await axiosInstance.post<LoginResponse>("/Auth/login", payload);
@@ -44,6 +48,8 @@ export async function orgLogin(payload: LoginPayload) {
   const accessToken = extractAccessToken(data);
   if (accessToken) {
     setOrgToken(accessToken);
+    // The stored role "admin" corresponds to the API role `Ehs_Director`.
+    // `Ehs_Lead` is rejected by the admin portal login gate.
     setAuthRole("admin");
   }
   return { ...data, accessToken: accessToken ?? data.accessToken };
@@ -58,6 +64,8 @@ export async function orgVerifyMfa(payload: VerifyMfaPayload) {
   const accessToken = extractAccessToken(data);
   if (accessToken) {
     setOrgToken(accessToken);
+    // The stored role "admin" corresponds to the API role `Ehs_Director`.
+    // `Ehs_Lead` is rejected by the admin portal login gate.
     setAuthRole("admin");
   }
   return { ...data, accessToken: accessToken ?? data.accessToken };
@@ -88,6 +96,8 @@ export async function orgMfaEnable(mfaToken: string, code: string) {
   const accessToken = extractAccessToken(data);
   if (accessToken) {
     setOrgToken(accessToken);
+    // The stored role "admin" corresponds to the API role `Ehs_Director`.
+    // `Ehs_Lead` is rejected by the admin portal login gate.
     setAuthRole("admin");
   }
   return { ...data, accessToken: accessToken ?? data.accessToken };
@@ -104,6 +114,7 @@ export async function getOrgMe() {
 /**
  * POST /Auth/select-site — reissues the org token with a new SiteId. Same contract
  * the EHSS app uses; required for multi-site tenant Admins in this portal.
+ * Only `Ehs_Director` tenant admins reach this path in the admin portal.
  */
 export async function selectOrgSite(siteId: number) {
   const { data } = await axiosInstance.post<ApiResponse<SelectSiteResponse>>(
@@ -115,6 +126,8 @@ export async function selectOrgSite(siteId: number) {
     extractAccessToken(data) ?? data.dataModel?.accessToken ?? undefined;
   if (accessToken) {
     setOrgToken(accessToken);
+    // The stored role "admin" corresponds to the API role `Ehs_Director`.
+    // `Ehs_Lead` is rejected by the admin portal login gate.
     setAuthRole("admin");
   }
 

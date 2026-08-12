@@ -55,8 +55,10 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
       return;
     }
 
-    // Tenant Admins never call select-company; hydrate their site list from
-    // Org/me so the header switcher can offer every site they are assigned to.
+    // Ehs_Director tenant admins (stored role 'admin') never call select-company;
+    // hydrate their site list from Org/me so the header switcher can offer every
+    // site they are assigned to. Ehs_Lead is rejected by the admin portal login
+    // gate, so this path is never reached by a site authority.
     if (isAdminRole()) {
       const context = getTenantContext();
       const contextReady =

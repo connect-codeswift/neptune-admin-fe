@@ -1,11 +1,9 @@
 export const USER_ROLE_OPTIONS = [
-  { value: "hse-manager", label: "HSE Manager" },
-  { value: "safety-officer", label: "Safety Officer" },
-  { value: "system-admin", label: "System Admin" },
-  { value: "employee", label: "Employee" },
+  { value: "ehs-director", label: "EHS Director" },
+  { value: "ehs-lead", label: "EHS Lead" },
+  { value: "ehs-manager", label: "EHS Manager" },
   { value: "supervisor", label: "Supervisor" },
-  { value: "auditor", label: "Auditor" },
-  { value: "read-only", label: "Read-Only" },
+  { value: "worker", label: "Worker" },
 ];
 
 export const USER_DEPARTMENT_OPTIONS = [
@@ -39,49 +37,63 @@ export type RolePermissionPreview = {
 
 export const ROLE_PERMISSION_PREVIEWS: Record<string, RolePermissionPreview[]> =
   {
-    employee: [
-      { label: "View Safety Records", granted: true },
-      { label: "Submit Incident Reports", granted: true },
-      { label: "Manage LOTO", granted: false },
-      { label: "Approve Documents", granted: false },
-      { label: "System Configuration", granted: false },
-    ],
-    "hse-manager": [
-      { label: "View Safety Records", granted: true },
-      { label: "Submit Incident Reports", granted: true },
-      { label: "Manage LOTO", granted: true },
-      { label: "Approve Documents", granted: true },
-      { label: "System Configuration", granted: false },
-    ],
-    "system-admin": [
+    "ehs-director": [
       { label: "View Safety Records", granted: true },
       { label: "Submit Incident Reports", granted: true },
       { label: "Manage LOTO", granted: true },
       { label: "Approve Documents", granted: true },
       { label: "System Configuration", granted: true },
     ],
+    "ehs-lead": [
+      { label: "View Safety Records", granted: true },
+      { label: "Submit Incident Reports", granted: true },
+      { label: "Manage LOTO", granted: true },
+      { label: "Approve Documents", granted: true },
+      { label: "System Configuration", granted: false },
+    ],
+    "ehs-manager": [
+      { label: "View Safety Records", granted: true },
+      { label: "Submit Incident Reports", granted: true },
+      { label: "Manage LOTO", granted: true },
+      { label: "Approve Documents", granted: true },
+      { label: "System Configuration", granted: false },
+    ],
+    supervisor: [
+      { label: "View Safety Records", granted: true },
+      { label: "Submit Incident Reports", granted: true },
+      { label: "Manage LOTO", granted: false },
+      { label: "Approve Documents", granted: false },
+      { label: "System Configuration", granted: false },
+    ],
+    worker: [
+      { label: "View Safety Records", granted: true },
+      { label: "Submit Incident Reports", granted: false },
+      { label: "Manage LOTO", granted: false },
+      { label: "Approve Documents", granted: false },
+      { label: "System Configuration", granted: false },
+    ],
   };
 
 export const ADDITIONAL_PERMISSION_GROUPS = [
   {
     label: "Safety",
-    permissions: ["View Records", "Manage LOTO"],
+    permissions: ["Safety.Incident.View", "Safety.LOTO.Manage"],
   },
   {
     label: "Facility",
-    permissions: ["Upload Documents", "Approve Documents"],
+    permissions: ["Compliance.Document.Upload", "Compliance.Document.Approve"],
   },
   {
     label: "Communications",
-    permissions: ["Manage Users", "Access Configuration"],
+    permissions: ["System.Users.Manage", "System.Settings.Manage"],
   },
   {
     label: "Operations",
-    permissions: ["View Records", "Manage LOTO"],
+    permissions: ["Safety.Incident.View", "Safety.LOTO.Manage"],
   },
   {
     label: "Admin",
-    permissions: ["Manage Users", "Access Configuration"],
+    permissions: ["System.Users.Manage", "System.Settings.Manage"],
   },
 ] as const;
 
@@ -90,7 +102,7 @@ export function getRolePermissionPreview(
 ): RolePermissionPreview[] {
   return (
     ROLE_PERMISSION_PREVIEWS[roleValue] ??
-    ROLE_PERMISSION_PREVIEWS.employee ??
+    ROLE_PERMISSION_PREVIEWS.worker ??
     []
   );
 }
@@ -98,6 +110,6 @@ export function getRolePermissionPreview(
 export function getRoleLabel(roleValue: string): string {
   return (
     USER_ROLE_OPTIONS.find((option) => option.value === roleValue)?.label ??
-    "Employee"
+    "Worker"
   );
 }
