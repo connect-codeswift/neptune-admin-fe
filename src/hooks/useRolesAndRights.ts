@@ -18,6 +18,7 @@ import {
 } from "@/lib/mappers/roles.mapper";
 import {
   assignRolePermissions,
+  deleteRole,
   createRole,
   getAllPermissions,
   getAllRoles,
@@ -158,6 +159,23 @@ export function useAssignRolePermissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_PERMISSIONS_QUERY_KEY });
+    },
+  });
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (roleId: number) => {
+      const response = await deleteRole(roleId);
+      assertApiSuccess(response, "Failed to delete this role.");
+      return response;
+    },
+    onSuccess: () => {
+      // Both lists carry the role, and the summary counts change with it.
+      queryClient.invalidateQueries({ queryKey: ROLES_PERMISSIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
     },
   });
 }
