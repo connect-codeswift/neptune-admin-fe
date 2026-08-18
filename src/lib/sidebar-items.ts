@@ -28,7 +28,7 @@ export function getSidebarNavSections(
   }
 
   // The local role "admin" represents the tenant `Ehs_Director` role.
-  // `Ehs_Lead` is rejected by the backend at `/AdminPortalAuth/login` and is
+  // `Ehs_Lead` is rejected by the backend at `/v1/admin/auth/login` and is
   // therefore never passed here as "admin".
   if (role === "admin") return getOrgAdminNavSections(pathname);
   return [];

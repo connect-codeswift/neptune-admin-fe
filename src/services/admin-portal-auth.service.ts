@@ -11,7 +11,7 @@ import { setPortalAccountType } from "@/lib/portal-auth";
 import axiosInstance from "@/lib/axiosInstance";
 
 /**
- * POST /AdminPortalAuth/login
+ * POST /v1/admin/auth/login
  *
  * Unified admin portal entry: resolves staff (SuperAdmin) vs tenant admin
  * server-side. Staff always continue through SuperAdmin MFA; tenant admins
@@ -22,7 +22,7 @@ import axiosInstance from "@/lib/axiosInstance";
  */
 export async function portalLogin(payload: LoginPayload) {
   const { data } = await axiosInstance.post<LoginResponse>(
-    "/AdminPortalAuth/login",
+    "/v1/admin/auth/login",
     payload,
   );
   setAuthEmail(payload.email);
@@ -36,7 +36,7 @@ export async function portalLogin(payload: LoginPayload) {
     if (accessToken) {
       setOrgToken(accessToken);
       // The backend only returns `accountType: "tenant"` for the `Ehs_Director`
-      // role; `Ehs_Lead` is rejected at `/AdminPortalAuth/login`. The frontend
+      // role; `Ehs_Lead` is rejected at `/v1/admin/auth/login`. The frontend
       // stores the tenant admin role locally as "admin".
       setAuthRole("admin");
     }
