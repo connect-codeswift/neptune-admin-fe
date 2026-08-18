@@ -28,23 +28,23 @@ function resolveMutationConfig(options?: SuperAdminSiteMutationOptions) {
   };
 }
 
-/** GET /SuperAdminSites */
+/** GET /v1/super-admin/sites */
 export async function getSuperAdminSites(params?: GetSuperAdminSitesParams) {
   const { data } = await axiosInstance.get<
     ApiResponse<SuperAdminSitesListResponse>
-  >("/SuperAdminSites", { params });
+  >("/v1/super-admin/sites", { params });
   return data;
 }
 
-/** GET /SuperAdminSites/{siteId} */
+/** GET /v1/super-admin/sites/{siteId} */
 export async function getSuperAdminSite(siteId: number) {
   const { data } = await axiosInstance.get<ApiResponse<SuperAdminSiteResponse>>(
-    `/SuperAdminSites/${siteId}`,
+    `/v1/super-admin/sites/${siteId}`,
   );
   return data;
 }
 
-/** POST /SuperAdminSites */
+/** POST /v1/super-admin/sites */
 export async function createSuperAdminSite(
   payload: CreateSuperAdminSitePayload,
   options?: SuperAdminSiteMutationOptions,
@@ -56,14 +56,14 @@ export async function createSuperAdminSite(
       : payload;
 
   const { data } = await axiosInstance.post<ApiResponse<SuperAdminSiteResponse>>(
-    "/SuperAdminSites",
+    "/v1/super-admin/sites",
     body,
     { neptuneUseStaffToken: useStaffToken },
   );
   return data;
 }
 
-/** PUT /SuperAdminSites/{siteId} */
+/** PUT /v1/super-admin/sites/{siteId} */
 export async function updateSuperAdminSite(
   siteId: number,
   payload: UpdateSuperAdminSitePayload,
@@ -72,7 +72,7 @@ export async function updateSuperAdminSite(
   const { useStaffToken, organizationId } = resolveMutationConfig(options);
 
   const { data } = await axiosInstance.put<ApiResponse<SuperAdminSiteResponse>>(
-    `/SuperAdminSites/${siteId}`,
+    `/v1/super-admin/sites/${siteId}`,
     payload,
     {
       neptuneUseStaffToken: useStaffToken,
@@ -85,7 +85,7 @@ export async function updateSuperAdminSite(
   return data;
 }
 
-/** DELETE /SuperAdminSites/{siteId} */
+/** DELETE /v1/super-admin/sites/{siteId} */
 export async function deleteSuperAdminSite(
   siteId: number,
   options?: SuperAdminSiteMutationOptions,
@@ -93,7 +93,7 @@ export async function deleteSuperAdminSite(
   const { useStaffToken, organizationId } = resolveMutationConfig(options);
 
   const { data } = await axiosInstance.delete<ApiResponse<unknown>>(
-    `/SuperAdminSites/${siteId}`,
+    `/v1/super-admin/sites/${siteId}`,
     {
       neptuneUseStaffToken: useStaffToken,
       params:
