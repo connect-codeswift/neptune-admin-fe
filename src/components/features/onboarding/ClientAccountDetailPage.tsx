@@ -7,6 +7,7 @@ import { TabBar } from "@/components/ui";
 import { useClientAccountDetail } from "@/hooks/useClientAccountDetail";
 import { clearOrgSession } from "@/lib/auth-tokens";
 import { ClientModulesTab } from "./ClientModulesTab";
+import { ClientNotificationsTab } from "./ClientNotificationsTab";
 import { ClientOverviewTab } from "./ClientOverviewTab";
 import { ClientSitesTab } from "./ClientSitesTab";
 import { ClientSubscriptionTab } from "./ClientSubscriptionTab";
@@ -17,6 +18,7 @@ const TABS = [
   { id: "sites", label: "Sites" },
   { id: "modules", label: "Modules" },
   { id: "access", label: "Access & Limits" },
+  { id: "notifications", label: "Notifications" },
 ] as const;
 
 const SITES_TAB_INDEX = TABS.findIndex((tab) => tab.id === "sites");
@@ -91,6 +93,14 @@ export function ClientAccountDetailPage({
         atSiteLimit={company.atSiteLimit}
         initialEditSiteId={pendingSiteEditId}
         onInitialEditConsumed={handleInitialEditConsumed}
+      />
+    );
+  } else if (activeTab.id === "notifications") {
+    tabContent = (
+      <ClientNotificationsTab
+        key={company.id}
+        companyName={company.name}
+        activatedModules={company.activatedModules}
       />
     );
   } else if (activeTab.id === "modules") {
