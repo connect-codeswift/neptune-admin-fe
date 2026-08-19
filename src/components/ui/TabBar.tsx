@@ -27,21 +27,23 @@ export function TabBar({
   return (
     <nav
       aria-label={label}
-      className={`flex gap-3 border-b border-darkest/12 pl-2 ${className}`.trim()}
+      className={`border-ehs-border flex gap-3 border-b pl-2 ${className}`.trim()}
     >
       {tabs.map((tab, index) => {
         const active = index === activeIndex;
 
         let tabClass =
-          "cursor-pointer px-4 pt-2 pb-3 text5 text-[#8892a3] transition-colors hover:text-darkest";
+          "text4 text-ehs-muted-text hover:text-ehs-darker cursor-pointer px-4 pt-2 pb-3 transition-colors";
         if (active) {
           tabClass =
-            "cursor-pointer border-b-[3px] border-blue-normal px-4 pt-2 pb-3 text4 text-blue-normal";
+            "text5 border-ehs-normal-blue text-ehs-normal-blue cursor-pointer border-b-[3px] px-4 pt-2 pb-3";
         }
 
-        let badgeClass = "rounded-full bg-red px-1.5 py-0.5 text9 text-white";
+        let badgeClass =
+          "text7 bg-ehs-red text-ehs-on-accent rounded-full px-1.5 py-0.5";
         if (!active) {
-          badgeClass = "rounded-full bg-red/12 px-1.5 py-0.5 text9 text-red";
+          badgeClass =
+            "text7 bg-ehs-red/12 text-ehs-red rounded-full px-1.5 py-0.5";
         }
 
         return (

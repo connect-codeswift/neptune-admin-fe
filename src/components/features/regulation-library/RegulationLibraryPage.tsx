@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { SearchInput } from "@/components/inputs";
+import {
+  FeatureErrorCard,
+  FeatureLoadingGrid,
+} from "@/components/features/shared";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import { useRegulationLibrary } from "@/hooks/useRegulationLibrary";
@@ -32,20 +36,25 @@ function matchesSearch(
 
 export function RegulationLibraryPage() {
   const { adminHref, basePath } = useRegulationLibraryPaths();
+  const sectionHeadingId = useId();
   const [search, setSearch] = useState("");
   // `isPending` (not `isLoading`) so the list keeps its loading state while the
   // query is still gated on the tenant scope — a disabled query reports
   // `isLoading === false` with no data, which would flash the empty list.
-  const { data: regulations = [], isPending, isError, error } =
+  const { data: regulations = [], isPending, isError, error, refetch } =
     useRegulationLibrary();
 
-  const filteredRegulations = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return regulations;
-    return regulations.filter((regulation) =>
+  // No `useMemo`: React Compiler is on for this app, and the repo's rule is that
+  // components do not hand-memoize.
+  const query = search.trim().toLowerCase();
+  let filteredRegulations = regulations;
+  if (query) {
+    filteredRegulations = regulations.filter((regulation) =>
       matchesSearch(regulation, query),
     );
-  }, [regulations, search]);
+  }
+
+  const ready = !isPending && !isError;
 
   return (
     <div className="flex flex-col gap-6 pb-4">
@@ -63,32 +72,72 @@ export function RegulationLibraryPage() {
         }
       />
 
-      <RegulationStatsRow regulations={regulations} />
-
-      <SearchInput
-        placeholder="Search regulations, articles, topics…"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        aria-label="Search regulations"
-      />
-
+      {/* The stat row used to compute over an empty array while the query was
+          still in flight, so the page opened on four confident zeros. */}
       {isPending ? (
-        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
-          Loading regulations…
-        </p>
+        <FeatureLoadingGrid
+          count={4}
+          label="Loading regulation stats…"
+          className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+        />
       ) : null}
+      {ready ? <RegulationStatsRow regulations={regulations} /> : null}
 
-      {isError ? (
-        <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
-          {error instanceof Error
-            ? error.message
-            : "Failed to load regulations."}
-        </p>
-      ) : null}
+      <section aria-labelledby={sectionHeadingId} className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id={sectionHeadingId} className="text3 text-ehs-darker">
+            All Regulations
+          </h2>
+          {ready && regulations.length > 0 ? (
+            <p className="text8 text-ehs-muted-text">
+              Showing {filteredRegulations.length} of {regulations.length}{" "}
+              regulation{regulations.length === 1 ? "" : "s"}
+            </p>
+          ) : null}
+        </div>
 
-      {!isPending && !isError ? (
-        <RegulationList regulations={filteredRegulations} />
-      ) : null}
+        <SearchInput
+          placeholder="Search regulations, articles, topics…"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          aria-label="Search regulations"
+          disabled={isPending || isError}
+        />
+
+        {isPending ? (
+          // Card-shaped, not a paragraph of grey bars: the list is a stack of
+          // wide rows, and the placeholder should say so.
+          <FeatureLoadingGrid
+            count={4}
+            label="Loading regulations…"
+            className="flex flex-col gap-4"
+            cardClassName="min-h-36"
+          />
+        ) : null}
+
+        {isError ? (
+          <FeatureErrorCard
+            title="Couldn’t load regulations"
+            message={
+              error instanceof Error
+                ? error.message
+                : "Failed to load regulations."
+            }
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        ) : null}
+
+        {ready ? (
+          <RegulationList
+            regulations={filteredRegulations}
+            searchQuery={search}
+            onClearSearch={() => setSearch("")}
+            addHref={`${basePath}/new`}
+          />
+        ) : null}
+      </section>
     </div>
   );
 }

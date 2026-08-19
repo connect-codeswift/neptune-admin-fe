@@ -38,7 +38,7 @@ export function AdminDashboardHeader({
             shape="rounded"
             size="md"
             onClick={handleBackToSuperAdmin}
-            className="size-11 shrink-0 border-darkest/10 bg-white shadow-lg hover:bg-lightgray"
+            className="size-11 shrink-0 border-ehs-border bg-ehs-surface text-ehs-gray shadow-(--ehs-shadow-card) hover:bg-ehs-light-bg"
           />
         ) : null
       }

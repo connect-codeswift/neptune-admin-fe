@@ -19,7 +19,7 @@ function DetailRow({
   value,
 }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className="flex items-center justify-between gap-4 text5">
+    <div className="flex items-center justify-between gap-4 text4">
       <span className="text-gray">{label}</span>
       <span className="font-semibold text-darkest">{value}</span>
     </div>
@@ -49,12 +49,12 @@ export function SiteLimitModal({
         <div>
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="text6 font-semibold text-gray">Sites Allocated</p>
-            <p className="text6 font-semibold text-blue-normal">
+            <p className="text7 text-blue-normal">
               {siteInfo.sitesUsed} of {siteInfo.sitesTotal} used
             </p>
           </div>
           <div
-            className="h-2 overflow-hidden rounded-full bg-[#e8edf3]"
+            className="h-2 overflow-hidden rounded-full bg-ehs-border-ink/10"
             role="progressbar"
             aria-valuenow={usagePercent}
             aria-valuemin={0}
@@ -68,7 +68,7 @@ export function SiteLimitModal({
           </div>
         </div>
 
-        <div className="rounded-xl bg-[#f4f6f9] px-4 py-3">
+        <div className="rounded-xl bg-ehs-surface-raised px-4 py-3">
           <div className="flex flex-col gap-2.5">
             <DetailRow
               label="Sites Used"
@@ -81,7 +81,7 @@ export function SiteLimitModal({
           </div>
         </div>
 
-        <p className="text5 leading-relaxed text-gray">
+        <p className="text4 leading-relaxed text-gray">
           {getSiteLimitMessage(siteInfo)}
         </p>
       </div>

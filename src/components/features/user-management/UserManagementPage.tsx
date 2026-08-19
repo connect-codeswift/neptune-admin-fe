@@ -31,6 +31,13 @@ import {
   parseOrgSitePath,
 } from "@/lib/sidebar-items";
 import { SubscriptionSeatLimitModal } from "./SubscriptionSeatLimitModal";
+import {
+  FeatureEmptyState,
+  FeatureErrorCard,
+  FeatureLoadingGrid,
+} from "@/components/features/shared";
+import { GLASS_SURFACE, GlassCard } from "@/components/ui/GlassCard";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const PAGE_SIZE = 20;
 
@@ -39,10 +46,84 @@ function StatCard({
   label,
 }: Readonly<{ value: number; label: string }>) {
   return (
-    <article className="flex min-h-24 flex-col justify-center rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-lg backdrop-blur-[10px]">
-      <p className="text1 text-darkest">{value}</p>
-      <p className="mt-1 text6 text-gray">{label}</p>
-    </article>
+    <GlassCard className="min-h-24 justify-center px-5 py-4">
+      {/* One wrapper child so GlassCard's own `gap` never separates the value
+          from its label — the 4px `mt-1` below is the intended spacing. */}
+      <div className="min-w-0">
+        {/* text2 is the KPI role: same 30px figure the rest of the app's stat
+            tiles use, and it carries tabular-nums so the four numbers line up
+            column-to-column as they change. */}
+        <p className="text2 text-darkest">{value}</p>
+        <p className="mt-1 text8 text-gray">{label}</p>
+      </div>
+    </GlassCard>
+  );
+}
+
+/**
+ * A stand-in shaped like the users table rather than a stack of grey bars: the
+ * avatar disc, the two-line identity, the badge pills and the action squares
+ * all land where the real row will land, so nothing jumps when the query
+ * resolves.
+ */
+function UsersTableSkeleton() {
+  const rows = Array.from({ length: 6 }, (_, index) => `user-row-${String(index)}`);
+
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Loading users…"
+      className={`${GLASS_SURFACE} min-w-0 overflow-hidden`}
+    >
+      <div className="overflow-x-auto">
+        <div className="min-w-240">
+          <div className="border-b border-ehs-border/40 px-4 py-3.5">
+            <Skeleton className="h-3 w-32 rounded-md" />
+          </div>
+          {rows.map((key) => (
+            <div
+              key={key}
+              className="flex items-center gap-4 border-b border-ehs-border/45 px-4 py-4 last:border-b-0"
+            >
+              <Skeleton className="size-8 shrink-0 rounded-2.5 bg-ehs-skeleton-strong" />
+              <div className="flex w-56 shrink-0 flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-36 rounded-md bg-ehs-skeleton-strong" />
+                <Skeleton className="h-3 w-44 rounded-md" />
+              </div>
+              <Skeleton className="h-5 w-24 shrink-0 rounded-md" />
+              <Skeleton className="h-3.5 w-40 shrink-0 rounded-md" />
+              <Skeleton className="h-5 w-20 shrink-0 rounded-full" />
+              <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                <Skeleton className="size-7 rounded-lg" />
+                <Skeleton className="size-7 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A control that is deliberately inert, and says so. The reason lives in
+ * `title` for a pointer and in an `sr-only` span for a reader — a disabled
+ * button takes `pointer-events: none`, so its own tooltip would never fire, and
+ * it is not in the tab order for the reason to be reached any other way.
+ */
+function ComingSoonAction({
+  icon,
+  label,
+  reason,
+}: Readonly<{ icon: string; label: string; reason: string }>) {
+  return (
+    <span title={reason}>
+      <Button variant="secondary" size="sm" leftIcon={icon} disabled>
+        {label}
+        <span className="sr-only"> — {reason}</span>
+      </Button>
+    </span>
   );
 }
 
@@ -55,12 +136,16 @@ function buildColumns(
     {
       id: "user",
       header: "User",
+      // TableUserCell already truncates both lines; the title puts the full
+      // name and address back within reach for the ones that get cut.
       cell: (row) => (
-        <TableUserCell
-          name={row.name}
-          email={row.email}
-          initials={row.initials}
-        />
+        <div title={`${row.name} · ${row.email}`}>
+          <TableUserCell
+            name={row.name}
+            email={row.email}
+            initials={row.initials}
+          />
+        </div>
       ),
     },
     {
@@ -71,9 +156,19 @@ function buildColumns(
     {
       id: "site",
       header: "Sites",
-      cell: (row) => (
-        <TableTextCell>{row.sites.join(", ") || "—"}</TableTextCell>
-      ),
+      cell: (row) => {
+        const siteNames = row.sites.join(", ");
+        return (
+          // `title` because a user on eight sites is a very long cell and the
+          // list is the only place the full set is visible.
+          <span
+            className="block max-w-60 truncate"
+            title={siteNames || undefined}
+          >
+            <TableTextCell>{siteNames || "—"}</TableTextCell>
+          </span>
+        );
+      },
     },
     {
       id: "status",
@@ -87,9 +182,13 @@ function buildColumns(
       headerClassName: "w-20",
       className: "w-20",
       cell: (row) => (
+        // Labels name the row, not just the verb: a screen reader hitting six
+        // "Edit" buttons in a column learns nothing from the sixth.
         <TableRowActions
           viewHref={`${basePath}/${row.id}`}
           editHref={`${basePath}/${row.id}/edit`}
+          viewLabel={`View ${row.name}`}
+          editLabel={`Edit ${row.name}`}
           onView={() => onView(row)}
           onEdit={() => onEdit(row)}
         />
@@ -137,6 +236,7 @@ export function UserManagementPage() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useSuperAdminUsers({
     siteId: Number.isFinite(siteId) ? siteId : undefined,
     search,
@@ -144,13 +244,20 @@ export function UserManagementPage() {
     pageSize: PAGE_SIZE,
   });
 
-  const { data: stats } = useSuperAdminUserStats(
+  const { data: stats, isLoading: statsLoading } = useSuperAdminUserStats(
     Number.isFinite(siteId) ? siteId : undefined,
   );
 
   const users = usersPage?.users ?? [];
   const totalRecords = usersPage?.totalRecords ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+  const firstShown = totalRecords === 0 ? 0 : (pageNumber - 1) * PAGE_SIZE + 1;
+  const lastShown = Math.min(pageNumber * PAGE_SIZE, totalRecords);
+
+  // The one distinction the old empty row could not make: a directory with
+  // nobody in it, versus a directory whose search and site filter happen to
+  // exclude everybody. The second is a dead end unless it hands back a way out.
+  const filtersActive = Boolean(search.trim()) || Boolean(siteFilter);
 
   const columns = buildColumns(
     basePath,
@@ -176,8 +283,14 @@ export function UserManagementPage() {
     setPageNumber(1);
   };
 
+  const handleClearFilters = () => {
+    setSearch("");
+    setSiteFilter("");
+    setPageNumber(1);
+  };
+
   return (
-    <div className="flex flex-col gap-6 pb-4">
+    <div className="flex min-w-0 flex-col gap-6 pb-4">
       <PageHeader
         title="User Management"
         description={
@@ -191,22 +304,23 @@ export function UserManagementPage() {
         ]}
         actions={
           <>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:upload"
-              onClick={() => toast.success("Import started.")}
-            >
-              Import
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:download"
-              onClick={() => toast.success("Export started.")}
-            >
-              Export
-            </Button>
+            {/*
+              Import and Export were wired to `toast.success("Import started.")`
+              and nothing else — the app announced that work had begun and then
+              did none of it. They are kept, visible and disabled, rather than
+              deleted: the capability is planned and the page header is where an
+              admin will look for it, so signposting it beats hiding it.
+            */}
+            <ComingSoonAction
+              icon="lucide:upload"
+              label="Import"
+              reason="Bulk user import is not available yet."
+            />
+            <ComingSoonAction
+              icon="lucide:download"
+              label="Export"
+              reason="Exporting the user list is not available yet."
+            />
             <Button
               size="sm"
               leftIcon="lucide:plus"
@@ -218,58 +332,135 @@ export function UserManagementPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard value={stats?.total ?? 0} label="Total Users" />
-        <StatCard value={stats?.active ?? 0} label="Active" />
-        <StatCard value={stats?.pendingSetup ?? 0} label="Pending Setup" />
-        <StatCard value={stats?.suspended ?? 0} label="Suspended" />
+      {statsLoading ? (
+        <FeatureLoadingGrid
+          count={4}
+          label="Loading user statistics…"
+          className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+        />
+      ) : (
+        <div className="stagger-cards grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard value={stats?.total ?? 0} label="Total Users" />
+          <StatCard value={stats?.active ?? 0} label="Active" />
+          <StatCard value={stats?.pendingSetup ?? 0} label="Pending Setup" />
+          <StatCard value={stats?.suspended ?? 0} label="Suspended" />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+          <SearchInput
+            label="Search"
+            placeholder="Search by name or email…"
+            value={search}
+            onChange={(event) => handleSearchChange(event.target.value)}
+          />
+          {/* A visible label rather than `label=""`: the control is a button
+              with a dropdown, so with no label it announced only its current
+              value and nothing about what it filters. */}
+          <SelectInput
+            label="Site"
+            options={siteOptions}
+            value={siteFilter}
+            onChange={handleSiteFilterChange}
+          />
+        </div>
+
+        {filtersActive ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text8 text-gray">
+              Filtered by{search.trim() ? ` “${search.trim()}”` : ""}
+              {search.trim() && siteFilter ? " and" : ""}
+              {siteFilter
+                ? ` ${siteOptions.find((option) => option.value === siteFilter)?.label ?? "a site"}`
+                : ""}
+              .
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon="mdi:filter-off-outline"
+              onClick={handleClearFilters}
+            >
+              Clear filters
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-        <SearchInput
-          placeholder="Search by name or email…"
-          value={search}
-          onChange={(event) => handleSearchChange(event.target.value)}
-          aria-label="Search users"
-        />
-        <SelectInput
-          label=""
-          options={siteOptions}
-          value={siteFilter}
-          onChange={handleSiteFilterChange}
-        />
-      </div>
-
-      {isLoading ? (
-        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
-          Loading users…
-        </p>
-      ) : null}
+      {isLoading ? <UsersTableSkeleton /> : null}
 
       {isError ? (
-        <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
-          {error instanceof Error ? error.message : "Failed to load users."}
-        </p>
+        <FeatureErrorCard
+          title="Couldn’t load users"
+          message={
+            error instanceof Error ? error.message : "Failed to load users."
+          }
+          onRetry={() => {
+            void refetch();
+          }}
+        />
       ) : null}
 
-      {!isLoading && !isError ? (
+      {!isLoading && !isError && users.length === 0 && filtersActive ? (
+        <FeatureEmptyState
+          icon="mdi:account-search-outline"
+          title="No users match this search"
+          description="Nobody in this organization matches the current search and site filter."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon="mdi:filter-off-outline"
+              onClick={handleClearFilters}
+            >
+              Clear filters
+            </Button>
+          }
+        />
+      ) : null}
+
+      {!isLoading && !isError && users.length === 0 && !filtersActive ? (
+        <FeatureEmptyState
+          icon="mdi:account-multiple-plus-outline"
+          title="No users yet"
+          description="Invite the people who will report incidents, run inspections and sign off on work here. They get an email invitation and pick their own password."
+          action={
+            <Button size="sm" leftIcon="lucide:plus" onClick={handleAddUser}>
+              Invite your first user
+            </Button>
+          }
+        />
+      ) : null}
+
+      {!isLoading && !isError && users.length > 0 ? (
         <>
           <Table
+            className="min-w-0"
             columns={columns}
             data={users}
             getRowId={(row) => row.id}
-            emptyMessage="No users found."
           />
 
-          {totalRecords > PAGE_SIZE ? (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text6 text-gray">
-                Page {pageNumber} of {totalPages} · {totalRecords} users
-              </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* "Page 1 of 4" never said how many rows were on screen. This is
+                the row range and the total, which is what an admin scanning a
+                directory is actually counting. */}
+            <p className="text8 text-gray tabular-nums">
+              Showing {firstShown}–{lastShown} of {totalRecords} user
+              {totalRecords === 1 ? "" : "s"}
+            </p>
+
+            {totalPages > 1 ? (
               <div className="flex items-center gap-2">
+                <span className="text8 text-ehs-muted-text tabular-nums">
+                  Page {pageNumber} of {totalPages}
+                </span>
                 <Button
                   variant="secondary"
                   size="sm"
+                  leftIcon="mdi:chevron-left"
+                  aria-label="Previous page of users"
                   disabled={pageNumber <= 1}
                   onClick={() => setPageNumber((current) => current - 1)}
                 >
@@ -278,14 +469,16 @@ export function UserManagementPage() {
                 <Button
                   variant="secondary"
                   size="sm"
+                  rightIcon="mdi:chevron-right"
+                  aria-label="Next page of users"
                   disabled={pageNumber >= totalPages}
                   onClick={() => setPageNumber((current) => current + 1)}
                 >
                   Next
                 </Button>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </>
       ) : null}
 

@@ -13,15 +13,11 @@ export function KpiSummaryCard({
 }: Readonly<KpiSummaryCardProps>) {
   return (
     <article
-      className={`rounded-2xl bg-consent-bg p-5 ${className}`.trim()}
+      className={`bg-ehs-surface-raised rounded-2xl p-5 ${className}`.trim()}
     >
-      <p className="text5 text-gray">{title}</p>
-      <p className="mt-2 text1 text-darkest">
-        {value}
-      </p>
-      <p className="mt-3 text5 text-blue-normal">
-        {activeCount} active
-      </p>
+      <p className="text6 text-ehs-gray">{title}</p>
+      <p className="text2 text-ehs-darker mt-2">{value}</p>
+      <p className="text8 text-ehs-normal-blue mt-3">{activeCount} active</p>
     </article>
   );
 }

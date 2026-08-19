@@ -39,18 +39,37 @@ export function ClientSiteFormFields({
   industryTypeOptions,
   siteSizeOptions,
   timezoneOptions,
+  showErrors = false,
 }: Readonly<{
   form: ClientSiteFormState;
   onFormChange: (form: ClientSiteFormState) => void;
   industryTypeOptions: { value: string; label: string }[];
   siteSizeOptions: { value: string; label: string }[];
   timezoneOptions: { value: string; label: string }[];
+  /**
+   * Turned on once the user has tried to save. A blank required field is not an
+   * error the moment an empty form opens — it only becomes one when they say
+   * they are done.
+   */
+  showErrors?: boolean;
 }>) {
+  let siteNameError: string | undefined;
+  let locationError: string | undefined;
+  if (showErrors) {
+    siteNameError = form.siteName.trim() ? undefined : "Site name is required.";
+    locationError = form.location.trim() ? undefined : "Location is required.";
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Required fields report inline, next to themselves, instead of only
+          producing a toast. Both are what the create/update endpoints reject a
+          payload without. */}
       <TextInput
         label="Site name *"
+        placeholder="e.g. Houston Main Plant"
         value={form.siteName}
+        error={siteNameError}
         onChange={(event) =>
           onFormChange({ ...form, siteName: event.target.value })
         }
@@ -58,6 +77,8 @@ export function ClientSiteFormFields({
       <TextInput
         label="Location *"
         value={form.location}
+        placeholder="e.g. Gulf Coast, Texas"
+        error={locationError}
         onChange={(event) =>
           onFormChange({ ...form, location: event.target.value })
         }
@@ -96,6 +117,7 @@ type ClientSiteFormModalProps = Readonly<{
   onClose: () => void;
   onSave: () => void;
   loading?: boolean;
+  showErrors?: boolean;
   industryTypeOptions: { value: string; label: string }[];
   siteSizeOptions: { value: string; label: string }[];
   timezoneOptions: { value: string; label: string }[];
@@ -109,6 +131,7 @@ export function ClientSiteFormModal({
   onClose,
   onSave,
   loading = false,
+  showErrors = false,
   industryTypeOptions,
   siteSizeOptions,
   timezoneOptions,
@@ -118,18 +141,27 @@ export function ClientSiteFormModal({
       open={open}
       title={editingSite ? "Edit site" : "Add site"}
       onClose={onClose}
+      secondaryLabel="Cancel"
+      onSecondary={onClose}
       primaryLabel={editingSite ? "Save changes" : "Create site"}
       onPrimary={onSave}
       loading={loading}
       size="lg"
     >
-      <ClientSiteFormFields
-        form={form}
-        onFormChange={onFormChange}
-        industryTypeOptions={industryTypeOptions}
-        siteSizeOptions={siteSizeOptions}
-        timezoneOptions={timezoneOptions}
-      />
+      <div className="flex flex-col gap-4">
+        <p className="text8 text-ehs-muted-text">
+          Fields marked * are required. Industry, size, and timezone can be
+          filled in later from this client&apos;s Sites tab.
+        </p>
+        <ClientSiteFormFields
+          form={form}
+          onFormChange={onFormChange}
+          industryTypeOptions={industryTypeOptions}
+          siteSizeOptions={siteSizeOptions}
+          timezoneOptions={timezoneOptions}
+          showErrors={showErrors}
+        />
+      </div>
     </Modal>
   );
 }

@@ -46,13 +46,13 @@ export function CheckboxGroupInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
+      <p id={`${groupId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${groupId}-helper`} className="text6 text-gray">
+      <p id={`${groupId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -73,7 +73,7 @@ export function CheckboxGroupInput({
       disabled={disabled}
     >
       {label ? (
-        <legend className="mb-0.5 text5 font-semibold text-darkest">
+        <legend className="mb-0.5 text7 text-darkest">
           {label}
         </legend>
       ) : null}
@@ -97,6 +97,10 @@ export function CheckboxGroupInput({
                 isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
               }`}
             >
+              {/* The tick is a background image, so its colour cannot follow a
+                  token: the light theme strokes it white on the teal fill, the
+                  dark theme strokes it in the on-accent ink because that fill
+                  is much lighter there. */}
               <input
                 id={optionId}
                 type="checkbox"
@@ -105,11 +109,11 @@ export function CheckboxGroupInput({
                 checked={isChecked}
                 disabled={isDisabled}
                 onChange={() => toggleValue(option.value)}
-                className={`mt-0.5 size-4 shrink-0 cursor-pointer appearance-none rounded border border-darkest/20 bg-white outline-none transition-colors checked:border-blue-normal checked:bg-blue-normal checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 4.5"/></svg>')] checked:bg-center checked:bg-no-repeat focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:cursor-not-allowed ${
-                  error ? "border-red" : ""
+                className={`mt-0.5 size-4 shrink-0 cursor-pointer appearance-none rounded border border-ehs-border-ink/25 bg-ehs-surface outline-none transition-colors checked:border-ehs-normal-blue checked:bg-ehs-normal-blue checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 4.5"/></svg>')] dark:checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%23062430" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 4.5"/></svg>')] checked:bg-center checked:bg-no-repeat focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/20 disabled:cursor-not-allowed ${
+                  error ? "border-ehs-red" : ""
                 }`}
               />
-              <span className="text5 text-darkest">
+              <span className="text4 text-darkest">
                 {option.label}
               </span>
             </label>

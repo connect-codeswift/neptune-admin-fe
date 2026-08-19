@@ -1,13 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { StatCard } from "@/components/features/dashboard/StatCard";
+import {
+  FeatureEmptyState,
+  FeatureErrorCard,
+  FeatureLoadingCard,
+  FeatureLoadingGrid,
+} from "@/components/features/shared";
+import { SearchInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
   ContextMenu,
-  KpiTrendCard,
+  GLASS_SURFACE,
   Table,
   TableStatusBadge,
   TableTextCell,
@@ -44,6 +52,8 @@ type TrialDialogState = {
   client: ClientAccount;
 } | null;
 
+type StatusFilter = "all" | "active" | "inactive";
+
 type ClientRowActionHandlers = {
   onStartTrial: (client: ClientAccount) => void;
   onExtendTrial: (client: ClientAccount) => void;
@@ -54,8 +64,10 @@ type ClientRowActionHandlers = {
 function ClientNameCell({ row }: Readonly<{ row: ClientAccount }>) {
   return (
     <div className="min-w-0">
-      <p className="truncate text5 font-semibold text-darkest">{row.name}</p>
-      <p className="truncate text7 text-[#b3bbc8]">ID {row.id}</p>
+      <p className="truncate text5 font-semibold text-darkest" title={row.name}>
+        {row.name}
+      </p>
+      <p className="truncate text7 text-ehs-placeholder">ID {row.id}</p>
       {row.accessExpiresAt && row.daysRemaining != null ? (
         <p className="mt-0.5 truncate text7 text-yellow">
           Access expires in {row.daysRemaining} day
@@ -112,11 +124,14 @@ function buildColumns(
       header: "Client",
       cell: (row) => <ClientNameCell row={row} />,
     },
-    
     {
       id: "contractStart",
       header: "Created",
-      cell: (row) => <TableTextCell>{row.contractStart}</TableTextCell>,
+      cell: (row) => (
+        <TableTextCell className="whitespace-nowrap tabular-nums">
+          {row.contractStart}
+        </TableTextCell>
+      ),
     },
     {
       id: "status",
@@ -131,20 +146,26 @@ function buildColumns(
     {
       id: "sites",
       header: "Sites",
+      headerClassName: "text-right",
+      className: "text-right",
       cell: (row) => (
-        <TableTextCell>
-          {row.sites} {row.sites === 1 ? "site" : "sites"}
-        </TableTextCell>
+        <TableTextCell className="tabular-nums">{row.sites}</TableTextCell>
       ),
     },
     {
       id: "users",
       header: "Users",
-      cell: (row) => <TableTextCell>{row.users}</TableTextCell>,
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (row) => (
+        <TableTextCell className="tabular-nums">{row.users}</TableTextCell>
+      ),
     },
     {
       id: "action",
       header: "Action",
+      headerClassName: "text-right",
+      className: "text-right",
       cell: (row) => <ClientRowActions client={row} {...handlers} />,
     },
   ];
@@ -177,9 +198,17 @@ function isAccessCurrent(company: {
   return expires > Date.now();
 }
 
+const STATUS_FILTERS: readonly { id: StatusFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "active", label: "Active" },
+  { id: "inactive", label: "Inactive" },
+];
+
 export function ClientAccountsPage() {
   const router = useRouter();
   const [trialDialog, setTrialDialog] = useState<TrialDialogState>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const setAccessWindow = useSetAccessWindowMutation();
   const {
     data: companies = [],
@@ -189,58 +218,82 @@ export function ClientAccountsPage() {
     refetch,
   } = useSuperAdminCompanies();
 
-  const clientAccounts = useMemo<ClientAccount[]>(
-    () =>
-      companies.map((company) => ({
-        id: String(company.id),
-        name: company.name,
-        activatedModules: company.activatedModules,
-        contractStart: formatDate(company.createdAt),
-        // Access state, not headcount. A company whose trial lapsed yesterday is
-        // inactive even with users; a paying company that has not onboarded
-        // anyone yet is active. accessExpiresAt null means permanent access.
-        status: isAccessCurrent(company) ? "active" : "inactive",
-        sites: company.siteCount,
-        users: company.userCount,
-        accessExpiresAt: company.accessExpiresAt,
-        daysRemaining: company.daysRemaining,
-      })),
-    [companies],
-  );
+  const clientAccounts: ClientAccount[] = companies.map((company) => ({
+    id: String(company.id),
+    name: company.name,
+    activatedModules: company.activatedModules,
+    contractStart: formatDate(company.createdAt),
+    // Access state, not headcount. A company whose trial lapsed yesterday is
+    // inactive even with users; a paying company that has not onboarded
+    // anyone yet is active. accessExpiresAt null means permanent access.
+    status: isAccessCurrent(company) ? "active" : "inactive",
+    sites: company.siteCount,
+    users: company.userCount,
+    accessExpiresAt: company.accessExpiresAt,
+    daysRemaining: company.daysRemaining,
+  }));
 
   const activeCount = clientAccounts.filter((o) => o.status === "active").length;
   const inactiveCount = clientAccounts.length - activeCount;
+  const totalSites = clientAccounts.reduce((sum, client) => sum + client.sites, 0);
+  const totalUsers = clientAccounts.reduce((sum, client) => sum + client.users, 0);
 
-  const kpiCards = [
+  // Counts of what is on the platform right now — the companies endpoint has no
+  // history, so none of these is a trend and none carries a direction badge.
+  // Ordered total → healthy → needs attention → scale, so the row reads left to
+  // right as one sentence rather than as four unrelated numbers.
+  const summaryStats = [
     {
-      value: clientAccounts.length,
       label: "Total Clients",
-      trendLabel: "live",
-      trend: "up" as const,
-      data: [clientAccounts.length],
+      value: clientAccounts.length,
+      detail: `${activeCount} active · ${inactiveCount} lapsed or inactive`,
+      icon: "lucide:building-2",
     },
     {
-      value: clientAccounts.reduce((sum, client) => sum + client.sites, 0),
-      label: "Total Sites",
-      trendLabel: "live",
-      trend: "up" as const,
-      data: [clientAccounts.reduce((sum, client) => sum + client.sites, 0)],
-    },
-    {
-      value: inactiveCount,
-      label: "Inactive",
-      trendLabel: "live",
-      trend: "down" as const,
-      data: [inactiveCount],
-    },
-    {
-      value: activeCount,
       label: "Active Clients",
-      trendLabel: "live",
-      trend: "up" as const,
-      data: [activeCount],
+      value: activeCount,
+      detail: "Permanent access or a trial still running",
+      icon: "lucide:circle-check",
+    },
+    {
+      label: "Inactive",
+      value: inactiveCount,
+      detail: "Access window lapsed — start or extend a trial to restore it",
+      icon: "lucide:calendar-x",
+    },
+    {
+      label: "Total Sites",
+      value: totalSites,
+      detail: `${totalUsers} user${totalUsers === 1 ? "" : "s"} across all clients`,
+      icon: "lucide:map-pin",
     },
   ];
+
+  const query = search.trim().toLowerCase();
+  const filtersApplied = query.length > 0 || statusFilter !== "all";
+  const visibleAccounts = clientAccounts.filter((client) => {
+    if (statusFilter !== "all" && client.status !== statusFilter) return false;
+    if (!query) return true;
+    return (
+      client.name.toLowerCase().includes(query) ||
+      client.id.includes(query) ||
+      client.activatedModules.toLowerCase().includes(query)
+    );
+  });
+
+  // Shown against each status control in the filter rail. A vertical list of
+  // three bare words reads as decoration; the same list with the number it
+  // would leave you looking at reads as a filter.
+  const statusCounts: Record<StatusFilter, number> = {
+    all: clientAccounts.length,
+    active: activeCount,
+    inactive: inactiveCount,
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+  };
 
   const handleOpenDashboard = async (client: ClientAccount) => {
     try {
@@ -275,8 +328,54 @@ export function ClientAccountsPage() {
     onExtendTrial: (client) => setTrialDialog({ mode: "extend", client }),
   });
 
+  const hasData = !isLoading && !isError;
+
+  // The list, the count line under it, and the "nothing matched" state are one
+  // block: whichever is showing, it is the left-hand column of the split below.
+  let listContent = (
+    <FeatureEmptyState
+      icon="mdi:filter-remove-outline"
+      title="No clients match these filters"
+      description={`None of the ${clientAccounts.length} client accounts match the current search and status filter.`}
+      action={
+        <Button
+          variant="secondary"
+          size="sm"
+          leftIcon="lucide:filter-x"
+          onClick={clearFilters}
+        >
+          Clear filters
+        </Button>
+      }
+    />
+  );
+
+  if (visibleAccounts.length > 0) {
+    listContent = (
+      <div className="flex min-w-0 flex-col gap-2">
+        <Table
+          columns={columns}
+          data={visibleAccounts}
+          getRowId={(row) => row.id}
+        />
+        {/* The endpoint returns the whole list in one page, so this is a count
+            rather than a pager — but the user still needs to know the table is
+            showing a subset when a filter is on. */}
+        <p
+          className="text8 text-ehs-muted-text px-1 tabular-nums"
+          role="status"
+          aria-live="polite"
+        >
+          Showing {visibleAccounts.length} of {clientAccounts.length} client
+          account{clientAccounts.length === 1 ? "" : "s"}
+          {filtersApplied ? " (filtered)" : ""}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6 pb-4">
+    <div className="flex flex-col gap-3.5 pb-4">
       <PageHeader
         title="Client Accounts"
         description="All organizations provisioned on Neptune EHSS"
@@ -297,38 +396,155 @@ export function ClientAccountsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {kpiCards.map((card) => (
-          <KpiTrendCard
-            key={card.label}
-            value={card.value}
-            label={card.label}
-            data={card.data}
-            trendLabel={card.trendLabel}
-            trend={card.trend}
-          />
-        ))}
-      </div>
-
       {isLoading ? (
-        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
-          Loading client accounts…
-        </p>
+        <FeatureLoadingGrid
+          count={4}
+          label="Loading client metrics…"
+          className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4"
+          cardClassName="min-h-30"
+        />
+      ) : null}
+
+      {hasData ? (
+        <div className="stagger-cards grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+          {summaryStats.map((stat) => (
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              detail={stat.detail}
+              icon={stat.icon}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {/* The skeleton has to be the shape of the page it stands in for, so it
+          is the same split: list on the left, filter rail on the right. */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 items-start gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <FeatureLoadingCard rows={8} label="Loading client accounts…" />
+          <FeatureLoadingCard
+            rows={4}
+            label="Loading filters…"
+            className="order-first xl:order-last"
+          />
+        </div>
       ) : null}
 
       {isError ? (
-        <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
-          {error instanceof Error ? error.message : "Failed to load clients."}
-        </p>
+        <FeatureErrorCard
+          title="Couldn’t load client accounts"
+          message={
+            error instanceof Error
+              ? error.message
+              : "The client list did not load. Check your connection and try again."
+          }
+          onRetry={() => {
+            void refetch();
+          }}
+        />
       ) : null}
 
-      {!isLoading && !isError ? (
-        <Table
-          columns={columns}
-          data={clientAccounts}
-          getRowId={(row) => row.id}
-          emptyMessage="No client accounts yet."
+      {/* Nothing provisioned yet and nothing matching the filters are different
+          problems: the first needs a company created, the second needs the
+          filters cleared. They used to share one dead-end message. */}
+      {hasData && clientAccounts.length === 0 ? (
+        <FeatureEmptyState
+          icon="mdi:domain-plus"
+          title="No client accounts yet"
+          description="Every organization you onboard shows up here with its sites, users, and access window."
+          action={
+            <Button href="/super/add-a-company" size="sm" leftIcon="lucide:plus">
+              Add your first client
+            </Button>
+          }
         />
+      ) : null}
+
+      {/* The workspace: the table is the page, so it takes the wide column and
+          keeps its own columns close together, and the controls that act on it
+          sit in a rail beside it rather than as another full-width band above
+          it. The rail is `order-first` while the split is stacked, so on a
+          narrow window you still meet the filters before the list. */}
+      {hasData && clientAccounts.length > 0 ? (
+        <div className="grid grid-cols-1 items-start gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          {listContent}
+
+          {/* Filtering happens in the browser over the already-fetched list, so
+              the query is untouched and the stat row stays platform-wide. */}
+          <div
+            role="search"
+            aria-label="Filter client accounts"
+            className={`${GLASS_SURFACE} animate-card-rise order-first flex flex-col gap-4 p-5 xl:order-last`}
+          >
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2 className="text3 text-ehs-darker">Find a client</h2>
+              <p className="text8 text-ehs-muted-text">
+                Narrows the table beside it. The totals above stay platform-wide.
+              </p>
+            </div>
+
+            <SearchInput
+              label="Search"
+              placeholder="Company name, ID, or module"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              containerClassName="w-full"
+            />
+
+            <div className="flex flex-col gap-2">
+              <p className="text6 text-ehs-muted-text" id="client-status-filter">
+                Status
+              </p>
+              <div
+                role="group"
+                aria-labelledby="client-status-filter"
+                className="flex flex-col gap-2"
+              >
+                {STATUS_FILTERS.map((filter) => {
+                  const isActive = filter.id === statusFilter;
+                  let toneClass =
+                    "border-ehs-border-ink/12 text-ehs-gray hover:border-ehs-border-ink/25 hover:text-ehs-darker";
+                  if (isActive) {
+                    toneClass =
+                      "border-ehs-normal-blue bg-ehs-normal-blue/12 text-ehs-dark-blue";
+                  }
+
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => setStatusFilter(filter.id)}
+                      className={`text4 focus-visible:ring-ehs-normal-blue/30 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 outline-none transition-colors focus-visible:ring-2 ${toneClass}`}
+                    >
+                      <span className="truncate">{filter.label}</span>
+                      <span className="shrink-0 tabular-nums">
+                        {statusCounts[filter.id]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-ehs-hairline/70 mt-auto border-t pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon="lucide:filter-x"
+                onClick={clearFilters}
+                disabled={!filtersApplied}
+                title={
+                  filtersApplied ? undefined : "No filters are applied right now"
+                }
+              >
+                Clear filters
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {trialDialog ? (

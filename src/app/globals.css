@@ -1,71 +1,1105 @@
 @import "tailwindcss";
 
-@theme {
-  --color-gray: #566072;
-  --color-green: #10b981;
-  --color-red: #ef4444;
-  --color-yellow: #f59e0b;
-  --color-admin: #7c3aed;
+:root {
+  --font-inter: var(--font-inter);
 
-  --color-blue-lightest: #e6f4f6;
-  --color-blue-light: #daeff2;
-  --color-blue-normal: #0891a6;
-  --color-blue-normal1: #39a7b8;
-  --color-blue-deep: #04505b;
-  --color-blue-darker: #1d3557;
-  --color-darkest: #0b1320;
-  --color-textcolor: #717182;
-  --color-lightgray: #f6f6f6;
-  --color-muted: #d8e8ec;
-  --color-consent-bg: #f6f9fa;
-  --color-bg: #ffffff;
-  --color-border: color-mix(in oklab, var(--color-darkest) 14%, transparent);
+  /* House easing for micro-interactions (popover-in, card motion). One
+     definition so the curves can't drift apart per animation. */
+  --ehs-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
+  --ehs-light-bg: #f3f5f8;
+  --ehs-dark-bg: #0b1320;
+
+  --ehs-border: #e5e7eb;
+
+  --ehs-icon-bg: #0891a620; /* IT IS OPAQUE */
+
+  --ehs-light-text: #ffffff;
+
+  --ehs-muted-text: #8892a3;
+  --ehs-gray: #566072;
+  /* Body copy inside cards — one step darker than --ehs-gray. */
+  --ehs-slate: #2a3446;
+
+  --ehs-green: #10b981;
+  --ehs-red: #ef4444;
+  --ehs-yellow: #f59e0b;
+  --ehs-navy: #1d3557;
+  --ehs-purple: #7c3aed;
+  --ehs-blue: #3b82f6;
+
+  /* A distinct step between yellow and red, not a shade of either. The
+     severity ramps that need it - SIA / SIP / SIF on the incident
+     classification toggle, the hierarchy-of-controls bands - collapse into
+     two indistinguishable bands if orange is folded into yellow. */
+  --ehs-orange: #f97316;
+
+  /* The darker green a filled success control moves to on hover. Every other
+     brand colour already had its -hover pair; green did not, so hover states
+     on green buttons were written as literal hex and could not flip. */
+  --ehs-green-hover: #059669;
+
+  --ehs-light-blue: #e6f4f6;
+  --ehs-light-blue-hover: #daeff2;
+  --ehs-light-blue-active: #b2dde3;
+
+  --ehs-normal-blue: #0891a6;
+  --ehs-normal-blue-hover: #078395;
+  --ehs-normal-blue-active: #067485;
+  --ehs-normal-blue-bg-light: #0891a60a;
+
+  --ehs-dark-blue: #066d7d;
+  --ehs-dark-blue-hover: #055764;
+  --ehs-dark-blue-active: #04414b;
+
+  /* ---------------------------------------------------------------------
+     Filled-control fills
+     ---------------------------------------------------------------------
+     The fill under a *label*, as opposed to the brand hue used for tints,
+     icons, borders and text.
+
+     They exist because `--ehs-normal-blue` (#0891a6) and `--ehs-red`
+     (#ef4444) cannot legibly carry white text: measured, they are 3.74:1 and
+     3.76:1, and a 14px button label needs 4.5:1. The hues are right for
+     everything they are used for elsewhere — a 12% wash, a dot, an icon, a
+     border — and only fail in the one place a solid fill sits under small
+     white text. Rather than darken the brand everywhere, the solid fill is
+     its own role.
+
+     Dark already passed (the fills lighten there and the ink is near-black,
+     6.77:1 and 5.83:1), so these repeat the existing dark values on purpose:
+     the fix is a light-theme one and dark must not shift.
+     --------------------------------------------------------------------- */
+  --ehs-accent-solid: #066d7d;
+  --ehs-accent-solid-hover: #055764;
+  --ehs-accent-solid-active: #04414b;
+  --ehs-danger-solid: #dc2626;
+  --ehs-danger-solid-hover: #b91c1c;
+  --ehs-dark-blue-bg-light: #0891a624;
+  --ehs-darker: #03333a;
+  --ehs-form-classes-bg: #eef1f6;
+  --ehs-green-bg-light: #10b9811a;
+
+  /* ---------------------------------------------------------------------
+     Surfaces
+     ---------------------------------------------------------------------
+     Added with dark mode. Everything above is a *hue* the design chose;
+     these are *roles* the theme fills in, which is what makes a second
+     palette possible without renaming hundreds of utilities.
+
+     Components used to write `bg-white` for a card and `bg-ehs-dark-bg` for
+     an inverted one. Both are literal in a way that cannot flip, so they are
+     now `bg-ehs-surface` / `bg-ehs-surface-inverse` and the values below do
+     the flipping.
+     --------------------------------------------------------------------- */
+
+  /* Card and panel fill. Also the base of every glass pane: `bg-ehs-surface/62`
+     is the frosted variant, and the opacity modifier works because this is a
+     plain colour rather than an rgba() string. */
+  --ehs-surface: #ffffff;
+
+  /* One step off the card - hovered rows, sunken wells, inset panels. */
+  --ehs-surface-raised: #f8fafc;
+
+  /* Deliberately opposite the page: dark chips and tooltips on a light theme,
+     light ones on a dark theme. */
+  --ehs-surface-inverse: #0b1320;
+  --ehs-surface-inverse-text: #ffffff;
+
+  /* Dark in BOTH themes - the same value is repeated in the dark block on
+     purpose. For surfaces that are dark by design rather than by theme: the
+     sign-in brand panel, image and PDF viewers, and controls that float on top
+     of a photo. Inverting those would put a light panel behind white brand
+     artwork, or a light plate behind a photograph. */
+  --ehs-canvas-dark: #0b1320;
+  --ehs-canvas-dark-text: #ffffff;
+
+  /* The mirror of --ehs-canvas-dark: light in BOTH themes, for anything that
+     depicts a sheet of paper. The GHS label preview is the case that needed
+     it - it shows what will come out of a printer, including a barcode and a
+     QR mark that only scan as dark-on-light, so the sheet cannot follow the
+     app's theme without misrepresenting the output. */
+  --ehs-paper: #ffffff;
+  /* The same three inks the label already used in light mode - it was styled
+     with --ehs-darker / --ehs-gray / --ehs-muted-text, which are correct on
+     paper but flip to near-white in dark. Pinned copies, so light is
+     unchanged and the sheet stays readable in dark. */
+  --ehs-paper-text: #03333a;
+  --ehs-paper-soft: #566072;
+  --ehs-paper-muted: #8892a3;
+  --ehs-paper-line: #e5e7eb;
+
+  /* Ink on a *filled accent* - a primary button, a filled status pill, an
+     active segmented pane.
+
+     Distinct from --ehs-light-text, which is white in both themes and belongs
+     on things that are dark in both: photos, media viewers, the pinned bands
+     of the hierarchy-of-controls ramp. The two were the same colour in light,
+     so the distinction never had to be made and every filled control simply
+     said "white".
+
+     It has to be made in dark, because every accent fill lightens there so it
+     can be seen against a near-black page: white on #22b8cf is 2.4:1, which
+     fails AA outright. Dark ink on the same fill is about 9:1. */
+  --ehs-on-accent: #ffffff;
+
+
+  /* Menus, select popovers and dropdowns: they float above the page rather
+     than sitting in it, so they carry a deeper drop than a card and no edge
+     highlight. */
+  --ehs-shadow-popover: 0 12px 32px -8px rgb(15 23 42 / 0.24);
+
+  /* Modals, dialogs and tooltips each had their own drop before theming, and
+     folding them into the card shadows changed how far each floats. Kept
+     separate so light renders exactly as approved. */
+  --ehs-shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --ehs-shadow-dialog: 0 24px 60px -12px rgb(15 23 42 / 0.4);
+  --ehs-shadow-tooltip: 0 8px 24px -8px rgb(15 23 42 / 0.28);
+
+  /* The same elevations without the inset top highlight. Most primary buttons
+     and a few cards never had that white rim; adding one to them was a visible
+     light-mode change, so they get their own variants. */
+  --ehs-shadow-button-primary-flat: 0 6px 18px -6px var(--ehs-normal-blue);
+  --ehs-shadow-card-flat:
+    0 1px 2px 0 rgb(15 23 42 / 0.04), 0 12px 32px -12px rgb(15 23 42 / 0.14);
+
+  /* A media backdrop is black, not slate: it sits behind a photograph, where
+     the neutral scrim used elsewhere reads as a colour cast. */
+  --ehs-overlay-media: rgb(0 0 0 / 0.6);
+
+  /* Deep ink for a label printed ON a tint of its own hue - a maroon on a red
+     wash, a bronze on an amber one. The base hue is far too light there: it is
+     the fill colour, so the text all but disappears into it. */
+  --ehs-red-ink: #7f1d1d;
+  --ehs-red-ink-soft: #b91c1c;
+  --ehs-yellow-ink: #92400e;
+  --ehs-yellow-ink-soft: #d97706;
+
+  /* The completed-step green, which is a pure green rather than the emerald of
+     --ehs-green and reads as a different colour next to it. */
+  --ehs-progress-done: #00c950;
+
+  /* Border ink, opaque, so a call site can restate its own alpha with a
+     modifier: border-ehs-border-ink/8 is exactly the rgba(15,23,42,0.08) it
+     replaced. One token covers the whole family - 0.06 through 0.35 - which
+     the two fixed greys could not, since they had to sit at some midpoint and
+     were therefore wrong at both ends. */
+  --ehs-border-ink: #0f172a;
+
+  /* Loading placeholders.
+
+     A skeleton has to sit clearly above its card without becoming the
+     brightest thing on screen. In light that is a cool grey a little lighter
+     than the border; in dark it cannot be the same grey, because a light block
+     on a near-black card reads as content that has finished loading rather
+     than as an absence. Dark uses a low-alpha wash instead, so the blocks read
+     as holes in the surface.
+
+     The light values are exactly what they replaced: slate-200/80 for the bar
+     and #d1d5db for the heavier title bars. */
+  --ehs-skeleton: rgb(226 232 240 / 0.8);
+  --ehs-skeleton-strong: #d1d5db;
+
+  /* A warning notice: tinted panel, its edge, and the ink on it.
+
+     Amber is the one hue with no usable token pair. `--ehs-yellow` is a fill
+     colour - fine as a dot or a bar, far too light as text - and the notices
+     that need it were written against Tailwind's amber-50/300/700, which are
+     literals and cannot flip. In dark the panel becomes a low-alpha wash of
+     the hue and the ink becomes the light end of it, so the notice reads as a
+     warning in both themes instead of a pale smudge. */
+  --ehs-warning-surface: rgb(255 251 235 / 0.9);
+  --ehs-warning-border: rgb(253 230 138 / 0.8);
+  --ehs-warning-ink: #b45309;
+
+  /* The bright edge on glass. White at full strength in light; in dark a
+     dilute slate, because a white hairline on a dark card reads as a seam. */
+  --ehs-hairline: #ffffff;
+
+  /* A line that needs to be seen rather than felt - table outlines, dividers
+     between stacked controls, the edge of an input. `--ehs-border` is the
+     quiet one. */
+  --ehs-border-strong: #cbd5e1;
+
+  /* Placeholder text and disabled labels: one step lighter than muted, and the
+     lowest-contrast text in the app. */
+  --ehs-placeholder: #b3bbc8;
+
+  /* Scrim behind modals. */
+  --ehs-overlay: rgb(15 23 42 / 0.4);
+
+  /* Card elevation, as a whole box-shadow list so the two themes can differ in
+     structure and not just colour - dark UI needs far less drop shadow and a
+     little more edge light to read as raised. */
+  --ehs-shadow-card:
+    0 1px 2px 0 rgb(15 23 42 / 0.04), 0 12px 32px -12px rgb(15 23 42 / 0.14),
+    inset 0 1px 0 1px rgb(255 255 255 / 0.9);
+  --ehs-shadow-card-hover:
+    0 1px 2px 0 rgb(15 23 42 / 0.05), 0 18px 40px -14px rgb(15 23 42 / 0.2),
+    inset 0 1px 0 1px rgb(255 255 255 / 0.9);
+
+  /* The module-card elevation, which is NOT the same as --ehs-shadow-card.
+
+     Two card shadows have always existed in this app: GlassCard's, with a
+     -12px spread that pulls the drop in tight, and the one ~77 module screens
+     hand-wrote, with no spread at all and so a wider, softer pool. They are
+     visibly different and both are approved, so both survive as tokens rather
+     than being unified - unifying them would have been a light-mode redesign
+     smuggled in under a dark-mode change. */
+  --ehs-shadow-panel:
+    0 1px 2px 0 rgb(15 23 42 / 0.04), 0 12px 32px 0 rgb(15 23 42 / 0.14),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.9);
+
+  /* Filled buttons: a coloured drop that reads as the button's own light
+     spilling onto a white page, plus the material's inset top highlight.
+
+     The whole list is a token, not just the colour, because the dark theme
+     drops the glow entirely rather than recolouring it - see the note there.
+     Use with Tailwind v4's `shadow-(--ehs-shadow-button-primary)`. */
+  --ehs-shadow-button-primary:
+    0 6px 18px -6px var(--ehs-normal-blue),
+    inset 0 1px 0 1px rgb(255 255 255 / 0.25);
+  --ehs-shadow-button-danger:
+    0 6px 18px -6px var(--ehs-red), inset 0 1px 0 1px rgb(255 255 255 / 0.25);
+  --ehs-shadow-button-primary-sm: 0 4px 12px -4px var(--ehs-normal-blue);
+
+  /* The lifted pill behind the active tab in a segmented control. */
+  --ehs-shadow-tab-active:
+    0 1px 2px 0 rgb(15 23 42 / 0.06), 0 4px 10px -4px rgb(15 23 42 / 0.16);
+
+  /* The app's ambient ground - flat base plus two corner blooms (Figma node
+     686:6515). Lives here rather than inline on <body> so it can change with
+     the theme; the blooms are far too bright to keep over a dark page. */
+  --ehs-shell-bg:
+    radial-gradient(
+      370px 294px at 222px 147px,
+      rgba(219, 234, 254, 0.75) 0%,
+      rgba(219, 234, 254, 0) 70%
+    ),
+    radial-gradient(
+      407px 319px at calc(100% - 185px) calc(100% - 123px),
+      rgba(207, 250, 254, 0.75) 0%,
+      rgba(207, 250, 254, 0) 70%
+    ),
+    #f3f5f8;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme
+   ---------------------------------------------------------------------------
+   Values only - no new names. Every utility in the app keeps resolving through
+   the same custom properties, so a screen written against tokens is already
+   dark-ready and one written against `#0b1320` is not. That is the whole
+   contract.
+
+   `<html data-theme>` is always concrete: "system" is resolved to light or dark
+   by the inline script in the root layout, before first paint. Nothing here is
+   behind `prefers-color-scheme`, because then an explicit choice and the OS
+   setting could disagree.
+
+   Notes on specific choices:
+   - The brand teal is lifted from #0891a6 to #22b8cf. The original fails
+     contrast against a near-black ground and reads as a smudge.
+   - `--ehs-darker`, the primary text colour, inverts outright. Its name is a
+     light-theme description; renaming it across its call sites would be a far
+     larger and riskier change than accepting the misnomer.
+   - Semantic status colours are lightened rather than reused: #ef4444 on
+     #0b1320 is legible but vibrates; #f87171 does not.
+   --------------------------------------------------------------------------- */
+
+[data-theme="dark"] {
+  --ehs-light-bg: #0b1320;
+  --ehs-dark-bg: #e8eef5; /* now the *text* role - see note above */
+
+  /* Only just visible, on purpose.
+
+     Light UI can afford a border a few steps darker than the page because the
+     eye reads it as a fold. Dark UI cannot: any line lighter than the surface
+     reads as drawn *on top*, so a card outlined this way looks traced rather
+     than raised. #22303f was three steps off the page and did exactly that.
+     This sits close enough to the surface to separate a table row without
+     outlining the card it sits in. */
+  --ehs-border: #1a2532;
+
+  --ehs-icon-bg: #22b8cf24;
+
+  --ehs-light-text: #ffffff; /* text on filled buttons - white in both themes */
+
+  --ehs-muted-text: #7d8b9d;
+  --ehs-gray: #9caabb;
+  --ehs-slate: #c6d2df;
+
+  --ehs-green: #34d399;
+  --ehs-red: #f87171;
+  --ehs-yellow: #fbbf24;
+  --ehs-navy: #93b0d4;
+  --ehs-purple: #a78bfa;
+  --ehs-blue: #60a5fa;
+  --ehs-orange: #fb923c;
+
+  /* Hover moves *lighter* here, not darker: on a dark ground the brighter
+     colour is the one that reads as raised. */
+  --ehs-green-hover: #6ee7b7;
+
+  --ehs-light-blue: #12333c;
+  --ehs-light-blue-hover: #164049;
+  --ehs-light-blue-active: #1b4d58;
+
+  --ehs-normal-blue: #22b8cf;
+  --ehs-normal-blue-hover: #3ac7db;
+  --ehs-normal-blue-active: #56d3e5;
+  --ehs-normal-blue-bg-light: #22b8cf14;
+
+  --ehs-dark-blue: #67d6e6;
+  --ehs-dark-blue-hover: #82e0ed;
+  --ehs-dark-blue-active: #9ce8f3;
+
+  /* Unchanged from the pre-existing dark fills — see the note in `:root`.
+     Dark already cleared AA, so these deliberately restate `--ehs-normal-blue`
+     and `--ehs-red` rather than darkening anything. */
+  --ehs-accent-solid: #22b8cf;
+  --ehs-accent-solid-hover: #3ac7db;
+  --ehs-accent-solid-active: #56d3e5;
+  --ehs-danger-solid: #f87171;
+  --ehs-danger-solid-hover: #fca5a5;
+  --ehs-dark-blue-bg-light: #22b8cf24;
+
+  --ehs-darker: #e6f1f4;
+  --ehs-form-classes-bg: #16212f;
+  --ehs-green-bg-light: #34d3991f;
+
+  --ehs-surface: #111c2b;
+  --ehs-surface-raised: #182534;
+  --ehs-surface-inverse: #e8eef5;
+  --ehs-surface-inverse-text: #0b1320;
+
+  /* Unchanged from light - see the notes there. */
+  --ehs-canvas-dark: #0b1320;
+  --ehs-canvas-dark-text: #ffffff;
+  --ehs-paper: #ffffff;
+  --ehs-paper-text: #03333a;
+  --ehs-paper-soft: #566072;
+  --ehs-paper-muted: #8892a3;
+  --ehs-paper-line: #e5e7eb;
+
+  /* Near-black rather than pure black: pure black on a saturated fill reads as
+     a hole punched in it. */
+  --ehs-on-accent: #062430;
+
+  --ehs-shadow-popover: 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  --ehs-shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+  --ehs-shadow-dialog: 0 24px 60px -12px rgb(0 0 0 / 0.75);
+  --ehs-shadow-tooltip: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+
+  /* Flat in dark too - the glow these carry in light is the thing dark mode
+     drops, so both variants land on the same plain contact shadow. */
+  --ehs-shadow-button-primary-flat: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --ehs-shadow-card-flat:
+    0 1px 2px 0 rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.55);
+
+  /* Unchanged: a photo backdrop is black in both themes. */
+  --ehs-overlay-media: rgb(0 0 0 / 0.6);
+
+  /* Inverted: on a dark page the tint behind these is dark, so the ink that
+     reads on it is the light end of the hue, not the deep end. */
+  --ehs-red-ink: #fca5a5;
+  --ehs-red-ink-soft: #f87171;
+  --ehs-yellow-ink: #fcd34d;
+  --ehs-yellow-ink-soft: #fbbf24;
+
+  --ehs-progress-done: #3ce87a;
+
+  /* Light ink, so the same /8 … /35 modifiers draw a faint bright hairline
+     instead of a faint dark one. */
+  --ehs-border-ink: #94a3b8;
+
+  /* Holes in the surface, not blocks on top of it. */
+  --ehs-skeleton: rgb(148 163 184 / 0.13);
+  --ehs-skeleton-strong: rgb(148 163 184 / 0.2);
+
+  --ehs-warning-surface: rgb(251 191 36 / 0.1);
+  --ehs-warning-border: rgb(251 191 36 / 0.3);
+  --ehs-warning-ink: #fcd34d;
+  --ehs-border-strong: #263444;
+  --ehs-placeholder: #64748b;
+  /* No glass edge in dark, deliberately.
+
+     The bright hairline is what makes a frosted pane read as a pane on a light
+     page: it is the lit top edge of a translucent sheet. Over a dark ground
+     there is no light to catch, so the same line stops reading as an edge and
+     starts reading as an outline drawn around the card - a visible seam on
+     every card, table and modal in the app.
+
+     Separation in dark comes from the surface being lighter than the page
+     (#111c2b on #0b1320) plus the drop shadow below, which is how dark UI
+     normally does it. Transparent rather than deleted so the ~60 existing
+     `border-ehs-hairline/NN` utilities keep their 1px of layout and need no
+     edit; the opacity modifiers resolve to transparent either way. */
+  --ehs-hairline: transparent;
+  --ehs-overlay: rgb(2 6 12 / 0.62);
+
+  /* Shorter, deeper drops and a dimmer top highlight: on a dark ground the
+     inset white line does the lifting that a drop shadow does in light. */
+  /* Drops only - the inset top highlight is the hairline in shadow form and
+     goes for the same reason. */
+  --ehs-shadow-card:
+    0 1px 2px 0 rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.55);
+  --ehs-shadow-card-hover:
+    0 1px 2px 0 rgb(0 0 0 / 0.45), 0 18px 40px -14px rgb(0 0 0 / 0.65);
+
+  /* The two light card shadows converge here: their difference is a spread on
+     a translucent black pool, which is invisible over a near-black page. What
+     mattered - the white inset seam - is gone from both. */
+  --ehs-shadow-panel:
+    0 1px 2px 0 rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.55);
+
+  /* No glow in dark. The coloured drop is a light-theme device: on a white
+     page it reads as the button casting its own colour, but on a near-black
+     one the same shadow has nothing to fall on and instead haloes the button,
+     which looks like a focus ring nobody asked for. A plain contact shadow
+     does the lifting here; the fill is already the brightest thing on screen.
+     The white inset highlight goes too - it only muddies a saturated fill on
+     a dark ground. */
+  --ehs-shadow-button-primary: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --ehs-shadow-button-danger: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --ehs-shadow-button-primary-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+
+  --ehs-shadow-tab-active:
+    0 1px 2px 0 rgb(0 0 0 / 0.45), 0 4px 10px -4px rgb(0 0 0 / 0.5);
+
+  --ehs-shell-bg:
+    radial-gradient(
+      370px 294px at 222px 147px,
+      rgba(34, 184, 207, 0.1) 0%,
+      rgba(34, 184, 207, 0) 70%
+    ),
+    radial-gradient(
+      407px 319px at calc(100% - 185px) calc(100% - 123px),
+      rgba(59, 130, 246, 0.09) 0%,
+      rgba(59, 130, 246, 0) 70%
+    ),
+    #0b1320;
+}
+
+/* Point Tailwind's `dark:` variant at the attribute the app controls, not at
+   the OS. Without this the variant would follow prefers-color-scheme while
+   every token followed data-theme, and the two would disagree for anyone who
+   picked a theme that differs from their system. Use it only where a token
+   cannot express the difference - an image swap, a gradient direction, a
+   blend mode. Colour belongs in the tokens above. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-ehs-light-bg: var(--ehs-light-bg);
+  --color-ehs-dark-bg: var(--ehs-dark-bg);
+
+  --color-ehs-border: var(--ehs-border);
+
+  --color-ehs-icon-bg: var(--ehs-icon-bg);
+
+  --color-ehs-light-text: var(--ehs-light-text);
+
+  --color-ehs-muted-text: var(--ehs-muted-text);
+  --color-ehs-gray: var(--ehs-gray);
+  --color-ehs-slate: var(--ehs-slate);
+
+  --color-ehs-green: var(--ehs-green);
+  --color-ehs-green-hover: var(--ehs-green-hover);
+  --color-ehs-orange: var(--ehs-orange);
+  --color-ehs-red: var(--ehs-red);
+  --color-ehs-yellow: var(--ehs-yellow);
+  --color-ehs-navy: var(--ehs-navy);
+  --color-ehs-purple: var(--ehs-purple);
+  --color-ehs-blue: var(--ehs-blue);
+
+  --color-ehs-light-blue: var(--ehs-light-blue);
+  --color-ehs-light-blue-hover: var(--ehs-light-blue-hover);
+  --color-ehs-light-blue-active: var(--ehs-light-blue-active);
+
+  --color-ehs-normal-blue: var(--ehs-normal-blue);
+  --color-ehs-normal-blue-hover: var(--ehs-normal-blue-hover);
+  --color-ehs-normal-blue-active: var(--ehs-normal-blue-active);
+  --color-ehs-normal-blue-bg-light: var(--ehs-normal-blue-bg-light);
+
+  --color-ehs-dark-blue: var(--ehs-dark-blue);
+  --color-ehs-dark-blue-hover: var(--ehs-dark-blue-hover);
+  --color-ehs-dark-blue-active: var(--ehs-dark-blue-active);
+
+  --color-ehs-accent-solid: var(--ehs-accent-solid);
+  --color-ehs-accent-solid-hover: var(--ehs-accent-solid-hover);
+  --color-ehs-accent-solid-active: var(--ehs-accent-solid-active);
+  --color-ehs-danger-solid: var(--ehs-danger-solid);
+  --color-ehs-danger-solid-hover: var(--ehs-danger-solid-hover);
+  --color-ehs-dark-blue-bg-light: var(--ehs-dark-blue-bg-light);
+
+  --color-ehs-darker: var(--ehs-darker);
+  --color-ehs-form-classes-bg: var(--ehs-form-classes-bg);
+  --color-ehs-green-bg-light: var(--ehs-green-bg-light);
+
+  --color-ehs-surface: var(--ehs-surface);
+  --color-ehs-surface-raised: var(--ehs-surface-raised);
+  --color-ehs-surface-inverse: var(--ehs-surface-inverse);
+  --color-ehs-surface-inverse-text: var(--ehs-surface-inverse-text);
+  --color-ehs-canvas-dark: var(--ehs-canvas-dark);
+  --color-ehs-canvas-dark-text: var(--ehs-canvas-dark-text);
+  --color-ehs-paper: var(--ehs-paper);
+  --color-ehs-paper-text: var(--ehs-paper-text);
+  --color-ehs-paper-soft: var(--ehs-paper-soft);
+  --color-ehs-paper-muted: var(--ehs-paper-muted);
+  --color-ehs-paper-line: var(--ehs-paper-line);
+  --color-ehs-border-ink: var(--ehs-border-ink);
+  --color-ehs-skeleton: var(--ehs-skeleton);
+  --color-ehs-skeleton-strong: var(--ehs-skeleton-strong);
+  --color-ehs-warning-surface: var(--ehs-warning-surface);
+  --color-ehs-warning-border: var(--ehs-warning-border);
+  --color-ehs-warning-ink: var(--ehs-warning-ink);
+  --color-ehs-overlay-media: var(--ehs-overlay-media);
+  --color-ehs-red-ink: var(--ehs-red-ink);
+  --color-ehs-red-ink-soft: var(--ehs-red-ink-soft);
+  --color-ehs-yellow-ink: var(--ehs-yellow-ink);
+  --color-ehs-yellow-ink-soft: var(--ehs-yellow-ink-soft);
+  --color-ehs-progress-done: var(--ehs-progress-done);
+  --color-ehs-on-accent: var(--ehs-on-accent);
+  --color-ehs-hairline: var(--ehs-hairline);
+  --color-ehs-overlay: var(--ehs-overlay);
+  --color-ehs-border-strong: var(--ehs-border-strong);
+  --color-ehs-placeholder: var(--ehs-placeholder);
+
+  /* This app self-hosts Inter through `src/fonts/inter.ts`, which exposes it as
+     `--font-inter`. `font-sans` is what `src/app/layout.tsx` puts on &lt;body&gt;, so
+     it has to resolve to that rather than to the Geist variables the reference
+     app declared and never loaded. */
   --font-sans: var(--font-inter);
+
+  /*
+   * Numeric radius tokens used across the app (GlassCard, tables, inputs).
+   * Tailwind’s defaults stop at --radius-4xl named sizes; bare numbers like
+   * rounded-5 / rounded-2.5 only work when these --radius-* vars exist.
+   * Without them, border-radius is invalid and corners render square.
+   * Values match the pre-refactor arbitrary sizes (20px / 10px / 12px).
+   */
+  --radius-0\.5: 0.125rem;
+  --radius-0\.75: 0.1875rem;
+  --radius-2\.5: 0.625rem;
+  --radius-3: 0.75rem;
+  --radius-3\.5: 0.875rem;
+  --radius-4: 1rem;
+  --radius-5: 1.25rem;
+
+  /* -------------------------------------------------------------------------
+     Legacy admin-portal colour names
+     -------------------------------------------------------------------------
+     This app shipped its own flat palette before the EHSS design language was
+     adopted: `text-darkest`, `bg-blue-normal`, `text-gray`, `bg-lightgray` and
+     friends are written into roughly two hundred components.
+
+     Rewriting every one of those call sites would be a very large diff whose
+     only purpose is renaming, and each edit is a chance to change a screen by
+     accident. Instead the old names are kept and pointed at the new *roles*, so
+     a component that still says `text-darkest` now resolves to the themed ink
+     token and flips with the theme for free.
+
+     They are aliases, not a second palette — every value below is a `var()` to
+     something declared above, so there is exactly one place a colour is
+     decided. New code should use the `ehs-` names directly; these exist so the
+     existing screens did not have to be touched to gain dark mode.
+
+     The one name that could not be aliased is `darkest` used as a *fill*
+     (`bg-darkest` on the sign-in panel) rather than as ink. Ink has to invert
+     in dark and that panel must not, so those call sites were moved to
+     `bg-ehs-canvas-dark`, which is dark in both themes by design.
+     ------------------------------------------------------------------------- */
+  --color-darkest: var(--ehs-darker);
+  --color-gray: var(--ehs-gray);
+  --color-textcolor: var(--ehs-muted-text);
+  --color-bg: var(--ehs-surface);
+  --color-lightgray: var(--ehs-surface-raised);
+  --color-consent-bg: var(--ehs-surface-raised);
+  --color-border: var(--ehs-border);
+
+  --color-green: var(--ehs-green);
+  --color-red: var(--ehs-red);
+  --color-yellow: var(--ehs-yellow);
+  --color-admin: var(--ehs-purple);
+
+  --color-blue-lightest: var(--ehs-light-blue);
+  --color-blue-light: var(--ehs-light-blue-hover);
+  --color-blue-normal: var(--ehs-normal-blue);
+  --color-blue-normal1: var(--ehs-normal-blue-hover);
+  --color-blue-deep: var(--ehs-dark-blue);
+  --color-blue-darker: var(--ehs-navy);
+  --color-muted: var(--ehs-light-blue-active);
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-darkest);
-  font-family: var(--font-sans);
+  font-family: var(--font-inter);
+  min-height: 100vh;
+  background: var(--ehs-shell-bg);
+  /* Keeps the corner blooms anchored to the viewport rather than scrolling
+     away on long dashboard pages. */
+  background-attachment: fixed;
 }
 
-@layer base {
-  .text1 {
-    @apply text-[24px] lg:text-[26px] lg:tracking-tight font-semibold lg:leading-tight;
-  }
-  .text2 {
-    @apply text-[18px] lg:text-[20px] lg:tracking-tight font-semibold lg:leading-tight;
-  }
-  .text3 {
-    @apply text-[16px] lg:text-[18px] lg:tracking-tight font-semibold lg:leading-tight;
-  }
-  .text4 {
-    @apply text-[14px] lg:text-[16px] lg:tracking-tight font-bold lg:leading-tight;
-  }
-  .text5 {
-    @apply text-[13px] lg:text-[14px] lg:tracking-tight font-medium lg:leading-tight;
-  } /* BASE 14 on mobile, 16 on desktop */
-  .text6 {
-    @apply text-[12px] lg:text-[13px] lg:tracking-tight font-medium lg:leading-tight;
-  }
-  .text7 {
-    @apply text-[11px] lg:text-[12px] lg:tracking-tight font-semibold lg:leading-tight;
-  }
-  .text8 {
-    @apply text-[10px] lg:text-[11px] lg:tracking-tight font-bold lg:leading-tight;
-  }
-  .text9 {
-    @apply text-[9px] lg:text-[10px] lg:tracking-tight font-bold lg:leading-tight;
+/*
+ * A default ink for anything that never set its own colour.
+ *
+ * Dark-mode only, deliberately. In light the browser default is black and the
+ * app has always inherited it; setting a colour here would have quietly
+ * restyled every unstyled string in the product. In dark that same default is
+ * black on a near-black page, so a default has to exist.
+ */
+[data-theme="dark"] body {
+  color: var(--ehs-slate);
+}
+
+/* ---------------------------------------------------------------------------
+   Incident typography scale
+   ---------------------------------------------------------------------------
+   text1 = page title … text9 = meta label.
+   Sizes match the original Incident list / panel roles (not the inflated
+   responsive bump). Font family inherits from `body`. Color stays at the
+   call site.
+   --------------------------------------------------------------------------- */
+
+/*
+  Token   size              weight
+  ------  ----------------  --------
+  text1   1.25rem → 1.5rem  bold     (page title; sm+)
+  text2   1.875rem (30px)   normal   (KPI value)
+  text3   1.125rem (18px)   bold     (card / section title)
+  text4   0.875rem (14px)   normal   (body / table row)
+  text5   0.875rem (14px)   bold     (badge / emphasis)
+  text6   0.75rem (12px)    bold     (eyebrow / column header, uppercase)
+  text7   0.75rem (12px)    semibold (dense ID / numeric meta)
+  text8   0.75rem (12px)    normal   (caption / helper)
+  text9   0.875rem (14px)   semibold (meta field label, uppercase)
+*/
+
+/* Page title — DashboardHeader */
+@utility text1 {
+  @apply text-[1.25rem] leading-7 font-bold tracking-tight sm:text-[1.5rem] sm:leading-8;
+}
+
+/* KPI / hero numeric value */
+@utility text2 {
+  @apply text-[1.875rem] leading-none font-normal tracking-tight tabular-nums;
+}
+
+/* Card / panel section title */
+@utility text3 {
+  @apply text-[1.125rem] leading-7 font-bold;
+}
+
+/* Primary body / table row title */
+@utility text4 {
+  @apply text-[0.875rem] leading-normal font-normal;
+}
+
+/* Emphasized body / status badge label */
+@utility text5 {
+  @apply text-[0.875rem] leading-5 font-bold tracking-wide;
+}
+
+/* Eyebrow / KPI label / table column header */
+@utility text6 {
+  @apply text-[0.75rem] leading-4 font-bold tracking-wide uppercase;
+}
+
+/* Dense ID / numeric meta */
+@utility text7 {
+  @apply text-[0.75rem] leading-4 font-semibold tabular-nums;
+}
+
+/* Caption / helper under KPIs */
+@utility text8 {
+  @apply text-[0.75rem] leading-4 font-normal;
+}
+
+/* Meta field label (Reported, Summary, …) */
+@utility text9 {
+  @apply text-[0.875rem] leading-5 font-semibold tracking-wide uppercase;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: var(--ehs-green);
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--ehs-red);
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--ehs-yellow);
+}
+
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: var(--ehs-normal-blue);
+}
+
+/* Whitens the background of form controls within — overrides the FormBuilder's
+   default tinted fields (e.g. the Create Template wizard). */
+@utility fields-white {
+  & input,
+  & textarea,
+  & select {
+    background-color: var(--ehs-light-text);
   }
 }
 
-/* Indeterminate progress sweep — deploy-in-progress strip. */
-@keyframes deploy-sweep {
+/* Smooth pop-in for popovers / context menus */
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@utility animate-popover-in {
+  animation-name: popover-in;
+  animation-duration: 0.14s;
+  animation-timing-function: var(--ehs-ease-out);
+  animation-fill-mode: both;
+}
+
+/* Light sweep that travels across primary buttons on hover */
+@utility btn-sweep {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      105deg,
+      transparent,
+      rgb(255 255 255 / 0.45),
+      transparent
+    );
+    transform: translateX(-220%) skewX(-18deg);
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    transition: transform 0.8s ease;
+    transform: translateX(360%) skewX(-18deg);
+  }
+}
+
+@keyframes step-slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes step-slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes check-ripple {
   0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+@utility animate-check-ripple {
+  animation-name: check-ripple;
+  animation-duration: 0.7s;
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+/* Blade of light that sweeps a field while an AI rewrite is in flight. The
+   blade is a third of the field wide, so it travels well past both edges. */
+@keyframes ai-blade-sweep {
+  from {
+    transform: translateX(-150%) skewX(-18deg);
+  }
+
+  to {
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+
+@utility animate-ai-blade-sweep {
+  animation-name: ai-blade-sweep;
+  animation-duration: 1.15s;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  animation-iteration-count: infinite;
+}
+
+/* Breathing outline under the blade — reads as "thinking" rather than "stuck" */
+@keyframes ai-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@utility animate-ai-halo-pulse {
+  animation-name: ai-halo-pulse;
+  animation-duration: 1.6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* One-shot confirmation ring when the rewritten text lands in the field */
+@keyframes ai-result-flash {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@utility animate-ai-result-flash {
+  animation-name: ai-result-flash;
+  animation-duration: 0.7s;
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) rotate(0deg) scale(0.4);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--confetti-x)), var(--confetti-y))
+      rotate(var(--confetti-rotate)) scale(1);
+  }
+}
+
+@utility animate-confetti-burst {
+  animation-name: confetti-burst;
+  animation-duration: 1.5s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+/* ---------------------------------------------------------------------------
+   Card motion
+   ---------------------------------------------------------------------------
+   Dashboard cards swap from skeleton to content when their query resolves, so
+   without this they pop in abruptly. The travel is deliberately small (7px):
+   these sit on a frosted surface over a page gradient, and anything longer
+   reads as decoration on a page about incidents.
+
+   Every utility below carries its own prefers-reduced-motion guard, so a call
+   site cannot forget `motion-reduce:` and ship something that ignores the
+   setting.
+   --------------------------------------------------------------------------- */
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-card-rise {
+  animation-name: card-rise;
+  animation-duration: 0.18s;
+  animation-timing-function: var(--ehs-ease-out);
+  animation-fill-mode: both;
+
+  /* `both` holds the 0-opacity start frame through any animation-delay, which
+     is what lets stagger-cards below hold a card back without it flashing. */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Staggers the direct children of a card grid. The dashboard's rows contain
+   card components whose own root element is the GlassCard, so `> *` lands on
+   the animated element without threading a delay prop through six components. */
+@utility stagger-cards {
+  & > *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+
+  & > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+
+  & > *:nth-child(4) {
+    animation-delay: 180ms;
+  }
+}
+
+/* Hover response for card surfaces: 1px is enough to feel alive without
+   implying the whole card is a button. The shadow is the GLASS_SURFACE stack
+   with the lift shadow deepened and the inset highlight left untouched. */
+@utility card-lift {
+  transition:
+    transform 0.18s var(--ehs-ease-out),
+    box-shadow 0.18s var(--ehs-ease-out);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--ehs-shadow-card-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+/* Arc travelling around the Neptune monogram's ring while the app boots. The
+   glyph itself stays still — a spinning letterform reads as a novelty, a
+   moving arc reads as progress. Rotates about the viewBox centre, so it needs
+   transform-box/transform-origin rather than Tailwind's default. */
+@keyframes mark-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-mark-orbit {
+  transform-box: view-box;
+  transform-origin: center;
+  animation-name: mark-orbit;
+  /* Unhurried on purpose: the mark should be legible as the logo before the
+     arc has gone round once. Linear, because easing a continuous rotation
+     makes it stutter at the loop seam. */
+  animation-duration: 2s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+
+  /* Still ring instead of a spinner; the status text carries the meaning. */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Loading sheen for placeholder blocks. Replaces a flat opacity pulse, which
+   blinks; a sweep reads as work in progress. Same gradient vocabulary as
+   ai-blade-sweep, without the skew — these are small rectangles. */
+@keyframes skeleton-sweep {
+  from {
     transform: translateX(-100%);
   }
-  100% {
-    transform: translateX(300%);
+
+  to {
+    transform: translateX(100%);
   }
+}
+
+@utility skeleton-sweep {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* Lighter than the placeholder in both themes - on a dark card a white
+       sweep blows out, so it is dialled back there rather than removed. */
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.55),
+      transparent
+    );
+    animation: skeleton-sweep 1.35s ease-in-out infinite;
+  }
+
+  /* Falls back to a still placeholder rather than a pulse, so reduced-motion
+     users get no looping animation at all. */
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+}
+
+/* The skeleton and button sweeps are white highlights, which is right on a
+   light surface and far too strong on a dark one. */
+[data-theme="dark"] .skeleton-sweep::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.07),
+    transparent
+  );
+}
+
+[data-theme="dark"] .btn-sweep::after {
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgb(255 255 255 / 0.22),
+    transparent
+  );
+}
+
+/* Native form controls, date pickers and scrollbars follow `color-scheme`,
+   which the theme script sets on <html>. Autofill does not: Chrome paints its
+   own pale yellow ground and near-black text, which on a dark field is a solid
+   light block. This repaints it with the field's own colours. */
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover,
+[data-theme="dark"] input:-webkit-autofill:focus,
+[data-theme="dark"] textarea:-webkit-autofill,
+[data-theme="dark"] select:-webkit-autofill {
+  -webkit-text-fill-color: var(--ehs-darker);
+  -webkit-box-shadow: 0 0 0 1000px var(--ehs-surface-raised) inset;
+  caret-color: var(--ehs-darker);
 }

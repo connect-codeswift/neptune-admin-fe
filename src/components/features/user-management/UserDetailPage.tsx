@@ -4,8 +4,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
-import { PageHeader, PlaceholderPage } from "@/components/layouts";
+import {
+  FeatureEmptyState,
+  FeatureErrorCard,
+  FeatureLoadingCard,
+} from "@/components/features/shared";
+import { PageHeader } from "@/components/layouts";
 import { Button, ConfirmDialog, TableStatusBadge } from "@/components/ui";
+import { GLASS_SURFACE, GlassCard } from "@/components/ui/GlassCard";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   useSuperAdminUserDetail,
   useUpdateSuperAdminUserStatus,
@@ -23,11 +30,55 @@ function ProfileField({
   value,
 }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className="flex flex-col gap-1 border-b border-darkest/8 py-3 last:border-b-0">
-      <span className="text8 tracking-[0.66px] text-[#8892a3] uppercase">
+    <div className="flex min-w-0 flex-col gap-1 border-b border-ehs-border-ink/8 py-3">
+      <span className="text8 tracking-[0.66px] text-ehs-muted-text uppercase">
         {label}
       </span>
-      <span className="text5 text-darkest">{value}</span>
+      {/* Site lists and job titles are the two that run long; truncating with
+          the full string in `title` keeps the two-column grid aligned. */}
+      <span className="truncate text4 text-darkest" title={value}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Placeholder shaped like the profile pane below it — the avatar disc, the name
+ * and status line, and the two-column field grid — so the page does not reflow
+ * when the request lands.
+ */
+function UserDetailSkeleton() {
+  const fields = Array.from({ length: 8 }, (_, index) => `field-${String(index)}`);
+
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Loading user details…"
+      className={`${GLASS_SURFACE} p-5.5`}
+    >
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <Skeleton className="size-16 shrink-0 rounded-full bg-ehs-skeleton-strong" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <Skeleton className="h-6 w-52 rounded-md bg-ehs-skeleton-strong" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <Skeleton className="mt-2 h-3.5 w-64 rounded-md" />
+          <div className="mt-4 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+            {fields.map((key) => (
+              <div
+                key={key}
+                className="flex flex-col gap-1.5 border-b border-ehs-border-ink/8 py-3"
+              >
+                <Skeleton className="h-2.5 w-20 rounded-md" />
+                <Skeleton className="h-3.5 w-36 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -35,28 +86,88 @@ function ProfileField({
 export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
   const router = useRouter();
   const { adminHref, basePath } = useUserManagementPaths();
-  const { data: user, isLoading, isError, error } = useSuperAdminUserDetail(userId);
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useSuperAdminUserDetail(userId);
   const statusMutation = useUpdateSuperAdminUserStatus(userId);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reactivateOpen, setReactivateOpen] = useState(false);
 
   if (isLoading) {
     return (
-      <PlaceholderPage
-        title="Loading User"
-        description="Fetching user details from the API…"
-      />
+      <div className="flex min-w-0 flex-col gap-6 pb-4">
+        <PageHeader
+          title="User"
+          description="Loading user details…"
+          breadcrumbs={[
+            { label: "Admin", href: adminHref },
+            { label: "User Management", href: basePath },
+          ]}
+        />
+        <UserDetailSkeleton />
+        <FeatureLoadingCard rows={1} label="Loading contact details…" />
+      </div>
     );
   }
 
-  if (isError || !user) {
+  // A failed request and a user that simply is not there are different
+  // situations and read differently: one offers a retry, the other explains
+  // that the record is gone.
+  if (isError) {
     return (
-      <PlaceholderPage
-        title="User Not Found"
-        description={
-          error instanceof Error ? error.message : "Could not load this user."
-        }
-      />
+      <div className="flex min-w-0 flex-col gap-6 pb-4">
+        <PageHeader
+          title="User"
+          description="This user could not be loaded."
+          breadcrumbs={[
+            { label: "Admin", href: adminHref },
+            { label: "User Management", href: basePath },
+          ]}
+        />
+        <FeatureErrorCard
+          title="Couldn’t load this user"
+          message={
+            error instanceof Error ? error.message : "Could not load this user."
+          }
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-w-0 flex-col gap-6 pb-4">
+        <PageHeader
+          title="User"
+          description="This user could not be found."
+          breadcrumbs={[
+            { label: "Admin", href: adminHref },
+            { label: "User Management", href: basePath },
+          ]}
+        />
+        <FeatureEmptyState
+          icon="mdi:account-question-outline"
+          title="User not found"
+          description="The account may have been removed, or the link that brought you here is out of date. Retrying will not bring it back."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon="mdi:arrow-left"
+              href={basePath}
+            >
+              Back to User Management
+            </Button>
+          }
+        />
+      </div>
     );
   }
 
@@ -110,6 +221,7 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
         cancelLabel="Cancel"
         confirmLabel="Deactivate"
         confirmVariant="danger"
+        loading={statusMutation.isPending}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => void handleDeactivate()}
       />
@@ -124,11 +236,13 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
         }
         cancelLabel="Cancel"
         confirmLabel="Reactivate"
+        confirmVariant="primary"
+        loading={statusMutation.isPending}
         onCancel={() => setReactivateOpen(false)}
         onConfirm={() => void handleReactivate()}
       />
 
-      <div className="flex flex-col gap-6 pb-4">
+      <div className="flex min-w-0 flex-col gap-6 pb-4">
         <PageHeader
           title={displayName}
           description={`${formatRoleName(user.roleName)} · ${siteNames.join(", ") || "—"}`}
@@ -167,21 +281,27 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
           }
         />
 
-        <section className="rounded-[20px] border border-white bg-white/62 p-5.5 shadow-lg backdrop-blur-[10px]">
+        <GlassCard className="p-5.5">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div
-              className="flex size-16 shrink-0 items-center justify-center rounded-full bg-blue-normal text2 text-white"
+              className="flex size-16 shrink-0 items-center justify-center rounded-full bg-blue-normal text2 text-ehs-on-accent"
               aria-hidden
             >
               {getUserInitials(displayName, user.email)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text3 text-darkest">{displayName}</p>
+                {/* h2 under the PageHeader's h1: the profile pane is the page's
+                    first section, and the level must not be skipped. */}
+                <h2 className="min-w-0 truncate text3 text-darkest">
+                  {displayName}
+                </h2>
                 <TableStatusBadge status={status} />
               </div>
-              <p className="mt-1 text5 text-gray">{user.email}</p>
-              <div className="mt-4 grid grid-cols-1 gap-0 sm:grid-cols-2">
+              <p className="mt-1 truncate text4 text-gray" title={user.email}>
+                {user.email}
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                 <ProfileField
                   label="Job Title"
                   value={user.jobTitle?.trim() || "—"}
@@ -212,10 +332,16 @@ export function UserDetailPage({ userId }: Readonly<{ userId: string }>) {
               </div>
             </div>
           </div>
-        </section>
+        </GlassCard>
 
+        {/* A "Contact" card holding one field read as an offcut. Email is the
+            channel invitations and resets go to, so it belongs beside the
+            phone number rather than only in the header strip above. */}
         <DetailCard title="Contact">
-          <ProfileField label="Phone" value={user.contactNo?.trim() || "—"} />
+          <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+            <ProfileField label="Email" value={user.email} />
+            <ProfileField label="Phone" value={user.contactNo?.trim() || "—"} />
+          </div>
         </DetailCard>
       </div>
     </>

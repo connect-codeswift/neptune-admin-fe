@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassCard } from "@/components/ui/GlassCard";
 import { IconButton } from "@/components/ui";
 import type { RoleViewModel } from "@/lib/mappers/roles.mapper";
 
@@ -14,7 +15,13 @@ type RoleCardProps = Readonly<{
 
 function RightTag({ label }: Readonly<{ label: string }>) {
   return (
-    <span className="inline-flex items-center rounded-md bg-darkest/6 px-2 py-0.5 text6 text-darkest">
+    // text7, not text6: text6 is the uppercase eyebrow role, and a dotted
+    // permission id rendered as SAFETY.INCIDENT.VIEW is harder to read and no
+    // longer matches the string the permission matrix shows.
+    <span
+      className="inline-flex max-w-56 items-center truncate rounded-md bg-ehs-border-ink/6 px-2 py-0.5 text7 font-normal text-darkest"
+      title={label}
+    >
       {label}
     </span>
   );
@@ -22,14 +29,15 @@ function RightTag({ label }: Readonly<{ label: string }>) {
 
 export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
   const visibleRights = role.permissionLabels.slice(0, VISIBLE_RIGHTS_COUNT);
-  const hiddenCount = role.permissionLabels.length - visibleRights.length;
+  const hiddenRights = role.permissionLabels.slice(VISIBLE_RIGHTS_COUNT);
+  const hiddenCount = hiddenRights.length;
 
   return (
-    <article className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-lg backdrop-blur-[10px]">
+    <GlassCard className="px-5 py-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text3 text-darkest">{role.name}</h2>
+            <h2 className="min-w-0 truncate text3 text-darkest">{role.name}</h2>
             {role.isSystem ? (
               <span className="inline-flex items-center rounded-md bg-blue-normal/12 px-2 py-0.5 text7 font-semibold tracking-[0.5px] text-blue-normal uppercase">
                 System
@@ -37,7 +45,7 @@ export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
             ) : null}
           </div>
 
-          <p className="mt-1 text5 text-gray">
+          <p className="mt-1 line-clamp-2 text4 text-gray">
             {role.description || "No description provided."}
           </p>
 
@@ -46,18 +54,25 @@ export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
               <RightTag key={right} label={right} />
             ))}
             {hiddenCount > 0 ? (
-              <span className="text6 font-semibold text-blue-normal">
+              // The overflow count is the only place the rest of the set is
+              // named short of opening the role, so it carries them in `title`.
+              <span
+                className="text7 text-blue-normal"
+                title={hiddenRights.join(", ")}
+              >
                 +{hiddenCount} more
               </span>
             ) : null}
             {role.permissionLabels.length === 0 ? (
-              <span className="text6 text-gray">No permissions assigned</span>
+              <span className="text8 text-ehs-muted-text">
+                No permissions assigned — this role grants no access
+              </span>
             ) : null}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3 self-start lg:pt-1">
-          <p className="text7 font-semibold tracking-[0.5px] text-[#8892a3] uppercase">
+        <div className="flex shrink-0 flex-wrap items-center gap-3 self-start lg:pt-1">
+          <p className="text7 font-semibold tracking-[0.5px] text-ehs-muted-text uppercase">
             {role.userCount} {role.userCount === 1 ? "User" : "Users"}
           </p>
 
@@ -94,6 +109,6 @@ export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
           </div>
         </div>
       </div>
-    </article>
+    </GlassCard>
   );
 }

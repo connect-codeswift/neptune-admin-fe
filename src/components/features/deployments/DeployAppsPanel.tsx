@@ -13,8 +13,8 @@ import { DeploySha, DeployStatusPill } from "./DeployPills";
 function AppNameCell({ app }: Readonly<{ app: DeployAppResponse }>) {
   return (
     <div className="min-w-0">
-      <p className="truncate text5 font-semibold text-darkest">{app.name}</p>
-      <p className="truncate text7 text-[#8892a3]">
+      <p className="text-ehs-darker truncate text5">{app.name}</p>
+      <p className="truncate text7 text-ehs-muted-text">
         {app.unit} · :{app.port}
       </p>
     </div>
@@ -26,13 +26,13 @@ function CommitCell({ app }: Readonly<{ app: DeployAppResponse }>) {
     <div className="min-w-0">
       <div className="flex items-center gap-2">
         <DeploySha sha={app.sha} />
-        <span className="truncate text6 text-gray">{app.subject}</span>
+        <span className="text-ehs-muted-text truncate text8">{app.subject}</span>
       </div>
-      <p className="mt-1 truncate text7 text-[#8892a3]">
+      <p className="mt-1 truncate text7 text-ehs-muted-text">
         Committed {formatRelative(app.committed)}
       </p>
       {app.stuckOnFailedSha ? (
-        <p className="mt-1.5 flex items-center gap-1.5 text7 text-red">
+        <p className="text-ehs-red mt-1.5 flex items-center gap-1.5 text7">
           <Icon icon="lucide:octagon-alert" width={12} height={12} aria-hidden />
           build failing on {app.stuckOnFailedSha} — not retrying
         </p>
@@ -57,7 +57,7 @@ function HealthCell({ app }: Readonly<{ app: DeployAppResponse }>) {
 
 /** `since` is systemd-formatted, not ISO — rendered exactly as the host wrote it. */
 function SinceCell({ app }: Readonly<{ app: DeployAppResponse }>) {
-  return <span className="text6 whitespace-nowrap text-gray">{app.since || "—"}</span>;
+  return <span className="text-ehs-muted-text text8 whitespace-nowrap">{app.since || "—"}</span>;
 }
 
 const APP_COLUMNS: TableColumn<DeployAppResponse>[] = [
