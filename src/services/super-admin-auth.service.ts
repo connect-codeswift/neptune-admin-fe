@@ -28,10 +28,10 @@ import { extractAccessToken } from "@/lib/auth-response";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiResponse } from "@/types/api.types";
 
-/** POST /SuperAdminAuth/login */
+/** POST /v1/super-admin/auth/login */
 export async function superAdminLogin(payload: LoginPayload) {
   const { data } = await axiosInstance.post<LoginResponse>(
-    "/SuperAdminAuth/login",
+    "/v1/super-admin/auth/login",
     payload,
   );
   // Login never returns a session token, only an MFA challenge, and the session
@@ -41,10 +41,10 @@ export async function superAdminLogin(payload: LoginPayload) {
   return data;
 }
 
-/** POST /SuperAdminAuth/verify-mfa */
+/** POST /v1/super-admin/auth/verify-mfa */
 export async function superAdminVerifyMfa(payload: VerifyMfaPayload) {
   const { data } = await axiosInstance.post<VerifyMfaResponse>(
-    "/SuperAdminAuth/verify-mfa",
+    "/v1/super-admin/auth/verify-mfa",
     payload,
   );
   const accessToken = extractAccessToken(data);
@@ -55,19 +55,19 @@ export async function superAdminVerifyMfa(payload: VerifyMfaPayload) {
   return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
-/** POST /SuperAdminAuth/mfa/setup */
+/** POST /v1/super-admin/auth/mfa/setup */
 export async function superAdminMfaSetup(payload: SuperAdminMfaSetupPayload) {
   const { data } = await axiosInstance.post<MfaSetupResponse>(
-    "/SuperAdminAuth/mfa/setup",
+    "/v1/super-admin/auth/mfa/setup",
     payload,
   );
   return data;
 }
 
-/** POST /SuperAdminAuth/mfa/enable */
+/** POST /v1/super-admin/auth/mfa/enable */
 export async function superAdminMfaEnable(payload: VerifyMfaPayload) {
   const { data } = await axiosInstance.post<MfaEnableResponse>(
-    "/SuperAdminAuth/mfa/enable",
+    "/v1/super-admin/auth/mfa/enable",
     payload,
   );
   const accessToken = extractAccessToken(data);
@@ -84,28 +84,28 @@ export type GetSuperAdminCompaniesParams = {
   pageSize?: number;
 };
 
-/** GET /SuperAdminCompanies */
+/** GET /v1/super-admin/companies */
 export async function getCompanies(params?: GetSuperAdminCompaniesParams) {
   const { data } = await axiosInstance.get<ApiResponse>(
-    "/SuperAdminCompanies",
+    "/v1/super-admin/companies",
     { params },
   );
   return data;
 }
 
-/** GET /SuperAdminCompanies/{orgId}/sites */
+/** GET /v1/super-admin/companies/{orgId}/sites */
 export async function getCompanySites(orgId: string | number) {
   const { data } = await axiosInstance.get<ApiResponse>(
-    `/SuperAdminCompanies/${orgId}/sites`,
+    `/v1/super-admin/companies/${orgId}/sites`,
   );
   return data;
 }
 
-/** POST /SuperAdminAuth/select-company */
+/** POST /v1/super-admin/auth/select-company */
 export async function selectCompany(payload: SuperAdminSelectCompanyPayload) {
   const { data } = await axiosInstance.post<
     ApiResponse<SelectCompanyResponse>
-  >("/SuperAdminAuth/select-company", payload);
+  >("/v1/super-admin/auth/select-company", payload);
 
   const token = data.dataModel?.accessToken;
   if (token) {
@@ -115,40 +115,40 @@ export async function selectCompany(payload: SuperAdminSelectCompanyPayload) {
   return data;
 }
 
-/** POST /SuperAdminAuth/create */
+/** POST /v1/super-admin/staff */
 export async function createSuperAdmin(payload: SuperAdminCreatePayload) {
   const { data } = await axiosInstance.post<ApiResponse<unknown>>(
-    "/SuperAdminAuth/create",
+    "/v1/super-admin/staff",
     payload,
   );
   return data;
 }
 
-/** POST /SuperAdminAuth/forgot-password */
+/** POST /v1/super-admin/auth/forgot-password */
 export async function superAdminForgotPassword(
   payload: SuperAdminForgotPasswordPayload,
 ) {
   const { data } = await axiosInstance.post<
     ApiResponse<SuperAdminForgotPasswordResponse>
-  >("/SuperAdminAuth/forgot-password", payload);
+  >("/v1/super-admin/auth/forgot-password", payload);
   return data;
 }
 
-/** POST /SuperAdminAuth/reset-password */
+/** POST /v1/super-admin/auth/reset-password */
 export async function superAdminResetPassword(
   payload: SuperAdminResetPasswordPayload,
 ) {
   const { data } = await axiosInstance.post<
     ApiResponse<SuperAdminResetPasswordResponse>
-  >("/SuperAdminAuth/reset-password", payload);
+  >("/v1/super-admin/auth/reset-password", payload);
   return data;
 }
 
-/** POST /SuperAdminAuth/bootstrap */
+/** POST /v1/super-admin/auth/bootstrap */
 export async function superAdminBootstrap(payload: SuperAdminBootstrapPayload) {
   const { data } = await axiosInstance.post<
     ApiResponse<SuperAdminBootstrapResponse>
-  >("/SuperAdminAuth/bootstrap", payload);
+  >("/v1/super-admin/auth/bootstrap", payload);
   return data;
 }
 

@@ -9,26 +9,26 @@ import type { ApiResponse } from "@/types/api.types";
  * in `@/lib/deploy-status`.
  */
 
-/** GET /PlatformOps/deploy-status */
+/** GET /v1/platform-ops/deploy-status */
 export async function getDeployStatus() {
   const { data } = await axiosInstance.get<ApiResponse>(
-    "/PlatformOps/deploy-status",
+    "/v1/platform-ops/deploy-status",
   );
   return data;
 }
 
-/** GET /PlatformOps/deploy-history */
+/** GET /v1/platform-ops/deploy-history */
 export async function getDeployHistory(limit = 50) {
   const { data } = await axiosInstance.get<ApiResponse>(
-    "/PlatformOps/deploy-history",
+    "/v1/platform-ops/deploy-history",
     { params: { limit } },
   );
   return data;
 }
 
-/** GET /PlatformOps/alerts */
+/** GET /v1/platform-ops/alerts */
 export async function getDeployAlerts(limit = 50) {
-  const { data } = await axiosInstance.get<ApiResponse>("/PlatformOps/alerts", {
+  const { data } = await axiosInstance.get<ApiResponse>("/v1/platform-ops/alerts", {
     params: { limit },
   });
   return data;

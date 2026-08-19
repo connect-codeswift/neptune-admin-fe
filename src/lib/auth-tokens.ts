@@ -9,7 +9,7 @@ const AUTH_EMAIL_KEY = "neptune_admin_email";
 // - "super-admin" corresponds to CodeSwift staff.
 //
 // `Ehs_Lead` is a site authority and is rejected by the backend at
-// `/AdminPortalAuth/login`; it is never stored here as "admin".
+// `/v1/admin/auth/login`; it is never stored here as "admin".
 export type StoredAuthRole = "super-admin" | "admin";
 
 export const AUTH_SESSION_EVENT = "neptune:auth-session-updated";
