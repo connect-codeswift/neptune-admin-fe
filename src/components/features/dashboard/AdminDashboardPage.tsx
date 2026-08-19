@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import {
+  FeatureEmptyState,
+  FeatureErrorCard,
+  FeatureLoadingCard,
+  FeatureLoadingGrid,
+} from "@/components/features/shared";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
   KpiSummaryCard,
-  KpiTrendCard,
   RecentActivityCard,
   type RecentActivityItem,
 } from "@/components/ui";
@@ -18,6 +23,7 @@ import {
   parseActivatedModuleCodes,
 } from "@/lib/ehs-modules";
 import { getAllSitesOfThisOrg } from "@/lib/org-sites";
+import { StatCard } from "./StatCard";
 
 function formatRelativeTime(value: string): string {
   const date = new Date(value);
@@ -33,6 +39,51 @@ function formatRelativeTime(value: string): string {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+/**
+ * The site list lives in the tenant context written at select-company, which is
+ * localStorage and therefore absent during SSR.
+ *
+ * This used to be `useState` + `useEffect(setSiteName)`, which is the pattern
+ * `react-hooks/set-state-in-effect` exists to catch: it renders once with the
+ * wrong value and schedules a second render to correct it. `useSyncExternalStore`
+ * says the same thing declaratively — the server snapshot is "unknown", the
+ * client snapshot reads storage — and produces identical markup on first paint
+ * without the extra state. The store never changes underneath us within a page
+ * view, so `subscribe` has nothing to listen to.
+ */
+function subscribeToTenantSites(): () => void {
+  return () => undefined;
+}
+
+function getServerSiteName(): string | undefined {
+  return undefined;
+}
+
+/** The number a card shows, and the sentence explaining what it is made of. */
+type SummaryStat = Readonly<{
+  label: string;
+  value: number;
+  detail: string;
+  icon: string;
+}>;
+
+type ModuleStat = Readonly<{
+  title: string;
+  value: number;
+  activeCount: number;
+}>;
+
+function describeAccess(access: {
+  isPermanent: boolean;
+  daysRemaining: number | null;
+}): string {
+  if (access.isPermanent) return "Permanent access";
+  if (access.daysRemaining != null) {
+    return `${access.daysRemaining} day${access.daysRemaining === 1 ? "" : "s"} remaining`;
+  }
+  return "Access window active";
+}
+
 export function AdminDashboardPage({
   description = "System overview, user management, and configuration",
   company,
@@ -45,94 +96,86 @@ export function AdminDashboardPage({
   const { summary, activity, isLoading, isError, error, refetch } =
     useOrgDashboard(20);
 
-  // Site names live in the tenant context written at select-company, which is
-  // localStorage and so unavailable during SSR. Resolving after mount keeps the
-  // server and client markup identical on first paint.
-  const [siteName, setSiteName] = useState<string>();
-  useEffect(() => {
-    if (!company) return;
-    setSiteName(
-      getAllSitesOfThisOrg(company).find((entry) => entry.id === site)?.name,
-    );
-  }, [company, site]);
+  const siteName = useSyncExternalStore(
+    subscribeToTenantSites,
+    () => {
+      if (!company) return undefined;
+      return getAllSitesOfThisOrg(company).find((entry) => entry.id === site)
+        ?.name;
+    },
+    getServerSiteName,
+  );
 
   // The organization name is authoritative from the summary. Previously this
   // came from getDummyOrganization(company) in the server component, keyed by
   // the real organization id, so every company rendered as dummy org "1".
-  const subtitle = summary
-    ? [summary.organization.name, siteName].filter(Boolean).join(" · ")
-    : description;
+  let subtitle = description;
+  if (summary) {
+    subtitle = [summary.organization.name, siteName].filter(Boolean).join(" · ");
+  }
 
-  const kpiCards = useMemo(() => {
-    if (!summary) return [];
-
-    return [
+  // Plain counts with their composition. The summary endpoint returns scalars,
+  // so there is no series here and these are not trends — see StatCard.
+  let summaryStats: SummaryStat[] = [];
+  if (summary) {
+    summaryStats = [
       {
-        value: summary.users.total,
         label: "Total Users",
-        trendLabel: `${summary.users.active} active`,
-        trend: "up" as const,
-        data: [summary.users.total],
+        value: summary.users.total,
+        detail: `${summary.users.active} active · ${summary.users.pendingSetup} pending setup`,
+        icon: "lucide:users",
       },
       {
-        value: summary.users.active,
         label: "Active Users",
-        trendLabel: `${summary.users.pendingSetup} pending`,
-        trend: "up" as const,
-        data: [summary.users.active],
+        value: summary.users.active,
+        detail: `${summary.users.suspended} suspended · ${summary.users.pendingSetup} pending setup`,
+        icon: "lucide:user-check",
       },
       {
-        value: summary.sites.total,
         label: "Sites",
-        trendLabel: "live",
-        trend: "up" as const,
-        data: [summary.sites.total],
+        value: summary.sites.total,
+        detail: siteName ? `Currently viewing ${siteName}` : "Across this organization",
+        icon: "lucide:map-pin",
       },
       {
-        value: summary.roles.total,
         label: "Roles",
-        trendLabel: `${summary.roles.custom} custom`,
-        trend: "up" as const,
-        data: [summary.roles.total],
+        value: summary.roles.total,
+        detail: `${summary.roles.custom} custom · ${Math.max(0, summary.roles.total - summary.roles.custom)} built in`,
+        icon: "lucide:shield-check",
       },
     ];
-  }, [summary]);
+  }
 
-  const moduleStats = useMemo(() => {
-    if (!summary) return [];
-    const moduleCodes = parseActivatedModuleCodes(
-      summary.activatedModules.modules,
+  let moduleStats: ModuleStat[] = [];
+  if (summary) {
+    const moduleIds = activatedModuleCodesToIds(
+      parseActivatedModuleCodes(summary.activatedModules.modules),
     );
-    const moduleIds = activatedModuleCodesToIds(moduleCodes);
 
-    if (moduleIds.length === 0) {
-      return [
+    if (moduleIds.length === 0 && summary.activatedModules.moduleCount > 0) {
+      moduleStats = [
         {
           title: "Activated Modules",
           value: summary.activatedModules.moduleCount,
           activeCount: summary.activatedModules.moduleCount,
         },
       ];
+    } else {
+      moduleStats = moduleIds.map((moduleId) => ({
+        title: getModuleLabel(moduleId),
+        value: 1,
+        activeCount: 1,
+      }));
     }
+  }
 
-    return moduleIds.map((moduleId) => ({
-      title: getModuleLabel(moduleId),
-      value: 1,
-      activeCount: 1,
-    }));
-  }, [summary]);
-
-  const activityItems = useMemo<RecentActivityItem[]>(
-    () =>
-      activity.map((item, index) => ({
-        id: `${item.type}-${item.occurredAt}-${index}`,
-        actor: item.actor ?? "System",
-        action: item.type.replace(/([A-Z])/g, " $1").trim(),
-        target: item.description,
-        time: formatRelativeTime(item.occurredAt),
-      })),
-    [activity],
-  );
+  const activityItems: RecentActivityItem[] = activity.map((item, index) => ({
+    id: `${item.type}-${item.occurredAt}-${index}`,
+    actor: item.actor ?? "System",
+    action: item.type.replace(/([A-Z])/g, " $1").trim(),
+    target: item.description,
+    time: formatRelativeTime(item.occurredAt),
+  }));
 
   return (
     <div className="flex flex-col gap-6 pb-4">
@@ -140,45 +183,61 @@ export function AdminDashboardPage({
         title="Admin Dashboard"
         description={subtitle}
         actions={
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:refresh-cw"
-              onClick={() => {
-                void refetch();
-                toast.success("Dashboard refreshed.");
-              }}
-            >
-              Refresh
-            </Button>
-          </>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon="lucide:refresh-cw"
+            onClick={() => {
+              void refetch();
+              toast.success("Dashboard refreshed.");
+            }}
+          >
+            Refresh
+          </Button>
         }
       />
 
       {isLoading ? (
-        <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
-          Loading dashboard…
-        </p>
+        <>
+          <FeatureLoadingGrid
+            count={4}
+            label="Loading dashboard metrics…"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            cardClassName="min-h-30"
+          />
+          {/* Shaped like what replaces it: the wide organization panel beside
+              the narrower activity column. */}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+            <FeatureLoadingCard rows={4} label="Loading organization overview…" />
+            <FeatureLoadingCard rows={5} label="Loading recent activity…" />
+          </div>
+        </>
       ) : null}
 
       {isError ? (
-        <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
-          {error instanceof Error ? error.message : "Failed to load dashboard."}
-        </p>
+        <FeatureErrorCard
+          title="Couldn’t load the dashboard"
+          message={
+            error instanceof Error
+              ? error.message
+              : "The dashboard summary did not load. Check your connection and try again."
+          }
+          onRetry={() => {
+            void refetch();
+          }}
+        />
       ) : null}
 
       {!isLoading && !isError && summary ? (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {kpiCards.map((kpi) => (
-              <KpiTrendCard
-                key={kpi.label}
-                value={kpi.value}
-                label={kpi.label}
-                data={kpi.data}
-                trendLabel={kpi.trendLabel}
-                trend={kpi.trend}
+          <div className="stagger-cards grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {summaryStats.map((stat) => (
+              <StatCard
+                key={stat.label}
+                label={stat.label}
+                value={stat.value}
+                detail={stat.detail}
+                icon={stat.icon}
               />
             ))}
           </div>
@@ -186,35 +245,36 @@ export function AdminDashboardPage({
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
             <DetailCard
               title="Organization"
+              description="Modules this organization is licensed for."
               action={
-                <p className="text5 text-gray">
-                  {summary.access.isPermanent
-                    ? "Permanent access"
-                    : summary.access.daysRemaining != null
-                      ? `${summary.access.daysRemaining} days remaining`
-                      : "Access window active"}
-                </p>
+                <p className="text4 text-gray">{describeAccess(summary.access)}</p>
               }
             >
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {moduleStats.length > 0 ? (
-                  moduleStats.map((module) => (
+              {moduleStats.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {moduleStats.map((module) => (
                     <KpiSummaryCard
                       key={module.title}
                       title={module.title}
                       value={module.value}
                       activeCount={module.activeCount}
                     />
-                  ))
-                ) : (
-                  <p className="text5 text-gray sm:col-span-2 xl:col-span-3">
-                    No modules activated for this organization yet.
-                  </p>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <FeatureEmptyState
+                  surface={false}
+                  icon="mdi:puzzle-outline"
+                  title="No modules activated"
+                  description="This organization has no EHS modules turned on, so most of the product is hidden from its users. CodeSwift staff activate modules from the client account."
+                />
+              )}
             </DetailCard>
 
-            <RecentActivityCard items={activityItems} />
+            <RecentActivityCard
+              items={activityItems}
+              emptyMessage="Nothing has happened on this organization yet. User invites, access changes, and site edits show up here."
+            />
           </div>
         </>
       ) : null}

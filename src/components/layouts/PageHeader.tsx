@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { GLASS_SURFACE } from "../ui/GlassCard";
 import { BreadCrumb, type BreadCrumbItem } from "../ui/BreadCrumb";
 
 export type PageHeaderProps = {
@@ -17,18 +18,20 @@ export function PageHeader({
   className = "",
 }: Readonly<PageHeaderProps>) {
   return (
+    // The same frosted pane every card on the page uses. It was a solid
+    // `bg-ehs-surface` panel, which made the header the one opaque plate on a
+    // page of glass — it read as a different material sitting on top of the
+    // design rather than as part of it.
     <header
-      className={`flex flex-col gap-4 rounded-2xl border border-darkest/8 bg-white px-6 py-5 shadow-lg sm:flex-row sm:items-center sm:justify-between ${className}`.trim()}
+      className={`${GLASS_SURFACE} animate-card-rise flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between ${className}`.trim()}
     >
-      <div className="min-w-0">
+      <div className="flex min-w-0 flex-col gap-1">
         {breadcrumbs && breadcrumbs.length > 0 ? (
-          <BreadCrumb items={breadcrumbs} className="mb-2" />
+          <BreadCrumb items={breadcrumbs} className="mb-1" />
         ) : null}
-        <h1 className="text1 text-darkest">
-          {title}
-        </h1>
+        <h1 className="text1 text-ehs-darker">{title}</h1>
         {description ? (
-          <p className="mt-1 text5 text-gray">{description}</p>
+          <p className="text4 text-ehs-muted-text">{description}</p>
         ) : null}
       </div>
 

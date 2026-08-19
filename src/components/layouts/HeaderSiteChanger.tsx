@@ -129,13 +129,13 @@ export function HeaderSiteChanger() {
         aria-label={`Switch site for ${companyLabel}. Current site: ${currentSite.name}`}
         onClick={() => setOpen((current) => !current)}
         disabled={switching}
-        className="inline-flex h-11 max-w-56 items-center gap-2 rounded-xl border border-darkest/10 bg-white px-3.5 text5 text-darkest shadow-lg outline-none transition-colors hover:border-darkest/16 focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:opacity-60"
+        className="text4 inline-flex h-11 max-w-56 cursor-pointer items-center gap-2 rounded-xl border border-ehs-border bg-ehs-surface px-3.5 text-ehs-darker shadow-(--ehs-shadow-card) outline-none transition-colors hover:border-ehs-border-strong focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/30 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Icon
           icon="lucide:map-pin"
           width={18}
           height={18}
-          className="shrink-0 text-darkest/55"
+          className="shrink-0 text-ehs-muted-text"
           aria-hidden
         />
         <span className="min-w-0 truncate whitespace-nowrap">
@@ -145,7 +145,7 @@ export function HeaderSiteChanger() {
           icon="mdi:chevron-down"
           width={18}
           height={18}
-          className="shrink-0 text-darkest/40"
+          className="shrink-0 text-ehs-muted-text"
           aria-hidden
         />
       </button>
@@ -155,7 +155,7 @@ export function HeaderSiteChanger() {
           id={menuId}
           role="menu"
           aria-label={`Sites for ${companyLabel}`}
-          className="absolute top-[calc(100%+0.375rem)] right-0 z-30 min-w-64 max-w-80 overflow-hidden rounded-xl border border-darkest/10 bg-white py-1 shadow-xl"
+          className="absolute top-[calc(100%+0.375rem)] right-0 z-30 min-w-64 max-w-80 overflow-hidden rounded-xl border border-ehs-border bg-ehs-surface py-1 shadow-(--ehs-shadow-popover)"
         >
           {sites.map((site) => {
             const isSelected = site.id === orgSite.site;
@@ -165,28 +165,28 @@ export function HeaderSiteChanger() {
                   type="button"
                   role="menuitem"
                   onClick={() => void handleSelect(site.id)}
-                  className={`flex w-full items-start justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-lightgray ${
-                    isSelected ? "bg-blue-normal/8" : ""
+                  className={`flex w-full cursor-pointer items-start justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-ehs-light-bg ${
+                    isSelected ? "bg-ehs-light-blue" : ""
                   }`}
                 >
                   <div className="min-w-0">
                     <p
-                      className={`truncate text5 ${
+                      className={`text4 truncate ${
                         isSelected
-                          ? "font-semibold text-blue-normal"
-                          : "text-darkest"
+                          ? "font-semibold text-ehs-normal-blue"
+                          : "text-ehs-darker"
                       }`}
                     >
                       {site.name}
                     </p>
-                    <p className="truncate text7 text-gray">{site.type}</p>
+                    <p className="text8 truncate text-ehs-muted-text">{site.type}</p>
                   </div>
                   {isSelected ? (
                     <Icon
                       icon="mdi:check"
                       width={18}
                       height={18}
-                      className="mt-0.5 shrink-0 text-blue-normal"
+                      className="mt-0.5 shrink-0 text-ehs-normal-blue"
                       aria-hidden
                     />
                   ) : null}

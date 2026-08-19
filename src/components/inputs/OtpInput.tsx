@@ -50,13 +50,13 @@ export function OtpInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
+      <p id={`${groupId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${groupId}-helper`} className="text6 text-gray">
+      <p id={`${groupId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -135,7 +135,7 @@ export function OtpInput({
       disabled={disabled}
     >
       {label ? (
-        <legend className="mb-0.5 text5 font-semibold text-darkest">
+        <legend className="mb-0.5 text7 text-darkest">
           {label}
         </legend>
       ) : null}
@@ -162,10 +162,10 @@ export function OtpInput({
             onChange={(event) => handleChange(index, event)}
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPaste={handlePaste}
-            className={`aspect-square h-auto w-full min-w-0 rounded-[10px] border bg-white text-center text3 text-darkest shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+            className={`aspect-square h-auto w-full min-w-0 rounded-2.5 border bg-ehs-surface/55 text-center text3 text-ehs-darker backdrop-blur-1.25 outline-none transition aria-invalid:border-ehs-red aria-invalid:focus:border-ehs-red aria-invalid:focus:ring-ehs-red/15 disabled:cursor-not-allowed disabled:opacity-60 ${
               error
-                ? "border-red focus:border-red focus-visible:ring-red/30"
-                : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
+                ? "border-ehs-red focus:border-ehs-red focus:ring-0.75 focus:ring-ehs-red/15"
+                : "border-ehs-border-ink/8 hover:border-ehs-border-ink/18 hover:bg-ehs-surface/70 focus:border-ehs-normal-blue focus:ring-0.75 focus:ring-ehs-normal-blue/15"
             }`}
           />
         ))}

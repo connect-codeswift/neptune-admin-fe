@@ -30,7 +30,7 @@ function CrumbLink({
     <button
       type="button"
       onClick={handleClick}
-      className="cursor-pointer text-gray transition-colors hover:text-darkest"
+      className="text-ehs-muted-text hover:text-ehs-darker cursor-pointer transition-colors"
     >
       {children}
     </button>
@@ -46,7 +46,7 @@ export function BreadCrumb({
 
   return (
     <nav aria-label={label} className={className}>
-      <ol className="flex flex-wrap items-center gap-1.5 text5 text-gray">
+      <ol className="text4 text-ehs-gray flex flex-wrap items-center gap-1.5">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const key = `${item.label}-${item.href ?? "current"}`;
@@ -54,14 +54,14 @@ export function BreadCrumb({
           return (
             <li key={key} className="inline-flex items-center gap-1.5">
               {index > 0 ? (
-                <span aria-hidden className="text-gray/70">
+                <span aria-hidden className="text-ehs-muted-text/70">
                   &gt;
                 </span>
               ) : null}
               {isLast || !item.href ? (
                 <span
                   aria-current={isLast ? "page" : undefined}
-                  className={isLast ? "text-gray" : undefined}
+                  className={isLast ? "text-ehs-darker font-semibold" : undefined}
                 >
                   {item.label}
                 </span>

@@ -65,6 +65,11 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/ppe-catalog",
     icon: "lucide:hard-hat",
   },
+  {
+    label: "Settings",
+    href: "/settings/profile",
+    icon: "mdi:cog-outline",
+  },
 ];
 
 export function prefixNavItems(

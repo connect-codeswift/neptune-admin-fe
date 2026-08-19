@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { NumberInput } from "@/components/inputs";
 import { Button, TextButton } from "@/components/ui";
 import type { KpiMetricDefinition } from "./kpi-targets-catalog";
@@ -35,6 +35,8 @@ export function KpiTargetRow(props: Readonly<KpiTargetRowProps>) {
     onClear,
   } = props;
 
+  const inputId = useId();
+  const hintId = useId();
   const [draft, setDraft] = useState(() => toDraft(savedValue));
   const [syncedValue, setSyncedValue] = useState(savedValue);
 
@@ -68,21 +70,33 @@ export function KpiTargetRow(props: Readonly<KpiTargetRowProps>) {
     onSave(definition.metric, parsed);
   }
 
-  const describedBy = `kpi-${definition.metric}-hint`;
+  // The metric's own explanation plus whichever message NumberInput is showing
+  // under the field. Written as an if/else chain rather than nested ternaries
+  // (S3358), and it has to name the same ids NumberInput derives from `inputId`.
+  let describedBy = hintId;
+  if (error) {
+    describedBy = `${hintId} ${inputId}-error`;
+  } else if (definition.unit) {
+    describedBy = `${hintId} ${inputId}-helper`;
+  }
 
   return (
-    <div className="border-muted/60 flex flex-col gap-3 border-b py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-6">
+    <div className="flex flex-col gap-3 border-b border-ehs-border-ink/8 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
       <div className="min-w-0 flex-1">
-        <p className="text6 text-darkest font-medium">{definition.label}</p>
-        <p id={describedBy} className="text8 text-gray mt-0.5">
-          {betterLabel} · {definition.unit}
+        {/* A real `<label>`, so the metric name is the field's name and clicking
+            it puts the cursor in the box. */}
+        <label htmlFor={inputId} className="text4 text-ehs-darker">
+          {definition.label}
+        </label>
+        <p id={hintId} className="mt-0.5 text8 text-ehs-muted-text">
+          {betterLabel}
           {definition.hint ? ` · ${definition.hint}` : ""}
         </p>
       </div>
 
-      <div className="flex shrink-0 items-start gap-2">
+      <div className="flex shrink-0 flex-wrap items-start gap-2">
         <NumberInput
-          aria-label={`${definition.label} target`}
+          id={inputId}
           aria-describedby={describedBy}
           value={draft}
           min={0}
@@ -90,21 +104,32 @@ export function KpiTargetRow(props: Readonly<KpiTargetRowProps>) {
           placeholder="No target"
           disabled={readOnly}
           error={error}
+          // The unit sits under the field rather than only in the hint line, so
+          // "12" is never ambiguous between days, counts and percentages.
+          helperText={definition.unit}
           containerClassName="w-36"
           onChange={(event) => {
             setDraft(event.target.value);
           }}
         />
 
-        {canSave ? (
-          <Button size="sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving…" : "Save"}
-          </Button>
-        ) : null}
+        {/* Save is always here and goes live when the value changes. It used to
+            appear only once the field was dirty, so the row's controls moved
+            under the cursor as you typed and there was nothing to aim at. */}
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={!canSave}
+          loading={isSaving}
+          loadingText="Saving…"
+        >
+          Save
+        </Button>
 
-        {!readOnly && savedId != null && !isDirty ? (
+        {!readOnly && savedId != null ? (
           <TextButton
             size="sm"
+            className="h-9"
             onClick={() => {
               onClear(savedId);
             }}

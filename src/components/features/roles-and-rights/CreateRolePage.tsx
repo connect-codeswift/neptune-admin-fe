@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
+import { FeatureErrorCard } from "@/components/features/shared";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { TextAreaInput, TextInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
@@ -34,6 +36,7 @@ export function CreateRolePage() {
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<
     number[] | null
   >(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   // `isPending` (not `isLoading`) so the form stays disabled while the query is
   // still gated on the tenant scope resolving.
@@ -42,6 +45,7 @@ export function CreateRolePage() {
     isPending: permissionsLoading,
     isError: permissionsError,
     error: permissionsLoadError,
+    refetch: refetchPermissions,
   } = useAllPermissions();
   const { data: existingRoles = [] } = useRolesWithPermissions();
   const createRoleMutation = useCreateRoleWithPermissions();
@@ -80,15 +84,34 @@ export function CreateRolePage() {
     setSelectedPermissionIds(role.permissionIds);
   };
 
-  const handleCreate = async () => {
-    const trimmedName = roleName.trim();
-    if (!trimmedName) {
-      toast.error("Role name is required.");
-      return;
-    }
+  const trimmedName = roleName.trim();
+  const duplicateName = existingRoles.some(
+    (entry) => entry.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+  );
 
-    if (resolvedSelectedIds.length === 0) {
-      toast.error("Select at least one permission.");
+  // Derived during render and shown under the field, rather than fired at the
+  // corner of the screen as a toast after the admin has already pressed Create.
+  let nameError: string | undefined;
+  if (showErrors && !trimmedName) {
+    nameError = "Give the role a name — it is what appears in the user’s profile.";
+  } else if (duplicateName) {
+    nameError = "A role with this name already exists in this organization.";
+  }
+
+  let rightsError: string | undefined;
+  if (showErrors && resolvedSelectedIds.length === 0) {
+    rightsError =
+      "Grant at least one right, otherwise anyone holding this role can see nothing.";
+  }
+
+  const isDirty =
+    Boolean(roleName) ||
+    Boolean(description) ||
+    selectedPermissionIds !== null;
+
+  const handleCreate = async () => {
+    if (!trimmedName || duplicateName || resolvedSelectedIds.length === 0) {
+      setShowErrors(true);
       return;
     }
 
@@ -108,7 +131,7 @@ export function CreateRolePage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-4">
+    <div className="flex min-w-0 flex-col gap-6 pb-4">
       <PageHeader
         title="Create New Role"
         description="Define a custom role with tailored rights"
@@ -126,21 +149,27 @@ export function CreateRolePage() {
               size="sm"
               leftIcon="lucide:shield-plus"
               onClick={() => void handleCreate()}
+              loading={createRoleMutation.isPending}
+              loadingText="Creating…"
               disabled={
                 createRoleMutation.isPending ||
                 permissionsLoading ||
-                permissionsError
+                permissionsError ||
+                !isDirty
               }
             >
-              {createRoleMutation.isPending ? "Creating…" : "Create Role"}
+              Create Role
             </Button>
           </>
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="flex flex-col gap-6">
-          <DetailCard title="Role Information">
+      <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <DetailCard
+            title="Role Information"
+            description="What this role is called and who it is for."
+          >
             <div className="flex flex-col gap-4">
               <TextInput
                 label="Role Name"
@@ -148,6 +177,8 @@ export function CreateRolePage() {
                 required
                 value={roleName}
                 onChange={(event) => setRoleName(event.target.value)}
+                error={nameError}
+                helperText="Shown wherever a user’s role appears. Roles apply company-wide."
               />
               <TextAreaInput
                 label="Description"
@@ -155,28 +186,53 @@ export function CreateRolePage() {
                 rows={4}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
+                helperText="Optional, but it is the only hint the next admin gets about why this role exists."
               />
             </div>
           </DetailCard>
 
           <DetailCard
             title="Rights"
+            description="Everything a holder of this role may see and do."
             action={
-              <span className="text5 text-gray">
+              <span className="text7 text-gray tabular-nums">
                 {resolvedSelectedIds.length} granted
               </span>
             }
           >
+            {rightsError ? (
+              <p className="mb-3 text8 text-ehs-red" role="alert">
+                {rightsError}
+              </p>
+            ) : null}
+
             {permissionsLoading ? (
-              <p className="text5 text-gray">Loading permissions…</p>
+              <div
+                role="status"
+                aria-busy="true"
+                aria-label="Loading permissions…"
+                className="flex flex-col gap-3"
+              >
+                <Skeleton className="h-4 w-40 rounded-md bg-ehs-skeleton-strong" />
+                <Skeleton className="h-3.5 w-full rounded-md" />
+                <Skeleton className="h-3.5 w-full rounded-md" />
+                <Skeleton className="h-3.5 w-2/3 rounded-md" />
+              </div>
             ) : null}
 
             {permissionsError ? (
-              <p className="text5 text-red">
-                {permissionsLoadError instanceof Error
-                  ? permissionsLoadError.message
-                  : "Failed to load permissions."}
-              </p>
+              <FeatureErrorCard
+                surface={false}
+                title="Couldn’t load permissions"
+                message={
+                  permissionsLoadError instanceof Error
+                    ? permissionsLoadError.message
+                    : "Failed to load permissions."
+                }
+                onRetry={() => {
+                  void refetchPermissions();
+                }}
+              />
             ) : null}
 
             {!permissionsLoading && !permissionsError ? (
@@ -190,22 +246,22 @@ export function CreateRolePage() {
           </DetailCard>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <DetailCard
             title="Start from Preset"
-            description="Copy rights from a template, then customize"
+            description="Replaces the current selection with a template’s rights, which you can then edit."
           >
             <ul className="flex flex-col gap-2">
               {ROLE_PRESETS.map((preset) => {
                 const active = preset.id === activePresetId;
                 let itemClass =
-                  "flex w-full cursor-pointer items-center justify-between rounded-[10px] border px-3.5 py-3 text-left transition-colors";
+                  "flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] border px-3.5 py-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/40 disabled:cursor-not-allowed disabled:opacity-50";
                 if (active) {
                   itemClass +=
                     " border-blue-normal bg-blue-normal/8 text-blue-normal";
                 } else {
                   itemClass +=
-                    " border-darkest/10 bg-white text-darkest hover:border-darkest/20 hover:bg-darkest/3";
+                    " border-ehs-border-ink/10 bg-ehs-surface text-darkest hover:border-ehs-border-ink/20 hover:bg-ehs-border-ink/3";
                 }
 
                 return (
@@ -214,10 +270,13 @@ export function CreateRolePage() {
                       type="button"
                       className={itemClass}
                       onClick={() => handlePresetSelect(preset.id)}
+                      aria-pressed={active}
                       disabled={permissionsLoading || permissionsError}
                     >
-                      <span className="text5 font-semibold">{preset.name}</span>
-                      <span className="text6 text-gray">
+                      <span className="min-w-0 truncate text4 font-semibold">
+                        {preset.name}
+                      </span>
+                      <span className="shrink-0 text7 text-gray">
                         {getPresetRightCount(preset.id)} rights
                       </span>
                     </button>
@@ -230,20 +289,20 @@ export function CreateRolePage() {
           {existingRoles.length > 0 ? (
             <DetailCard
               title="Copy from Role"
-              description="Mirror permissions from an existing role"
+              description="Replaces the current selection with an existing role’s rights. The two roles do not stay linked afterwards."
             >
               <ul className="flex flex-col gap-2">
                 {existingRoles.map((role) => (
                   <li key={role.id}>
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between rounded-[10px] border border-darkest/10 bg-white px-3.5 py-3 text-left transition-colors hover:border-darkest/20 hover:bg-darkest/3"
+                      className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-ehs-border-ink/10 bg-ehs-surface px-3.5 py-3 text-left outline-none transition-colors hover:border-ehs-border-ink/20 hover:bg-ehs-border-ink/3 focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/40"
                       onClick={() => handleCopyFromRole(role.id)}
                     >
-                      <span className="text5 font-semibold text-darkest">
+                      <span className="min-w-0 truncate text4 font-semibold text-darkest">
                         {role.name}
                       </span>
-                      <span className="text6 text-gray">
+                      <span className="shrink-0 text7 text-gray">
                         {role.permissionIds.length} rights
                       </span>
                     </button>
@@ -254,7 +313,9 @@ export function CreateRolePage() {
           ) : null}
 
           <DetailCard title="Summary">
-            <p className="text2 text-darkest">
+            {/* Live, because it is the running total of everything ticked in
+                the matrix on the left and it changes under the reader. */}
+            <p className="text2 text-darkest" aria-live="polite">
               {resolvedSelectedIds.length}{" "}
               <span className="text4 font-normal text-gray">rights selected</span>
             </p>
@@ -264,14 +325,16 @@ export function CreateRolePage() {
                 .map((entry) => (
                   <div
                     key={entry.group}
-                    className="flex items-center justify-between gap-3 rounded-lg bg-darkest/6 px-2.5 py-1.5 text6 text-darkest"
+                    className="flex items-center justify-between gap-3 rounded-lg bg-ehs-border-ink/6 px-2.5 py-1.5 text8 text-darkest"
                   >
-                    <span className="truncate">{entry.group}</span>
-                    <span className="shrink-0 font-semibold">{entry.count}</span>
+                    <span className="min-w-0 truncate">{entry.group}</span>
+                    <span className="shrink-0 font-semibold tabular-nums">
+                      {entry.count}
+                    </span>
                   </div>
                 ))}
               {groupSummary.every((entry) => entry.count === 0) ? (
-                <p className="text6 text-gray">No rights selected yet.</p>
+                <p className="text8 text-gray">No rights selected yet.</p>
               ) : null}
             </div>
           </DetailCard>

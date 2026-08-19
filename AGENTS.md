@@ -151,17 +151,123 @@ wired yet — check whether a real service/hook exists before extending them.
 `"use client"` only where actually needed. Full component contract:
 [.cursor/rules/ui-components.mdc](.cursor/rules/ui-components.mdc).
 
-## Styling
+## Styling — the EHSS design language
 
-Tailwind v4, tokens declared in `@theme` in [src/app/globals.css](src/app/globals.css) — brand
-`blue-normal` `#0891a6`, plus `darkest`, `gray`, `lightgray`, `muted`, `green`/`red`/`yellow`.
-Typography uses the `.text1`–`.text9` base-layer classes, not ad-hoc font sizes. Glass surfaces:
-`bg-white/62`, `rounded-[20px]`, soft dual shadow.
+This app shares its design system with `connect-codeswift/neptune-ehss-fe`. The token block in
+[src/app/globals.css](src/app/globals.css) is **ported from that repo and kept in step with it** —
+when the two disagree, the EHSS repo is the source of truth. Tailwind v4, no `tailwind.config.js`.
+
+**Every colour is a token, and every token is defined twice** — once under `:root` and once under
+`[data-theme="dark"]`. A screen written against tokens is already dark-ready; one written against
+`#0b1320` or `bg-white` is not. That is the whole contract.
+
+Tokens are `ehs-` prefixed: `ehs-normal-blue` (+ `-hover` / `-active` / `-bg-light`),
+`ehs-light-blue`, `ehs-dark-blue`, `ehs-darker` (primary ink), `ehs-gray`, `ehs-slate`,
+`ehs-muted-text`, `ehs-placeholder`, `ehs-green` / `-red` / `-yellow` / `-orange` / `-purple` /
+`-blue` / `-navy`, `ehs-border`, `ehs-border-strong`, `ehs-border-ink`, `ehs-hairline`,
+`ehs-light-bg`, and the surface roles below. Grep `globals.css` before hardcoding a hex.
+
+### Surfaces are roles, not colours
+
+- `ehs-surface` — card and panel fill. `bg-ehs-surface/50` is the frosted variant.
+- `ehs-surface-raised` — one step off the card: hovered rows, sunken wells, disabled fields.
+- `ehs-surface-inverse` — deliberately opposite the page (dark chips on light, light on dark).
+- `ehs-canvas-dark` — dark in **both** themes. For things dark by design, not by theme: the
+  sign-in brand panel, media viewers. Inverting those would put a light panel behind white
+  artwork.
+- `ehs-on-accent` — ink on a *filled* accent. Not the same as `ehs-light-text` (white in both
+  themes): accent fills lighten in dark, where white on them fails contrast outright.
+- `ehs-border-ink` — opaque border ink, dark in light theme and **light in dark**, so
+  `border-ehs-border-ink/8` stays a hairline in both.
+
+### Legacy colour names
+
+The pre-port palette (`darkest`, `gray`, `blue-normal`, `bg`, `lightgray`, `border`, `muted`,
+`green`/`red`/`yellow`, …) still resolves: the names are kept at the bottom of `@theme inline` as
+**aliases onto the themed roles**, so the ~200 components written against them flip for free. They
+are aliases, not a second palette — every value is a `var()` to a token above.
+
+**New code uses the `ehs-` names directly.** Do not add new call sites for the legacy names, and do
+not mass-rename existing ones — that diff is pure churn and every edit risks changing a screen.
+
+One name could not be aliased: `darkest` as a *fill* (`bg-darkest`) rather than as ink. Ink inverts
+in dark and the sign-in panel must not, so those call sites use `bg-ehs-canvas-dark`.
+
+### Type, surfaces, shadows
+
+Typography is the `text1`–`text9` utilities (defined in `globals.css`, sizes match the EHSS repo),
+never ad-hoc font sizes. They carry **no colour** — always pair with a token: `text1 text-ehs-darker`,
+`text4 text-ehs-gray`, `text8 text-ehs-muted-text`.
+
+| Class   | Size / weight            | Role                          |
+| ------- | ------------------------ | ----------------------------- |
+| `text1` | 20→24px bold             | page title                    |
+| `text2` | 30px normal, tabular     | KPI / hero figure             |
+| `text3` | 18px bold                | card / section title          |
+| `text4` | 14px normal              | **primary body**, table row   |
+| `text5` | 14px bold                | emphasis, badge label         |
+| `text6` | 12px bold **UPPERCASE**  | eyebrow, table column header  |
+| `text7` | 12px semibold, tabular   | dense ID, numeric meta        |
+| `text8` | 12px normal              | caption, helper text          |
+| `text9` | 14px semibold UPPERCASE  | meta field label              |
+
+**Body text is `text4`, captions are `text8`, and both are normal weight.** In the EHSS repo those
+two carry about 70% of all type. If a screen has more bold lines than plain ones, its weights are
+inverted — that is a bug, not a style.
+
+> **Trap, and the reason this table exists.** This scale replaced an older one that used the *same
+> class names for different roles*: `text5` was `font-medium` and served as the base body text, and
+> `text6` was `font-medium` small body. Under the current scale both are bold — and `text6` is also
+> uppercased. Adopting the new definitions without remapping the call sites turned every paragraph
+> in the app bold, across ~250 sites, because nothing errored: the classes still existed and still
+> applied, they just meant something else.
+>
+> Those call sites have been remapped (old `text5` body → `text4`, old `text6` body → `text8`). If
+> you find a stray one, the tell is `text6` on text that is not meant to be shouted in capitals.
+> Never port a type scale by swapping its definitions — the names are not the contract, the roles
+> are.
+[src/components/Text.tsx](src/components/Text.tsx) is the typography primitive; it takes a required
+`as` and a single string child.
+
+Cards are [`GlassCard`](src/components/ui/GlassCard.tsx) (or its exported `GLASS_SURFACE` constant),
+with [`CardHeading`](src/components/ui/CardHeading.tsx) for the title/subtitle row. **Do not retype
+the glass recipe** — it used to be copy-pasted across a dozen files and could not be changed in one
+place.
+
+Elevation is a token referenced by class: `shadow-(--ehs-shadow-card)`, `-card-hover`, `-panel`,
+`-popover`, `-modal`, `-tooltip`, `-button-primary`, `-button-danger`. Dark mode drops the coloured
+button glow entirely rather than recolouring it, which is why the whole shadow list is the token
+and not just its colour.
+
+Numeric radius tokens (`rounded-0.5` / `-0.75` / `-2.5` / `-3` / `-3.5` / `-4` / `-5`) exist because
+Tailwind's named scale stops short — keep them defined or corners render square.
 
 Prefer scale tokens over arbitrary px when equivalent (`rounded-[12px]`→`rounded-xl`,
-`w-[236px]`→`w-59`, `size-[30px]`→`size-7.5`); keep true one-offs like `rounded-[20px]`. Icons
-via Iconify; pixel-exact logos go in `public/`. Full list:
-[.cursor/rules/tailwind-tokens.mdc](.cursor/rules/tailwind-tokens.mdc).
+`w-[236px]`→`w-59`, `size-[30px]`→`size-7.5`). Icons via Iconify (`mdi:*`); pixel-exact logos go in
+`public/`. Full list: [.cursor/rules/tailwind-tokens.mdc](.cursor/rules/tailwind-tokens.mdc).
+
+### Dark mode
+
+`<html data-theme>` is always concrete — `"system"` is resolved to `light`/`dark` by the inline
+script in [src/app/layout.tsx](src/app/layout.tsx) **before first paint**, so there is no flash.
+Nothing is behind `prefers-color-scheme` in CSS, because then an explicit choice and the OS setting
+could disagree. The preference lives in `localStorage["neptune-theme"]`, per device.
+
+[src/lib/theme.ts](src/lib/theme.ts) owns the store (modelled with `useSyncExternalStore`, so
+reading localStorage cannot cause a hydration mismatch);
+[src/providers/ThemeProvider.tsx](src/providers/ThemeProvider.tsx) exposes
+`{ preference, resolvedTheme, setPreference, isReady }`. **Anything that renders differently per
+theme must wait for `isReady`** or it renders the default on the server and the real value on the
+client.
+
+`@custom-variant dark` points Tailwind's `dark:` variant at the attribute, not the OS. Use `dark:`
+only where a token cannot express the difference — an image swap, a gradient direction, a blend
+mode. **Colour belongs in the tokens.**
+
+Charts are the one exception to "no literal colours": Recharts writes `fill=` / `stroke=` as SVG
+presentation attributes, where `var()` is invalid and the browser drops it. Chart marks keep literal
+hex with a comment naming the token they match. Chart containers, tooltips and legends are normal
+DOM and do get tokens.
 
 ## Sonar / a11y rules that must not regress
 

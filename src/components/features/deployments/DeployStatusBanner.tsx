@@ -22,9 +22,16 @@ type Banner = {
 };
 
 const BANNER_CLASS: Record<BannerTone, string> = {
-  ok: "border-green/25 bg-green/8 text-green",
-  warn: "border-yellow/35 bg-yellow/12 text-yellow",
-  danger: "border-red/25 bg-red/8 text-red",
+  ok: "border-ehs-green/25 bg-ehs-green/8 text-ehs-green",
+  warn: "border-ehs-yellow/35 bg-ehs-yellow/12 text-ehs-yellow",
+  danger: "border-ehs-red/25 bg-ehs-red/8 text-ehs-red",
+};
+
+/** The icon plate. Inherits the tone ink from the banner; only the fill differs. */
+const BANNER_ICON_CLASS: Record<BannerTone, string> = {
+  ok: "bg-ehs-green/14",
+  warn: "bg-ehs-yellow/16",
+  danger: "bg-ehs-red/14",
 };
 
 function joinAppNames(names: string[]): string {
@@ -83,14 +90,21 @@ export function DeployStatusBanner({ status }: Readonly<DeployStatusBannerProps>
   const banner = getBanner(status);
 
   return (
+    // The hero of the page: the one line that answers "is anything on fire".
+    // It reads at arm's length now — plated icon, section-title type — instead
+    // of as one more tinted strip among the notices around it.
     <div
-      className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${BANNER_CLASS[banner.tone]}`}
+      className={`flex items-start gap-3.5 rounded-4 border px-4.5 py-4 ${BANNER_CLASS[banner.tone]}`}
       role={banner.tone === "ok" ? undefined : "alert"}
     >
-      <Icon icon={banner.icon} width={18} height={18} className="mt-0.5 shrink-0" aria-hidden />
-      <div className="min-w-0">
-        <p className="text4">{banner.title}</p>
-        <p className="mt-1 text6 opacity-85">{banner.detail}</p>
+      <span
+        className={`flex size-11 shrink-0 items-center justify-center rounded-3 ${BANNER_ICON_CLASS[banner.tone]}`}
+      >
+        <Icon icon={banner.icon} width={22} height={22} aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1 pt-0.5">
+        <h2 className="text3">{banner.title}</h2>
+        <p className="mt-1 text8 opacity-85">{banner.detail}</p>
       </div>
     </div>
   );
@@ -135,20 +149,20 @@ export function DeployInProgressStrip({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-blue-normal/25 bg-blue-normal/8">
+    <div className="border-ehs-normal-blue/25 bg-ehs-normal-blue/8 rounded-3 overflow-hidden border">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
         <span className="relative flex size-2 shrink-0" aria-hidden>
-          <span className="absolute inline-flex size-full rounded-full bg-blue-normal/70 motion-safe:animate-ping" />
-          <span className="relative inline-flex size-2 rounded-full bg-blue-normal" />
+          <span className="bg-ehs-normal-blue/70 absolute inline-flex size-full rounded-full motion-safe:animate-ping" />
+          <span className="bg-ehs-normal-blue relative inline-flex size-2 rounded-full" />
         </span>
-        <p className="text4 text-blue-deep">Deploy running</p>
-        <p className="text6 text-gray">
+        <p className="text-ehs-dark-blue text5">Deploy running</p>
+        <p className="text-ehs-muted-text text8">
           Started {formatInstant(startedAt)}
           {elapsed === null ? null : ` · ${formatElapsed(elapsed)} elapsed`}
         </p>
       </div>
-      <div className="h-0.5 w-full overflow-hidden bg-blue-normal/15">
-        <div className="h-full w-full rounded-full bg-blue-normal motion-safe:w-1/3 motion-safe:animate-[deploy-sweep_1.8s_ease-in-out_infinite]" />
+      <div className="bg-ehs-normal-blue/15 h-0.5 w-full overflow-hidden">
+        <div className="bg-ehs-normal-blue h-full w-full rounded-full motion-safe:w-1/3 motion-safe:animate-[deploy-sweep_1.8s_ease-in-out_infinite]" />
       </div>
     </div>
   );

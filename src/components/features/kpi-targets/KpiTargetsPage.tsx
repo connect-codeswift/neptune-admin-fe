@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+import {
+  FeatureEmptyState,
+  FeatureErrorCard,
+  FeatureLoadingGrid,
+} from "@/components/features/shared";
 import { PageHeader } from "@/components/layouts";
+import { GLASS_SURFACE } from "@/components/ui/GlassCard";
 import type { KpiTargetModule } from "@/dtos/req/kpi-targets.req";
 import type { KpiTargetResponse } from "@/dtos/res/kpi-targets.res";
 import {
@@ -102,21 +108,34 @@ export function KpiTargetsPage() {
   }
 
   function renderModule(definition: KpiModuleDefinition) {
+    const setCount = definition.metrics.filter((metric) =>
+      targetsByKey.has(targetKey(definition.module, metric.metric)),
+    ).length;
+
     return (
-      <section
-        key={definition.module}
-        className="rounded-[20px] bg-white/62 p-5 shadow-[0_1px_2px_rgba(11,19,32,0.04),0_12px_32px_-16px_rgba(11,19,32,0.16)]"
-      >
-        <div className="flex items-start gap-3">
-          <span className="bg-blue-lightest text-blue-normal flex size-9 shrink-0 items-center justify-center rounded-xl">
-            <Icon icon={definition.icon} className="size-4.5" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text5 text-darkest font-semibold">
-              {definition.label}
-            </h2>
-            <p className="text8 text-gray mt-0.5">{definition.description}</p>
+      <section key={definition.module} className={`${GLASS_SURFACE} p-5`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-ehs-light-blue text-ehs-normal-blue">
+              <Icon
+                icon={definition.icon}
+                className="size-4.5"
+                aria-hidden="true"
+              />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text3 text-ehs-darker">{definition.label}</h2>
+              <p className="mt-0.5 text8 text-ehs-muted-text">
+                {definition.description}
+              </p>
+            </div>
           </div>
+
+          {/* How much of this module is configured, so a long list of empty
+              fields is not the only way to find out. */}
+          <p className="text8 text-ehs-muted-text tabular-nums">
+            {setCount} of {definition.metrics.length} set
+          </p>
         </div>
 
         <div className="mt-2">
@@ -147,18 +166,39 @@ export function KpiTargetsPage() {
     );
   }
 
-  let body: React.ReactNode;
+  let body: ReactNode;
   if (targetsQuery.isPending) {
+    // Two module-sized panes, not a paragraph of grey bars: the page is two
+    // tall cards and the placeholder should hold that shape.
     body = (
-      <p className="text7 text-gray py-8 text-center">Loading targets…</p>
+      <FeatureLoadingGrid
+        count={2}
+        label="Loading KPI targets…"
+        className="flex flex-col gap-5"
+        cardClassName="min-h-96"
+      />
     );
   } else if (targetsQuery.isError) {
     body = (
-      <p role="alert" className="text7 text-red py-8 text-center">
-        {targetsQuery.error instanceof Error
-          ? targetsQuery.error.message
-          : "Failed to load KPI targets."}
-      </p>
+      <FeatureErrorCard
+        title="Couldn’t load KPI targets"
+        message={
+          targetsQuery.error instanceof Error
+            ? targetsQuery.error.message
+            : "Failed to load KPI targets."
+        }
+        onRetry={() => {
+          void targetsQuery.refetch();
+        }}
+      />
+    );
+  } else if (visibleModules.length === 0) {
+    body = (
+      <FeatureEmptyState
+        icon="lucide:target"
+        title="No modules to set targets for"
+        description="Targets only exist for modules this organization has switched on. Incident and CAPA are both inactive, so there is nothing to configure here yet."
+      />
     );
   } else {
     body = (
@@ -177,22 +217,44 @@ export function KpiTargetsPage() {
         ]}
       />
 
-      <p className="text8 text-gray max-w-3xl">
-        Targets apply to the currently selected site. Leave a field empty for no target
-        — <strong>0 is a real target</strong>, not a way to clear one. Use{" "}
-        <strong>Clear</strong> to remove a target so the tile reports none instead of
-        zero.
-      </p>
+      {/* The two rules that are not guessable from the form: targets are
+          per-site, and an empty field is not the same as zero. They were loose
+          paragraphs on the page ground; in a panel they read as instructions
+          rather than as stray text. */}
+      <div className="flex items-start gap-2.5 rounded-xl border border-ehs-normal-blue/15 bg-ehs-normal-blue/5 px-4 py-3">
+        <Icon
+          icon="lucide:info"
+          width={16}
+          height={16}
+          className="mt-0.5 shrink-0 text-ehs-normal-blue"
+          aria-hidden="true"
+        />
+        <p className="text8 text-ehs-slate">
+          Targets apply to the currently selected site. Leave a field empty for
+          no target — <strong className="text-ehs-darker">0 is a real target</strong>,
+          not a way to clear one. Use <strong className="text-ehs-darker">Clear</strong>{" "}
+          to remove a target so the tile reports none instead of zero.
+        </p>
+      </div>
 
       {readOnly ? (
-        <p
+        <div
           role="status"
-          className="text8 text-darkest bg-yellow/15 rounded-xl px-4 py-3"
+          className="flex items-start gap-2.5 rounded-xl border border-ehs-warning-border bg-ehs-warning-surface px-4 py-3"
         >
-          You are signed in as CodeSwift staff, so this page is read-only. Saving needs
-          an organization admin account until the staff-token author gap is fixed on the
-          backend.
-        </p>
+          <Icon
+            icon="lucide:lock"
+            width={16}
+            height={16}
+            className="mt-0.5 shrink-0 text-ehs-warning-ink"
+            aria-hidden="true"
+          />
+          <p className="text8 text-ehs-warning-ink">
+            You are signed in as CodeSwift staff, so this page is read-only.
+            Saving needs an organization admin account until the staff-token
+            author gap is fixed on the backend.
+          </p>
+        </div>
       ) : null}
 
       {body}

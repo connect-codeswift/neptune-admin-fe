@@ -57,9 +57,9 @@ function BadgeButton({
 }: Readonly<BadgeButtonProps>) {
   if (variant === "card") {
     let cardClass =
-      "border-darkest/12 bg-white text-darkest hover:border-darkest/20";
+      "border-ehs-border-ink/8 bg-ehs-surface/55 text-ehs-darker backdrop-blur-1.25 hover:border-ehs-border-ink/18 hover:bg-ehs-surface/70";
     if (selected) {
-      cardClass = "border-blue-normal bg-blue-normal/10 text-blue-normal";
+      cardClass = "border-ehs-normal-blue bg-ehs-normal-blue/10 text-ehs-normal-blue";
     }
 
     return (
@@ -68,7 +68,7 @@ function BadgeButton({
         aria-pressed={selected}
         disabled={disabled}
         onClick={() => onToggle(option.value)}
-        className={`cursor-pointer rounded-[10px] border px-4 py-3.5 text-left text5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:cursor-not-allowed disabled:opacity-50 ${cardClass}`}
+        className={`cursor-pointer rounded-2.5 border px-4 py-3.5 text-left text4 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/20 disabled:cursor-not-allowed disabled:opacity-50 ${cardClass}`}
       >
         {option.label}
       </button>
@@ -76,10 +76,10 @@ function BadgeButton({
   }
 
   let badgeClass =
-    "border-darkest/15 bg-white text-gray hover:border-darkest/25";
+    "border-ehs-border-ink/12 bg-ehs-surface/55 text-ehs-gray backdrop-blur-1.25 hover:border-ehs-border-ink/22";
   if (selected) {
     badgeClass =
-      "border-green/40 bg-green/10 text-darkest hover:border-green/55";
+      "border-ehs-green/40 bg-ehs-green/10 text-ehs-darker hover:border-ehs-green/55";
   }
 
   return (
@@ -92,7 +92,9 @@ function BadgeButton({
     >
       <span
         className={`flex size-4 shrink-0 items-center justify-center rounded-full ${
-          selected ? "bg-green text-white" : "bg-darkest/20 text-white"
+          selected
+            ? "bg-ehs-green text-ehs-on-accent"
+            : "bg-ehs-border-ink/25 text-ehs-surface"
         }`}
         aria-hidden
       >
@@ -114,14 +116,14 @@ function buildFieldMessage(
 ) {
   if (error) {
     return (
-      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
+      <p id={`${groupId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   }
   if (helperText) {
     return (
-      <p id={`${groupId}-helper`} className="text6 text-gray">
+      <p id={`${groupId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -192,10 +194,8 @@ export function ToggleBadges({
       `grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 ${className}`.trim();
   }
 
-  let labelClass = "text4 text-darkest";
-  if (variant === "card") {
-    labelClass = "text5 font-semibold text-darkest";
-  }
+  // Both variants share the quiet field-label treatment used by every other control.
+  const labelClass = "text7 text-darkest";
 
   return (
     <fieldset
@@ -212,7 +212,7 @@ export function ToggleBadges({
               <span className="sr-only">Options</span>
             )}
             {showLegendCount ? (
-              <span className="text5 text-gray">{count}</span>
+              <span className="text7 text-gray">{count}</span>
             ) : null}
           </span>
         </legend>
@@ -234,7 +234,7 @@ export function ToggleBadges({
       </div>
 
       {showFooterCount ? (
-        <p className="text6 text-gray">{footerCountText}</p>
+        <p className="text8 text-gray">{footerCountText}</p>
       ) : null}
     </fieldset>
   );

@@ -46,13 +46,13 @@ export function RadioInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${groupId}-error`} className="text6 text-red" role="alert">
+      <p id={`${groupId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${groupId}-helper`} className="text6 text-gray">
+      <p id={`${groupId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -66,7 +66,7 @@ export function RadioInput({
       disabled={disabled}
     >
       {label ? (
-        <legend className="mb-0.5 text5 font-semibold text-darkest">
+        <legend className="mb-0.5 text7 text-darkest">
           {label}
         </legend>
       ) : null}
@@ -98,11 +98,11 @@ export function RadioInput({
                 checked={isChecked}
                 disabled={isDisabled}
                 onChange={() => onChange?.(option.value)}
-                className={`size-4 shrink-0 cursor-pointer appearance-none rounded-full border border-darkest/20 bg-white outline-none transition-colors checked:border-blue-normal checked:bg-[radial-gradient(circle_at_center,#0891a6_0_38%,transparent_40%)] focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:cursor-not-allowed ${
-                  error ? "border-red" : ""
+                className={`size-4 shrink-0 cursor-pointer appearance-none rounded-full border border-ehs-border-ink/25 bg-ehs-surface outline-none transition-colors checked:border-ehs-normal-blue checked:bg-[radial-gradient(circle_at_center,var(--ehs-normal-blue)_0_38%,transparent_40%)] focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/20 disabled:cursor-not-allowed ${
+                  error ? "border-ehs-red" : ""
                 }`}
               />
-              <span className="text5 text-darkest">
+              <span className="text4 text-darkest">
                 {option.label}
               </span>
             </label>

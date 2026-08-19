@@ -68,3 +68,13 @@ export {
   type TabBarProps,
   type TabBarTab,
 } from "./TabBar";
+
+/* —— Glass design-language surfaces —— */
+export {
+  GlassCard,
+  GLASS_SURFACE,
+  type GlassCardProps,
+} from "./GlassCard";
+export { CardHeading, type CardHeadingProps } from "./CardHeading";
+export { Skeleton, type SkeletonProps } from "./Skeleton";
+export { Toggle, type ToggleProps } from "./Toggle";

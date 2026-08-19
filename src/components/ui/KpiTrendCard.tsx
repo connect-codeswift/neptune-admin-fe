@@ -3,6 +3,27 @@
 import { Icon } from "@iconify/react";
 import { useId } from "react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { useTheme } from "@/providers/ThemeProvider";
+import type { ResolvedTheme } from "@/lib/theme";
+import { GlassCard } from "./GlassCard";
+
+/**
+ * Sparkline ink, as literal hex per theme.
+ *
+ * Recharts writes `stroke` / `stopColor` onto SVG **presentation attributes**,
+ * not CSS properties, and `var()` is not valid there — the browser discards the
+ * attribute and the mark falls back to the SVG default, which is a black fill
+ * and no stroke. Handing it `var(--ehs-green)` therefore did not produce a
+ * green line; it produced an invisible one, which is why these cards rendered
+ * blank.
+ *
+ * So the values are duplicated from `globals.css` and picked with the resolved
+ * theme instead. Keep them in step with `--ehs-green` / `--ehs-red` there.
+ */
+const SPARKLINE_INK: Record<ResolvedTheme, Record<KpiTrendDirection, string>> = {
+  light: { up: "#10b981", down: "#ef4444" },
+  dark: { up: "#34d399", down: "#f87171" },
+};
 
 export type KpiTrendDirection = "up" | "down";
 
@@ -35,8 +56,9 @@ function Sparkline({
   gradientId,
 }: Readonly<{ data: number[]; trend: KpiTrendDirection; gradientId: string }>) {
   const chartData = data.map((value, index) => ({ index, value }));
-  const stroke = trend === "up" ? "#10b981" : "#ef4444";
-  const fillFrom = trend === "up" ? "#10b981" : "#ef4444";
+  const { resolvedTheme } = useTheme();
+  const stroke = SPARKLINE_INK[resolvedTheme][trend];
+  const fillFrom = stroke;
 
   return (
     <div className="h-12 w-24 shrink-0">
@@ -80,23 +102,31 @@ export function KpiTrendCard({
   const isUp = direction === "up";
   const gradientId = `kpi-trend-${reactId}`;
 
-  return (
-    <article
-      className={`flex min-h-34 flex-col justify-between rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-lg backdrop-blur-[10px] ${className}`.trim()}
-    >
-      <div className="flex justify-end">
-        <Sparkline data={data} trend={direction} gradientId={gradientId} />
-      </div>
+  // A sparkline needs at least two points to be a line. Callers that have only
+  // a running total — most of this dashboard, whose summary endpoint returns
+  // scalars rather than a series — were passing a one-element array, and
+  // Recharts drew that as a single floating dot: a mark that looks like data
+  // but says nothing about a trend. Below two points the chart is omitted and
+  // the value gets the room instead.
+  const hasSeries = data.filter((point) => Number.isFinite(point)).length >= 2;
 
-      <div className="mt-1">
-        <p className="text1 text-darkest">
-          {value}
-        </p>
+  return (
+    <GlassCard className={`min-h-34 justify-between ${className}`.trim()}>
+      {hasSeries ? (
+        <div className="flex justify-end">
+          <Sparkline data={data} trend={direction} gradientId={gradientId} />
+        </div>
+      ) : null}
+
+      <div className={hasSeries ? "mt-1" : "mt-auto"}>
+        <p className="text2 text-ehs-darker">{value}</p>
         <div className="mt-2 flex items-center justify-between gap-3">
-          <p className="text6 text-gray">{label}</p>
+          <p className="text6 text-ehs-gray">{label}</p>
           <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text7 ${
-              isUp ? "bg-green/10 text-green" : "bg-red/10 text-red"
+            className={`text7 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 ${
+              isUp
+                ? "bg-ehs-green/[0.14] text-ehs-green"
+                : "bg-ehs-red/[0.14] text-ehs-red"
             }`}
           >
             <Icon
@@ -109,6 +139,6 @@ export function KpiTrendCard({
           </span>
         </div>
       </div>
-    </article>
+    </GlassCard>
   );
 }

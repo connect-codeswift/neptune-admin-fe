@@ -69,7 +69,7 @@ export function DashboardAuthGate({ kind, children }: DashboardAuthGateProps) {
 
   if (allowed !== true) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text5 text-gray">
+      <div className="text4 flex min-h-[40vh] items-center justify-center text-ehs-muted-text">
         Checking session…
       </div>
     );

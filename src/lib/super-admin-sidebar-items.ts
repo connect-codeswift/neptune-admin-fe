@@ -32,6 +32,11 @@ export const SUPER_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/deployments",
     icon: "lucide:rocket",
   },
+  {
+    label: "Settings",
+    href: "/settings/profile",
+    icon: "mdi:cog-outline",
+  },
 ];
 
 export const SUPER_ADMIN_DEPLOYMENTS_HREF = `${SUPER_ADMIN_BASE_PATH}/deployments`;

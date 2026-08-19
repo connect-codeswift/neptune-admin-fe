@@ -8,7 +8,12 @@ import {
   formatRelative,
   getUnresolvedAlerts,
 } from "@/lib/deploy-status";
-import { DeployEmptyState, DeploySha, DeployStatusPill } from "./DeployPills";
+import {
+  DeployEmptyState,
+  DeployPanelLoading,
+  DeploySha,
+  DeployStatusPill,
+} from "./DeployPills";
 
 function AlertCard({
   alert,
@@ -16,9 +21,10 @@ function AlertCard({
 }: Readonly<{ alert: DeployAlertResponse; dimmed: boolean }>) {
   const pill = describeAlertKind(alert.kind);
 
-  let cardClass = "rounded-2xl border border-darkest/8 bg-white p-4";
+  let cardClass =
+    "rounded-3 border border-ehs-border-ink/8 bg-ehs-surface/60 p-3.5";
   if (!dimmed) {
-    cardClass = "rounded-2xl border border-red/20 bg-red/4 p-4";
+    cardClass = "rounded-3 border border-ehs-red/20 bg-ehs-red/4 p-3.5";
   }
 
   return (
@@ -26,9 +32,9 @@ function AlertCard({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <DeployStatusPill tone={pill.tone} label={pill.label} dot />
-          <p className="min-w-0 text5 text-darkest">{alert.summary}</p>
+          <p className="text-ehs-darker min-w-0 text4">{alert.summary}</p>
         </div>
-        <span className="text7 whitespace-nowrap text-[#8892a3]" title={formatInstant(alert.at)}>
+        <span className="text7 whitespace-nowrap text-ehs-muted-text" title={formatInstant(alert.at)}>
           {formatRelative(alert.at)}
         </span>
       </div>
@@ -38,17 +44,17 @@ function AlertCard({
           {alert.details.map((detail) => (
             <li
               key={`${detail.app}-${detail.problem}-${detail.sha ?? "none"}`}
-              className="flex items-center gap-2 rounded-lg bg-darkest/4 px-2.5 py-1.5"
+              className="flex items-center gap-2 rounded-lg bg-ehs-border-ink/4 px-2.5 py-1.5"
             >
-              <span className="text7 font-semibold text-darkest">{detail.app}</span>
-              <span className="text7 text-gray">{detail.problem}</span>
+              <span className="text-ehs-darker text7">{detail.app}</span>
+              <span className="text-ehs-muted-text text7">{detail.problem}</span>
               {detail.sha ? <DeploySha sha={detail.sha} /> : null}
             </li>
           ))}
         </ul>
       ) : null}
 
-      <div className="mt-2.5 flex items-center gap-1.5 text7 text-[#8892a3]">
+      <div className="mt-2.5 flex items-center gap-1.5 text7 text-ehs-muted-text">
         <Icon icon="lucide:send" width={11} height={11} aria-hidden />
         {alert.notified.length > 0 ? (
           <span>Notified via {alert.notified.join(", ")}</span>
@@ -62,6 +68,8 @@ function AlertCard({
 
 export type DeployAlertsPanelProps = {
   alerts: DeployAlertResponse[];
+  /** True while the alerts request is still in flight. */
+  isLoading?: boolean;
 };
 
 /**
@@ -69,7 +77,14 @@ export type DeployAlertsPanelProps = {
  * exactly one `failure` entry however long it stays broken. A short list is the
  * healthy case, and an empty one is good news rather than a loading failure.
  */
-export function DeployAlertsPanel({ alerts }: Readonly<DeployAlertsPanelProps>) {
+export function DeployAlertsPanel({
+  alerts,
+  isLoading = false,
+}: Readonly<DeployAlertsPanelProps>) {
+  if (isLoading) {
+    return <DeployPanelLoading what="deploy alerts" />;
+  }
+
   if (alerts.length === 0) {
     return (
       <DeployEmptyState
@@ -87,18 +102,18 @@ export function DeployAlertsPanel({ alerts }: Readonly<DeployAlertsPanelProps>) 
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <p className="mb-2.5 text8 tracking-[0.66px] text-[#8892a3] uppercase">
+        <h3 className="text-ehs-muted-text mb-2.5 text8 tracking-[0.66px] uppercase">
           Live problems ({live.length})
-        </p>
+        </h3>
         {live.length === 0 ? (
-          <p className="flex items-center gap-2 rounded-2xl border border-green/20 bg-green/6 px-4 py-3 text5 text-green">
+          <p className="border-ehs-green/20 bg-ehs-green/6 text-ehs-green rounded-3 flex items-center gap-2 border px-4 py-3 text4">
             <Icon icon="lucide:circle-check" width={15} height={15} aria-hidden />
             Nothing broken right now.
           </p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2.5">
             {live.map((alert) => (
               <AlertCard
                 key={`${alert.at}-${alert.summary}`}
@@ -112,10 +127,10 @@ export function DeployAlertsPanel({ alerts }: Readonly<DeployAlertsPanelProps>) 
 
       {past.length > 0 ? (
         <div className="opacity-70">
-          <p className="mb-2.5 text8 tracking-[0.66px] text-[#8892a3] uppercase">
+          <h3 className="text-ehs-muted-text mb-2.5 text8 tracking-[0.66px] uppercase">
             History ({past.length})
-          </p>
-          <ul className="flex flex-col gap-3">
+          </h3>
+          <ul className="flex flex-col gap-2.5">
             {past.map((alert) => (
               <AlertCard
                 key={`${alert.at}-${alert.summary}`}

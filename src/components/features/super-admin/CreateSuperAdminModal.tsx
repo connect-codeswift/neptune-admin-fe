@@ -20,38 +20,52 @@ const EMPTY_FORM: SuperAdminCreatePayload & { confirmPassword: string } = {
   confirmPassword: "",
 };
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
 export function CreateSuperAdminModal({
   open,
   onClose,
 }: CreateSuperAdminModalProps) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
+  // Four toast messages fired one at a time, each after a click, was the whole
+  // validation story here. The rules live next to the fields now and only
+  // appear once the user has said they are done.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  const fullName = form.fullName.trim();
+  const email = form.email.trim();
+
+  let fullNameError: string | undefined;
+  let emailError: string | undefined;
+  let passwordError: string | undefined;
+  let confirmError: string | undefined;
+
+  if (!fullName) {
+    fullNameError = "Enter the staff member's full name.";
+  }
+  if (!EMAIL_PATTERN.test(email)) {
+    emailError = "Enter a valid email address — it doubles as their username.";
+  }
+  if (form.password.length < MIN_PASSWORD_LENGTH) {
+    passwordError = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (form.confirmPassword !== form.password) {
+    confirmError = "Both passwords have to match.";
+  }
+
+  const isValid = !fullNameError && !emailError && !passwordError && !confirmError;
 
   const resetAndClose = () => {
     setForm(EMPTY_FORM);
+    setSubmitAttempted(false);
     onClose();
   };
 
   const handleSubmit = async () => {
-    const fullName = form.fullName.trim();
-    const email = form.email.trim();
-
-    if (!fullName) {
-      toast.error("Full name is required.");
-      return;
-    }
-    if (!email) {
-      toast.error("Email is required.");
-      return;
-    }
-    if (form.password.length < 8) {
-      toast.error("Password must be at least 8 characters.");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
+    setSubmitAttempted(true);
+    if (!isValid) return;
 
     setLoading(true);
     try {
@@ -78,24 +92,24 @@ export function CreateSuperAdminModal({
       title="Create Staff Account"
       onClose={resetAndClose}
       onPrimary={() => void handleSubmit()}
-      primaryLabel={loading ? "Creating…" : "Create Account"}
+      primaryLabel="Create Account"
       secondaryLabel="Cancel"
       onSecondary={resetAndClose}
       loading={loading}
-      disabled={loading}
       closeOnBackdrop={!loading}
       size="md"
     >
       <div className="flex flex-col gap-4">
-        <p className="text5 text-gray">
+        <p className="text4 text-gray">
           Add another CodeSwift staff member who can sign in to the super admin
           dashboard. They will set up MFA on first login.
         </p>
 
         <TextInput
-          label="Full Name"
+          label="Full Name *"
           placeholder="e.g. Alex Rivera"
           value={form.fullName}
+          error={submitAttempted ? fullNameError : undefined}
           onChange={(event) =>
             setForm((current) => ({ ...current, fullName: event.target.value }))
           }
@@ -104,9 +118,10 @@ export function CreateSuperAdminModal({
         />
 
         <EmailInput
-          label="Email"
+          label="Email *"
           placeholder="staff@neptunehs.com"
           value={form.email}
+          error={submitAttempted ? emailError : undefined}
           onChange={(event) =>
             setForm((current) => ({ ...current, email: event.target.value }))
           }
@@ -115,9 +130,10 @@ export function CreateSuperAdminModal({
         />
 
         <PasswordInput
-          label="Password"
+          label="Password *"
           placeholder="Minimum 8 characters"
           value={form.password}
+          error={submitAttempted ? passwordError : undefined}
           onChange={(event) =>
             setForm((current) => ({ ...current, password: event.target.value }))
           }
@@ -127,9 +143,16 @@ export function CreateSuperAdminModal({
         />
 
         <PasswordInput
-          label="Confirm Password"
+          label="Confirm Password *"
           placeholder="Re-enter password"
           value={form.confirmPassword}
+          // The mismatch is worth flagging as soon as there is something to
+          // compare, rather than waiting for a click the user is about to make.
+          error={
+            form.confirmPassword.length > 0 || submitAttempted
+              ? confirmError
+              : undefined
+          }
           onChange={(event) =>
             setForm((current) => ({
               ...current,
