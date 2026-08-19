@@ -60,13 +60,13 @@ export function MultiSelectInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -109,7 +109,7 @@ export function MultiSelectInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="text5 font-semibold text-darkest"
+          className="text7 text-darkest"
         >
           {label}
         </label>
@@ -125,20 +125,20 @@ export function MultiSelectInput({
           aria-controls={listboxId}
           aria-describedby={describedBy}
           onClick={() => setOpen((current) => !current)}
-          className={`flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 py-2 text-left text5 shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+          className={`flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-2.5 border bg-ehs-surface/55 px-3.5 py-2 text-left text4 backdrop-blur-1.25 outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${
             error
-              ? "border-red focus:border-red focus-visible:ring-red/30"
-              : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
+              ? "border-ehs-red focus:border-ehs-red focus:ring-0.75 focus:ring-ehs-red/15"
+              : "border-ehs-border-ink/8 hover:border-ehs-border-ink/18 hover:bg-ehs-surface/70 focus:border-ehs-normal-blue focus:ring-0.75 focus:ring-ehs-normal-blue/15"
           } ${className}`.trim()}
         >
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             {selectedOptions.length === 0 ? (
-              <span className="text-darkest/50">{placeholder}</span>
+              <span className="text-ehs-muted-text">{placeholder}</span>
             ) : (
               selectedOptions.map((option) => (
                 <span
                   key={option.value}
-                  className="inline-flex items-center rounded-md bg-blue-lightest px-2 py-0.5 text6 text-blue-deep"
+                  className="inline-flex items-center rounded-md bg-blue-lightest px-2 py-0.5 text7 text-blue-deep"
                 >
                   {option.label}
                 </span>
@@ -149,7 +149,7 @@ export function MultiSelectInput({
             icon={open ? "mdi:chevron-up" : "mdi:chevron-down"}
             width={20}
             height={20}
-            className="shrink-0 text-gray"
+            className="shrink-0 text-ehs-muted-text"
             aria-hidden
           />
         </button>
@@ -159,10 +159,10 @@ export function MultiSelectInput({
             id={listboxId}
             aria-labelledby={inputId}
             style={{ maxHeight }}
-            className={`absolute left-0 z-50 w-full overflow-auto rounded-[10px] border border-darkest/12 bg-white p-1 shadow-lg scrollbar-none ${menuPositionClassName}`}
+            className={`animate-popover-in absolute left-0 z-50 w-full overflow-auto rounded-xl border border-ehs-hairline/70 bg-ehs-surface/96 p-1 shadow-(--ehs-shadow-popover) backdrop-blur-xl scrollbar-none ${menuPositionClassName}`}
           >
             {options.length === 0 ? (
-              <p className="px-3 py-2 text5 text-gray">No options</p>
+              <p className="px-3 py-2 text4 text-gray">No options</p>
             ) : (
               options.map((option) => {
                 const isSelected = value.includes(option.value);
@@ -173,10 +173,10 @@ export function MultiSelectInput({
                     aria-pressed={isSelected}
                     disabled={option.disabled}
                     onClick={() => toggleValue(option.value)}
-                    className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text4 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                       isSelected
-                        ? "bg-blue-lightest text-blue-deep"
-                        : "text-darkest hover:bg-lightgray"
+                        ? "bg-ehs-light-bg/70 font-semibold text-ehs-darker"
+                        : "text-ehs-darker hover:bg-ehs-light-bg/50"
                     }`}
                   >
                     <span>{option.label}</span>
@@ -185,7 +185,7 @@ export function MultiSelectInput({
                         icon="mdi:check"
                         width={18}
                         height={18}
-                        className="shrink-0 text-blue-normal"
+                        className="shrink-0 text-ehs-normal-blue"
                         aria-hidden
                       />
                     ) : null}

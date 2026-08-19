@@ -2,6 +2,7 @@ import {
   SuperAdminDashboardHeader,
   SuperAdminSidebar,
   DashboardAuthGate,
+  DashboardShell,
 } from "@/components/layouts";
 import { SuperAdminClientAccountsOrgSessionGuard } from "@/components/layouts/SuperAdminClientAccountsOrgSessionGuard";
 
@@ -11,17 +12,17 @@ export default function DashboardLayout({
   return (
     <DashboardAuthGate kind="super">
       <SuperAdminClientAccountsOrgSessionGuard />
-      <div className="grid h-screen min-h-0 w-full grid-cols-[auto_1fr] items-stretch overflow-hidden py-6 pl-6">
-        <div className="flex h-full min-h-0">
-          <SuperAdminSidebar />
-        </div>
-        <main className="flex h-full min-h-0 w-full flex-col gap-8 overflow-hidden px-6">
-          <SuperAdminDashboardHeader />
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-none">
-            {children}
-          </div>
-        </main>
-      </div>
+      <DashboardShell
+        sidebar={<SuperAdminSidebar />}
+        header={<SuperAdminDashboardHeader />}
+        // Platform staff work on wide monitors, and these screens are mostly
+        // tables and summary cards. Uncapped, a row of four stat cards spreads
+        // until each one is a mostly-empty rectangle and the companies table
+        // separates its name column from its status column by a foot of glass.
+        contentMaxWidthClassName="mx-auto w-full max-w-[1600px]"
+      >
+        {children}
+      </DashboardShell>
     </DashboardAuthGate>
   );
 }

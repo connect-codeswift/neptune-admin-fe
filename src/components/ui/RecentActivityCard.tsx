@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { GLASS_SURFACE } from "./GlassCard";
 import { TextButton } from "./TextButton";
 
 export type RecentActivityItem = {
@@ -34,10 +35,10 @@ export function RecentActivityCard({
 
   return (
     <section
-      className={`rounded-2xl border border-darkest/8 bg-white p-6 shadow-lg ${className}`.trim()}
+      className={[GLASS_SURFACE, "p-6", className].filter(Boolean).join(" ")}
     >
       <header className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text4 text-darkest">{title}</h2>
+        <h2 className="text3 text-ehs-darker">{title}</h2>
         {showViewAction ? (
           <TextButton
             href={viewHref}
@@ -53,21 +54,23 @@ export function RecentActivityCard({
       </header>
 
       {items.length === 0 ? (
-        <p className="text5 text-gray">{emptyMessage}</p>
+        <p className="text4 text-ehs-muted-text">{emptyMessage}</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {items.map((item) => (
             <li key={item.id}>
               <div className="flex items-start justify-between gap-4">
-                <p className="min-w-0 text5">
-                  <span className="font-bold text-darkest">{item.actor}</span>{" "}
-                  <span className="text-gray">{item.action}</span>
+                <p className="text4 min-w-0">
+                  <span className="text-ehs-darker font-bold">
+                    {item.actor}
+                  </span>{" "}
+                  <span className="text-ehs-gray">{item.action}</span>
                 </p>
-                <time className="shrink-0 text5 text-textcolor">
+                <time className="text8 text-ehs-muted-text shrink-0">
                   {item.time}
                 </time>
               </div>
-              <p className="mt-0.5 text4 text-darkest">{item.target}</p>
+              <p className="text4 text-ehs-slate mt-0.5">{item.target}</p>
             </li>
           ))}
         </ul>

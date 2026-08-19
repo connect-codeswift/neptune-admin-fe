@@ -120,10 +120,10 @@ export function Modal({
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      className={`fixed top-1/2 left-1/2 z-[200] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-visible rounded-2xl border-0 bg-white p-0 shadow-lg backdrop:bg-darkest/50 open:flex open:flex-col ${SIZE_CLASS[size]} ${className}`.trim()}
+      className={`bg-ehs-surface backdrop:bg-ehs-overlay fixed top-1/2 left-1/2 z-[200] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-visible rounded-2xl border-0 p-0 shadow-(--ehs-shadow-modal) backdrop:backdrop-blur-[2px] open:flex open:flex-col ${SIZE_CLASS[size]} ${className}`.trim()}
     >
       <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-2">
-        <h2 id={titleId} className="text2 text-darkest">
+        <h2 id={titleId} className="text3 text-ehs-darker">
           {title}
         </h2>
         {!hideClose ? (

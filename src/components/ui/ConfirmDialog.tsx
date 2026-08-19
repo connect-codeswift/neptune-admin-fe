@@ -91,16 +91,16 @@ export function ConfirmDialog({
       ref={dialogRef}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
-      className={`fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border-0 bg-white p-6 shadow-lg backdrop:bg-darkest/50 open:flex open:flex-col ${className}`.trim()}
+      className={`bg-ehs-surface backdrop:bg-ehs-overlay fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border-0 p-6 shadow-(--ehs-shadow-modal) backdrop:backdrop-blur-[2px] open:flex open:flex-col ${className}`.trim()}
     >
-      <h2 id={titleId} className="text2 text-darkest">
+      <h2 id={titleId} className="text3 text-ehs-darker">
         {title}
       </h2>
 
       {description ? (
         <div
           id={descriptionId}
-          className="mt-3 text5 leading-6 text-gray [&_strong]:font-bold [&_strong]:text-darkest"
+          className="text4 text-ehs-gray [&_strong]:text-ehs-darker mt-3 leading-6 [&_strong]:font-bold"
         >
           {description}
         </div>

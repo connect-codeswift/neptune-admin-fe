@@ -66,13 +66,13 @@ export function MonthInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -107,7 +107,7 @@ export function MonthInput({
       className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
     >
       {label ? (
-        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
+        <label htmlFor={inputId} className="text7 text-darkest">
           {label}
         </label>
       ) : null}
@@ -120,27 +120,27 @@ export function MonthInput({
         aria-controls={panelId}
         aria-describedby={describedBy}
         onClick={handleToggle}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-2.5 border bg-ehs-surface/55 px-3.5 text-left text4 backdrop-blur-1.25 outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${
           error
-            ? "border-red focus:border-red focus-visible:ring-red/30"
-            : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
+            ? "border-ehs-red focus:border-ehs-red focus:ring-0.75 focus:ring-ehs-red/15"
+            : "border-ehs-border-ink/8 hover:border-ehs-border-ink/18 hover:bg-ehs-surface/70 focus:border-ehs-normal-blue focus:ring-0.75 focus:ring-ehs-normal-blue/15"
         } ${className}`.trim()}
       >
-        <span className={parsed ? "text-darkest" : "text-darkest/50"}>
+        <span className={parsed ? "text-ehs-darker" : "text-ehs-muted-text"}>
           {parsed ? formatMonthDisplay(value) : placeholder}
         </span>
         <Icon
           icon="mdi:calendar-month"
           width={20}
           height={20}
-          className="shrink-0 text-gray"
+          className="shrink-0 text-ehs-muted-text"
           aria-hidden
         />
       </button>
       {open ? (
         <div
           id={panelId}
-          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 rounded-[10px] border border-darkest/12 bg-white p-3 shadow-lg"
+          className="animate-popover-in absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 rounded-xl border border-ehs-hairline/70 bg-ehs-surface/96 p-3 shadow-(--ehs-shadow-popover) backdrop-blur-xl"
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <button
@@ -148,17 +148,17 @@ export function MonthInput({
               aria-label="Previous year"
               disabled={year <= minYear}
               onClick={() => setYear((current) => Math.max(minYear, current - 1))}
-              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-gray transition-colors hover:bg-lightgray hover:text-darkest disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-ehs-muted-text transition-colors hover:bg-ehs-light-bg/60 hover:text-ehs-darker disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon icon="mdi:chevron-left" width={20} height={20} />
             </button>
-            <p className="text5 font-semibold text-darkest">{year}</p>
+            <p className="text5 text-darkest">{year}</p>
             <button
               type="button"
               aria-label="Next year"
               disabled={year >= maxYear}
               onClick={() => setYear((current) => Math.min(maxYear, current + 1))}
-              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-gray transition-colors hover:bg-lightgray hover:text-darkest disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-ehs-muted-text transition-colors hover:bg-ehs-light-bg/60 hover:text-ehs-darker disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon icon="mdi:chevron-right" width={20} height={20} />
             </button>
@@ -176,10 +176,10 @@ export function MonthInput({
                     onChange?.(optionValue);
                     setOpen(false);
                   }}
-                  className={`cursor-pointer rounded-lg px-2 py-2 text5 transition-colors ${
+                  className={`cursor-pointer rounded-lg px-2 py-2 text4 transition-colors ${
                     isSelected
-                      ? "bg-blue-normal font-semibold text-white"
-                      : "text-darkest hover:bg-blue-lightest"
+                      ? "bg-ehs-normal-blue font-semibold text-ehs-on-accent"
+                      : "text-ehs-darker hover:bg-ehs-light-blue"
                   }`}
                 >
                   {option.label.slice(0, 3)}

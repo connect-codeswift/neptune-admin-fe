@@ -14,15 +14,16 @@ import {
 } from "@/lib/deploy-status";
 import {
   DeployEmptyState,
+  DeployPanelLoading,
   DeployShaTransition,
   DeployStatusPill,
 } from "./DeployPills";
 
 const CYCLE_BAR: Record<DeployTone, string> = {
-  ok: "bg-green",
-  warn: "bg-yellow",
-  danger: "bg-red",
-  muted: "bg-darkest/20",
+  ok: "bg-ehs-green",
+  warn: "bg-ehs-yellow",
+  danger: "bg-ehs-red",
+  muted: "bg-ehs-border-ink/20",
 };
 
 /** Worst outcome in the cycle wins — a rollback matters more than a success next to it. */
@@ -50,8 +51,8 @@ function EventRow({ event }: Readonly<{ event: DeployHistoryEventResponse }>) {
   const pill = describeOutcome(event.outcome);
 
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-darkest/6 py-2.5 first:border-t-0">
-      <span className="w-24 shrink-0 text5 font-semibold text-darkest">{event.app}</span>
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-ehs-border-ink/6 py-2.5 first:border-t-0">
+      <span className="text-ehs-darker w-24 shrink-0 text4">{event.app}</span>
       <DeployStatusPill
         tone={pill.tone}
         label={pill.label}
@@ -66,17 +67,17 @@ function CycleCard({ cycle }: Readonly<{ cycle: DeployHistoryEntryResponse }>) {
   const tone = getCycleTone(cycle.events);
 
   return (
-    <li className="flex overflow-hidden rounded-2xl border border-darkest/8 bg-white">
+    <li className="border-ehs-border-ink/8 bg-ehs-surface/60 rounded-3 flex overflow-hidden border">
       <span className={`w-1 shrink-0 ${CYCLE_BAR[tone]}`} aria-hidden />
       <div className="min-w-0 flex-1 p-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
             <DeployStatusPill tone={tone} label={getCycleLabel(cycle.events)} dot />
-            <span className="text6 text-gray">
+            <span className="text-ehs-muted-text text8">
               {formatInstant(cycle.startedAt)} → {formatInstant(cycle.finishedAt)}
             </span>
           </div>
-          <span className="text7 text-[#8892a3]">
+          <span className="text7 text-ehs-muted-text">
             {formatDuration(cycle.startedAt, cycle.finishedAt)} ·{" "}
             {formatRelative(cycle.finishedAt ?? cycle.startedAt)}
           </span>
@@ -94,9 +95,18 @@ function CycleCard({ cycle }: Readonly<{ cycle: DeployHistoryEntryResponse }>) {
 
 export type DeployHistoryPanelProps = {
   history: DeployHistoryEntryResponse[];
+  /** True while the history request is still in flight. */
+  isLoading?: boolean;
 };
 
-export function DeployHistoryPanel({ history }: Readonly<DeployHistoryPanelProps>) {
+export function DeployHistoryPanel({
+  history,
+  isLoading = false,
+}: Readonly<DeployHistoryPanelProps>) {
+  if (isLoading) {
+    return <DeployPanelLoading what="deploy history" />;
+  }
+
   if (history.length === 0) {
     return (
       <DeployEmptyState
@@ -108,7 +118,7 @@ export function DeployHistoryPanel({ history }: Readonly<DeployHistoryPanelProps
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col gap-2.5">
       {history.map((cycle) => (
         <CycleCard key={cycle.startedAt} cycle={cycle} />
       ))}

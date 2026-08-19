@@ -4,31 +4,49 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layouts";
-import { Button, SetupTabBar } from "@/components/ui";
+import { Button, ConfirmDialog, SetupTabBar } from "@/components/ui";
+import { CardHeading } from "@/components/ui/CardHeading";
+import { GLASS_SURFACE } from "@/components/ui/GlassCard";
 import type { RegisterPayload } from "@/dtos/req/onboarding.req";
 import { moduleIdsToActivatedModules } from "@/lib/ehs-modules";
 import { register } from "@/services/auth.service";
 import { SetupStepOne } from "./SetupStepOne";
 import { SetupStepThree } from "./SetupStepThree";
 import { SetupStepTwo, type SiteDraft } from "./SetupStepTwo";
+import { WizardSummaryRail } from "./WizardSummaryRail";
 
 const SETUP_STEPS = [
   {
     id: "organization",
     label: "Organization",
     icon: "lucide:building-2",
+    /** Shown under the step strip so "what is left" is never a guess. */
+    summary: "Name the company and pick the modules it is licensed for.",
   },
   {
     id: "sites",
     label: "Sites",
     icon: "lucide:map-pin",
+    summary: "Add at least one physical site. More can be added after setup.",
   },
   {
     id: "admin-account",
     label: "Admin Account",
     icon: "lucide:key-round",
+    summary: "Create the first administrator, who invites everyone else.",
   },
 ] as const;
+
+type StepErrors = {
+  organizationName?: string;
+  sites?: string;
+  adminName?: string;
+  adminEmail?: string;
+  adminPassword?: string;
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
 
 function createId() {
   return crypto.randomUUID();
@@ -79,7 +97,14 @@ export function AddCompanyWizard() {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Errors appear only once the user has said they are finished with a step.
+  // A required field is not "wrong" while it is still being filled in.
+  const [showErrors, setShowErrors] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
+  // Every field lives here, at the level above the steps, which is why moving
+  // backwards and forwards through the wizard never loses what was typed —
+  // the step components are stateless views over this state.
   const [organizationName, setOrganizationName] = useState("");
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
@@ -93,28 +118,70 @@ export function AddCompanyWizard() {
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
 
+  const hasEnteredAnything =
+    organizationName.trim().length > 0 ||
+    selectedModules.length > 0 ||
+    sites.length > 0 ||
+    siteName.trim().length > 0 ||
+    adminName.trim().length > 0 ||
+    adminEmail.trim().length > 0 ||
+    adminPassword.length > 0;
+
+  const stepErrors: StepErrors[] = [
+    {
+      organizationName: organizationName.trim()
+        ? undefined
+        : "Enter the organization's name.",
+    },
+    {
+      sites:
+        sites.length > 0 || siteName.trim()
+          ? undefined
+          : "Add at least one site before continuing.",
+    },
+    {
+      adminName: adminName.trim() ? undefined : "Enter the administrator's name.",
+      adminEmail: EMAIL_PATTERN.test(adminEmail.trim())
+        ? undefined
+        : "Enter a valid email address — this is where the sign-in link goes.",
+      adminPassword:
+        adminPassword.length >= MIN_PASSWORD_LENGTH
+          ? undefined
+          : `Use at least ${MIN_PASSWORD_LENGTH} characters.`,
+    },
+  ];
+
+  const currentErrors = stepErrors[stepIndex] ?? {};
+  const currentStepValid = Object.values(currentErrors).every(
+    (message) => message === undefined,
+  );
+
+  const leaveWizard = () => {
+    router.push("/super/client-accounts");
+  };
+
   const goBack = () => {
+    setShowErrors(false);
     if (stepIndex === 0) {
-      router.push("/super/client-accounts");
+      if (hasEnteredAnything) {
+        setCancelOpen(true);
+        return;
+      }
+      leaveWizard();
       return;
     }
     setStepIndex((current) => current - 1);
   };
 
   const completeSetup = async () => {
-    if (!organizationName.trim()) {
-      toast.error("Organization name is required.");
-      setStepIndex(0);
-      return;
-    }
-    if (sites.length === 0 && !siteName.trim()) {
-      toast.error("Add at least one site.");
-      setStepIndex(1);
-      return;
-    }
-    if (!adminName.trim() || !adminEmail.trim() || !adminPassword) {
-      toast.error("Admin name, email, and password are required.");
-      setStepIndex(2);
+    // Guard against a step being skipped by an earlier bug: land the user on
+    // the first step that is still incomplete rather than failing at the API.
+    const firstBrokenStep = stepErrors.findIndex((errors) =>
+      Object.values(errors).some((message) => message !== undefined),
+    );
+    if (firstBrokenStep !== -1) {
+      setStepIndex(firstBrokenStep);
+      setShowErrors(true);
       return;
     }
 
@@ -150,6 +217,12 @@ export function AddCompanyWizard() {
   };
 
   const goContinue = () => {
+    if (!currentStepValid) {
+      setShowErrors(true);
+      return;
+    }
+
+    setShowErrors(false);
     if (stepIndex >= SETUP_STEPS.length - 1) {
       void completeSetup();
       return;
@@ -158,12 +231,7 @@ export function AddCompanyWizard() {
   };
 
   const addSite = () => {
-    if (
-      !siteName.trim() ||
-      !region.trim() ||
-      !industryType ||
-      !companySize
-    ) {
+    if (!siteName.trim() || !region.trim() || !industryType || !companySize) {
       toast.error("Complete the site form first.");
       return;
     }
@@ -196,6 +264,9 @@ export function AddCompanyWizard() {
         onOrganizationNameChange={setOrganizationName}
         selectedModules={selectedModules}
         onSelectedModulesChange={setSelectedModules}
+        organizationNameError={
+          showErrors ? currentErrors.organizationName : undefined
+        }
       />
     );
   } else if (stepIndex === 1) {
@@ -212,6 +283,7 @@ export function AddCompanyWizard() {
         sites={sites}
         onAddSite={addSite}
         onRemoveSite={removeSite}
+        sitesError={showErrors ? currentErrors.sites : undefined}
       />
     );
   } else {
@@ -223,53 +295,142 @@ export function AddCompanyWizard() {
         onAdminEmailChange={setAdminEmail}
         adminPassword={adminPassword}
         onAdminPasswordChange={setAdminPassword}
+        adminNameError={showErrors ? currentErrors.adminName : undefined}
+        adminEmailError={showErrors ? currentErrors.adminEmail : undefined}
+        adminPasswordError={showErrors ? currentErrors.adminPassword : undefined}
       />
     );
   }
 
   const isLastStep = stepIndex === SETUP_STEPS.length - 1;
+  const currentStep = SETUP_STEPS[stepIndex] ?? SETUP_STEPS[0];
+  const nextStep = SETUP_STEPS[stepIndex + 1];
 
   let continueLabel = "Continue";
   if (isLastStep) {
-    continueLabel = isSubmitting ? "Submitting…" : "Complete Setup";
+    continueLabel = "Complete Setup";
+  }
+
+  let backLabel = "Back";
+  if (stepIndex === 0) {
+    backLabel = "Cancel";
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-4">
+    <div className="flex flex-col gap-3.5 pb-4">
       <PageHeader
         title="Add New Client"
         description="Walk through onboarding set up"
       />
 
-      <SetupTabBar steps={[...SETUP_STEPS]} activeIndex={stepIndex} />
+      {/* The step rail shows where you are; this line says what this step is
+          for and what is still ahead, which the icons alone never did.
 
-      <div className="mx-auto w-full max-w-2xl">{stepContent}</div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          leftIcon="lucide:chevron-left"
-          onClick={goBack}
-          disabled={isSubmitting}
-        >
-          Back
-        </Button>
-
-        <div className="flex items-center gap-3">
-          <span className="text5 text-gray">
-            Step {stepIndex + 1} of {SETUP_STEPS.length}
-          </span>
-          <Button
-            type="button"
-            rightIcon={isLastStep ? undefined : "lucide:chevron-right"}
-            onClick={goContinue}
-            disabled={isSubmitting}
-          >
-            {continueLabel}
-          </Button>
-        </div>
+          It sits above the grid rather than at the top of the form column so
+          that both columns begin with a card at the same y. Inside the column
+          it pushed the first form card ~60px below the rail beside it, and the
+          two read as misaligned even though they were in the same row. */}
+      <div
+        className="flex flex-col gap-1 px-1"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="text-ehs-normal-blue text6">
+          Step {stepIndex + 1} of {SETUP_STEPS.length} · {currentStep.label}
+        </p>
+        <p className="text-ehs-muted-text text8">
+          {currentStep.summary}
+          {nextStep ? ` Next: ${nextStep.label}.` : " This is the last step."}
+        </p>
       </div>
+
+      {/*
+        Three grid areas rather than one column: the form keeps a comfortable
+        measure on the left (8 of 13 columns, the house split), and the right
+        column carries the progress rail above a running summary of what has
+        been entered. Below `xl` the same three items stack in reading order —
+        rail, form, summary — so the step bar is still the first thing on a
+        phone and the summary lands where a review belongs, at the end.
+
+        `xl:grid-rows-[auto_1fr]` is load-bearing. The form spans both rows, and
+        against the default `auto auto` a spanning item distributes its extra
+        height across every track it covers — so a tall form silently stretched
+        row 1 and left a large hole between the rail and the summary beside it.
+        Making row 2 the flexible track sends that slack there instead, and row
+        1 stays exactly as tall as the rail.
+      */}
+      <div className="stagger-cards grid gap-3.5 xl:grid-cols-13 xl:grid-rows-[auto_1fr] xl:items-start">
+        <aside
+          className={`${GLASS_SURFACE} animate-card-rise flex min-w-0 flex-col gap-4 p-4.75 xl:col-span-5 xl:col-start-9 xl:row-start-1`}
+        >
+          <div className="hidden xl:block">
+            <CardHeading
+              title="Setup steps"
+              subtitle="Three steps, in order. You can go back without losing anything."
+            />
+          </div>
+
+          <SetupTabBar steps={[...SETUP_STEPS]} activeIndex={stepIndex} />
+        </aside>
+
+        <div className="flex min-w-0 flex-col gap-3.5 xl:col-span-8 xl:col-start-1 xl:row-span-2 xl:row-start-1">
+          <div className="stagger-cards flex min-w-0 flex-col gap-3.5">
+            {stepContent}
+          </div>
+
+          {/* The action bar is a surface of its own so it reads as the floor of
+              the form rather than as loose text under the last card. */}
+          <div
+            className={`${GLASS_SURFACE} animate-card-rise flex flex-wrap items-center justify-between gap-3 px-4.75 py-3.5`}
+          >
+            <Button
+              type="button"
+              variant="secondary"
+              leftIcon={stepIndex === 0 ? undefined : "lucide:chevron-left"}
+              onClick={goBack}
+              disabled={isSubmitting}
+            >
+              {backLabel}
+            </Button>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-ehs-muted-text text8">
+                Nothing is saved until you finish the last step.
+              </span>
+              <Button
+                type="button"
+                rightIcon={isLastStep ? undefined : "lucide:chevron-right"}
+                onClick={goContinue}
+                loading={isSubmitting}
+                loadingText="Creating client…"
+              >
+                {continueLabel}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <WizardSummaryRail
+          organizationName={organizationName}
+          selectedModules={selectedModules}
+          sites={sites}
+          pendingSiteName={siteName}
+          adminName={adminName}
+          adminEmail={adminEmail}
+          activeStepIndex={stepIndex}
+          className="xl:col-span-5 xl:col-start-9 xl:row-start-2"
+        />
+      </div>
+
+      <ConfirmDialog
+        open={cancelOpen}
+        title="Leave without creating this client?"
+        description="Nothing has been sent to the server yet, so everything typed into these three steps is discarded."
+        confirmLabel="Discard and leave"
+        cancelLabel="Stay here"
+        onCancel={() => setCancelOpen(false)}
+        onConfirm={leaveWizard}
+      />
     </div>
   );
 }

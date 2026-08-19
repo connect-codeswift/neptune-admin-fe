@@ -40,13 +40,13 @@ export function ToggleInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -60,7 +60,7 @@ export function ToggleInput({
             {label ? (
               <label
                 htmlFor={inputId}
-                className={`text5 font-semibold text-darkest ${
+                className={`text7 text-darkest ${
                   disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
                 }`}
               >
@@ -68,7 +68,7 @@ export function ToggleInput({
               </label>
             ) : null}
             {description ? (
-              <p className="mt-0.5 text6 text-gray">{description}</p>
+              <p className="mt-0.5 text8 text-gray">{description}</p>
             ) : null}
           </div>
         ) : null}
@@ -80,8 +80,8 @@ export function ToggleInput({
           aria-describedby={describedBy}
           disabled={disabled}
           onClick={() => onChange?.(!checked)}
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-blue-normal/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
-            checked ? "bg-blue-normal" : "bg-darkest/20"
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
+            checked ? "bg-ehs-normal-blue" : "bg-ehs-border"
           }`}
         >
           <span

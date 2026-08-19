@@ -13,6 +13,8 @@ export function DocumentCategoriesPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   return (
+    // Header → stats → (create form) → content, in the same `gap-6` rhythm the
+    // other catalog screens use.
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
         title="Document Categories"
@@ -39,7 +41,9 @@ export function DocumentCategoriesPage() {
         <DocumentCategoryForm onCancel={() => setShowCreateForm(false)} />
       ) : null}
 
-      <DocumentCategoryGrid />
+      {/* The grid owns its own section heading and count, so the empty state can
+          offer the same "add one" action the header carries. */}
+      <DocumentCategoryGrid onCreate={() => setShowCreateForm(true)} />
     </div>
   );
 }

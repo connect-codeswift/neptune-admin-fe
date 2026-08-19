@@ -106,7 +106,21 @@ export function CompanySitePickerModal({
       hideFooter
     >
       <div className="flex flex-col gap-4">
-        <p className="text6 text-gray">{description}</p>
+        <p className="text8 text-gray">{description}</p>
+
+        {/* An empty company list is not the same as a slow one. Without this the
+            select just opened onto nothing and left the user clicking a
+            permanently disabled Continue with no explanation. */}
+        {!companiesLoading && companies.length === 0 ? (
+          <p
+            className="rounded-xl border border-ehs-warning-border bg-ehs-warning-surface px-4 py-3 text8 text-ehs-warning-ink"
+            role="status"
+          >
+            No companies are provisioned yet, so there is nothing to select.
+            Onboard a client first from Client Accounts → New Client.
+          </p>
+        ) : null}
+
         <SelectInput
           label="Company"
           placeholder={companiesLoading ? "Loading companies…" : "Select company"}
@@ -143,10 +157,17 @@ export function CompanySitePickerModal({
           <Button
             size="sm"
             leftIcon="lucide:building-2"
-            onClick={handleConfirm}
-            disabled={submitting || !organizationId || !siteId}
+            onClick={() => void handleConfirm()}
+            loading={submitting}
+            loadingText="Selecting…"
+            disabled={!organizationId || !siteId}
+            title={
+              organizationId && siteId
+                ? undefined
+                : "Pick a company and one of its sites first"
+            }
           >
-            {submitting ? "Selecting…" : "Continue"}
+            Continue
           </Button>
         </div>
       </div>

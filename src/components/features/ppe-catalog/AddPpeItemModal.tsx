@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
+import { useState, type ReactNode } from "react";
 import {
   NumberInput,
   SelectInput,
@@ -39,6 +38,21 @@ type AddPpeItemModalProps = Readonly<{
   onAdd: (draft: AddPpeItemDraft, categoryLabel: string) => void | Promise<void>;
 }>;
 
+/** Titled group inside the modal, so the six fields read as two decisions. */
+function FieldGroup({
+  legend,
+  children,
+}: Readonly<{ legend: string; children: ReactNode }>) {
+  return (
+    <fieldset className="min-w-0 border-0 p-0">
+      <legend className="mb-3 text6 tracking-[0.5px] text-ehs-muted-text uppercase">
+        {legend}
+      </legend>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">{children}</div>
+    </fieldset>
+  );
+}
+
 export function AddPpeItemModal({
   open,
   loading = false,
@@ -46,22 +60,36 @@ export function AddPpeItemModal({
   onAdd,
 }: AddPpeItemModalProps) {
   const [draft, setDraft] = useState<AddPpeItemDraft>(EMPTY_DRAFT);
+  /** Errors only appear once the field has been left or a save attempted. */
+  const [showErrors, setShowErrors] = useState(false);
 
   const categoryLabel = getCategoryLabel(draft.categoryId);
+  const trimmedName = draft.name.trim();
+
+  // The rule the toast used to state after the fact: a name is the only field
+  // the catalog cannot render a row without.
+  let nameError: string | undefined;
+  if (showErrors && trimmedName === "") {
+    nameError = "Give the item a name — it is what appears on the catalog card.";
+  }
+
+  const canSubmit = trimmedName !== "" && !loading;
 
   const resetAndClose = () => {
     setDraft(EMPTY_DRAFT);
+    setShowErrors(false);
     onClose();
   };
 
   const handleAdd = async () => {
-    if (!draft.name.trim()) {
-      toast.error("Item name is required.");
+    if (trimmedName === "") {
+      setShowErrors(true);
       return;
     }
 
     await onAdd(draft, categoryLabel);
     setDraft(EMPTY_DRAFT);
+    setShowErrors(false);
   };
 
   return (
@@ -74,14 +102,16 @@ export function AddPpeItemModal({
       closeOnBackdrop={!loading}
     >
       <div className="flex flex-col gap-5">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <FieldGroup legend="Item">
           <TextInput
             label="Item Name"
             placeholder="e.g. 3M Safety Glasses"
             value={draft.name}
+            error={nameError}
             onChange={(event) =>
               setDraft((current) => ({ ...current, name: event.target.value }))
             }
+            onBlur={() => setShowErrors(true)}
             required
           />
           <TextInput
@@ -106,12 +136,13 @@ export function AddPpeItemModal({
               }))
             }
           />
-        </div>
+        </FieldGroup>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <FieldGroup legend="Classification & stock">
           <TextInput
             label="Safety Standard"
             placeholder="e.g. ANSI Z87.1+"
+            helperText="The standard printed on the item."
             value={draft.safetyStandard}
             onChange={(event) =>
               setDraft((current) => ({
@@ -134,6 +165,7 @@ export function AddPpeItemModal({
           <NumberInput
             label="Min Stock Level"
             min={0}
+            helperText="Units. Below this the catalog flags the item as low stock."
             value={String(draft.minStockLevel)}
             onChange={(event) =>
               setDraft((current) => ({
@@ -142,9 +174,11 @@ export function AddPpeItemModal({
               }))
             }
           />
-        </div>
+        </FieldGroup>
 
-        <div className="flex flex-wrap items-center gap-3 pt-2">
+        {/* Right-aligned above a hairline, matching Modal's own footer, so a
+            modal with a custom action row does not read as a different dialog. */}
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-ehs-border-ink/8 pt-4">
           <Button
             type="button"
             variant="secondary"
@@ -158,6 +192,7 @@ export function AddPpeItemModal({
             leftIcon="lucide:package-plus"
             loading={loading}
             loadingText="Adding…"
+            disabled={!canSubmit}
             onClick={handleAdd}
           >
             Add to Catalog

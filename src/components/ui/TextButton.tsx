@@ -18,15 +18,25 @@ export type TextButtonProps = Omit<
   children?: ReactNode;
 };
 
+/**
+ * `ehsTextButtonClass` with its colour and type scale lifted out: that recipe
+ * hardcodes the brand ink and `text-sm`, and this button has `variant` and
+ * `size` props for both. A second `text-*` colour appended after it would win
+ * or lose on stylesheet order rather than on the variant the caller asked for,
+ * so the shared half lives here and the tiers below restate the ink.
+ */
+const BASE_CLASS =
+  "inline-flex cursor-pointer items-center gap-1 rounded bg-transparent p-0 transition-colors outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50";
+
 const VARIANT_CLASS: Record<TextButtonVariant, string> = {
-  default: "text-blue-normal hover:text-blue-deep",
-  muted: "text-gray hover:text-darkest",
-  danger: "text-red hover:text-red/80",
+  default: "text-ehs-normal-blue hover:text-ehs-normal-blue-hover",
+  muted: "text-ehs-gray hover:text-ehs-darker",
+  danger: "text-ehs-red hover:text-ehs-red-ink-soft",
 };
 
 const SIZE_CLASS: Record<TextButtonSize, string> = {
-  sm: "text6",
-  md: "text5",
+  sm: "text8",
+  md: "text4",
   lg: "text5",
 };
 
@@ -61,7 +71,7 @@ export function TextButton({
       type={type}
       disabled={disabled}
       onClick={handleClick}
-      className={`inline-flex cursor-pointer items-center gap-1 bg-transparent p-0 font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-blue-normal/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`${BASE_CLASS} ${
         VARIANT_CLASS[variant]
       } ${SIZE_CLASS[size]} ${UNDERLINE_CLASS[underline]} ${className}`.trim()}
       {...props}

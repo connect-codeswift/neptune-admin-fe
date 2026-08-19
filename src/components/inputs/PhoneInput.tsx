@@ -94,14 +94,14 @@ function FieldMessage({
 }>): ReactNode {
   if (error) {
     return (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   }
   if (helperText) {
     return (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -179,15 +179,15 @@ function CountryPickerPanel({
   return (
     <div
       id={panelId}
-      className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 overflow-hidden rounded-[10px] border border-darkest/12 bg-white shadow-lg"
+      className="animate-popover-in absolute top-[calc(100%+0.25rem)] left-0 z-20 w-72 overflow-hidden rounded-xl border border-ehs-hairline/70 bg-ehs-surface/96 shadow-(--ehs-shadow-popover) backdrop-blur-xl"
     >
-      <div className="border-b border-darkest/10 p-2">
+      <div className="border-b border-ehs-border-ink/10 p-2">
         <input
           type="search"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search country…"
-          className="h-9 w-full rounded-lg border border-darkest/10 bg-lightgray px-3 text5 text-darkest outline-none focus:border-blue-normal"
+          className="h-9 w-full rounded-lg border border-ehs-border-ink/10 bg-ehs-surface-raised px-3 text4 text-ehs-darker outline-none placeholder:text-ehs-muted-text focus:border-ehs-normal-blue"
         />
       </div>
       <div className="max-h-56 overflow-auto p-1">
@@ -197,16 +197,16 @@ function CountryPickerPanel({
             type="button"
             aria-pressed={item.code === country}
             onClick={() => onSelect(item.code)}
-            className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text5 transition-colors ${
+            className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text4 transition-colors ${
               item.code === country
-                ? "bg-blue-lightest text-blue-deep"
-                : "text-darkest hover:bg-lightgray"
+                ? "bg-ehs-light-bg/70 font-semibold text-ehs-darker"
+                : "text-ehs-darker hover:bg-ehs-light-bg/50"
             }`}
           >
             <span className="truncate">
               {item.label} ({item.code})
             </span>
-            <span className="shrink-0 text-gray">{item.dial}</span>
+            <span className="shrink-0 text-ehs-muted-text">{item.dial}</span>
           </button>
         ))}
       </div>
@@ -262,8 +262,8 @@ export function PhoneInput({
   };
 
   const fieldBorderClass = error
-    ? "border-red focus-within:border-red focus-within:ring-red/30"
-    : "border-darkest/12 focus-within:border-blue-normal focus-within:ring-blue-normal/30";
+    ? "border-ehs-red focus-within:border-ehs-red focus-within:ring-0.75 focus-within:ring-ehs-red/15"
+    : "border-ehs-border-ink/8 hover:border-ehs-border-ink/18 focus-within:border-ehs-normal-blue focus-within:ring-0.75 focus-within:ring-ehs-normal-blue/15";
 
   return (
     <div
@@ -271,13 +271,13 @@ export function PhoneInput({
       className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
     >
       {label ? (
-        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
+        <label htmlFor={inputId} className="text7 text-darkest">
           {label}
         </label>
       ) : null}
       <div
-        className={`flex h-12 overflow-hidden rounded-[10px] border bg-white shadow-lg transition-colors focus-within:ring-2 ${fieldBorderClass} ${
-          disabled ? "bg-lightgray opacity-60" : ""
+        className={`flex h-12 overflow-hidden rounded-2.5 border bg-ehs-surface/55 backdrop-blur-1.25 transition ${fieldBorderClass} ${
+          disabled ? "cursor-not-allowed opacity-60" : ""
         } ${className}`.trim()}
       >
         <button
@@ -287,7 +287,7 @@ export function PhoneInput({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((current) => !current)}
-          className="flex shrink-0 cursor-pointer items-center gap-1 border-r border-darkest/10 px-3 text5 text-darkest disabled:cursor-not-allowed"
+          className="flex shrink-0 cursor-pointer items-center gap-1 border-r border-ehs-border-ink/10 px-3 text4 text-ehs-darker disabled:cursor-not-allowed"
         >
           <span>{selectedCountry.dial}</span>
           <Icon
@@ -308,7 +308,7 @@ export function PhoneInput({
           aria-describedby={describedBy}
           aria-invalid={Boolean(error) || undefined}
           onChange={(event) => emitChange(country, event.target.value)}
-          className="min-w-0 flex-1 bg-transparent px-3.5 text5 text-darkest outline-none placeholder:text-darkest/50 disabled:cursor-not-allowed"
+          className="min-w-0 flex-1 bg-transparent px-3.5 text4 text-darkest outline-none placeholder:text-ehs-muted-text disabled:cursor-not-allowed"
         />
       </div>
       {open ? (

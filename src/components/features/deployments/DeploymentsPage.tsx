@@ -1,17 +1,10 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { useState } from "react";
 import { PageHeader } from "@/components/layouts";
-import { Button, TabBar } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { ApiError } from "@/lib/api-error";
-import {
-  formatElapsed,
-  formatInstant,
-  formatRelative,
-  formatRelativeOrRaw,
-  getUnresolvedAlerts,
-} from "@/lib/deploy-status";
+import { getUnresolvedAlerts } from "@/lib/deploy-status";
 import {
   useDeployAlerts,
   useDeployHistory,
@@ -20,40 +13,36 @@ import {
 import { DeployAlertsPanel } from "./DeployAlertsPanel";
 import { DeployAppsPanel } from "./DeployAppsPanel";
 import { DeployHistoryPanel } from "./DeployHistoryPanel";
-import { DeployEmptyState, DeploySectionCard } from "./DeployPills";
 import {
-  DeployInProgressStrip,
-  DeployStatusBanner,
-} from "./DeployStatusBanner";
+  DeployEmptyState,
+  DeploySectionCard,
+  DeployStatusPill,
+} from "./DeployPills";
+import { DeployStatusHero } from "./DeployStatusHero";
+import { GLASS_SURFACE } from "@/components/ui/GlassCard";
 
-const TAB_APPS = 0;
-const TAB_HISTORY = 1;
-const TAB_ALERTS = 2;
-
-function MetaChip({
-  label,
-  value,
-  title,
-}: Readonly<{ label: string; value: string; title?: string }>) {
-  return (
-    <div className="min-w-0" title={title}>
-      <p className="text8 tracking-[0.66px] text-[#8892a3] uppercase">{label}</p>
-      <p className="mt-1 truncate text5 text-darkest">{value}</p>
-    </div>
-  );
-}
-
+/**
+ * A spinner rather than a skeleton, deliberately: this page is one snapshot
+ * read, it resolves in well under a second, and a shaped placeholder for a
+ * banner + meta row + table would flash. What it was missing is the
+ * announcement — a screen reader had no way to know the page was still working.
+ */
 function LoadingState() {
   return (
-    <div className="flex items-center gap-2.5 rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 shadow-lg backdrop-blur-[10px]">
+    <div
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      className={`${GLASS_SURFACE} flex items-center gap-2.5 px-5 py-8`}
+    >
       <Icon
         icon="lucide:loader-circle"
         width={16}
         height={16}
-        className="animate-spin text-blue-normal"
+        className="text-ehs-normal-blue animate-spin motion-reduce:animate-none"
         aria-hidden
       />
-      <p className="text5 text-gray">Reading the deploy snapshot…</p>
+      <p className="text-ehs-muted-text text4">Reading the deploy snapshot…</p>
     </div>
   );
 }
@@ -65,7 +54,8 @@ function ErrorState({
   const isForbidden = error instanceof ApiError && error.status === 403;
 
   let title = "Could not read the deploy snapshot";
-  let description = "The platform ops endpoint did not answer. Try again in a moment.";
+  let description =
+    "The platform ops endpoint did not answer. Try again in a moment.";
   if (isForbidden) {
     title = "Staff access only";
     description =
@@ -75,7 +65,7 @@ function ErrorState({
   }
 
   return (
-    <div className="rounded-[20px] border border-white/90 bg-white/62 p-5 shadow-lg backdrop-blur-[10px]">
+    <div className={`${GLASS_SURFACE} p-5`} role="alert">
       <DeployEmptyState
         icon="lucide:server-off"
         title={title}
@@ -83,7 +73,12 @@ function ErrorState({
       />
       {isForbidden ? null : (
         <div className="flex justify-center pb-4">
-          <Button variant="secondary" size="sm" leftIcon="lucide:refresh-cw" onClick={onRetry}>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon="lucide:refresh-cw"
+            onClick={onRetry}
+          >
             Try again
           </Button>
         </div>
@@ -98,29 +93,45 @@ function ErrorState({
  */
 function SampleDataNotice() {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-blue-normal/25 bg-blue-lightest px-4 py-3.5">
+    <div className="border-ehs-normal-blue/25 bg-ehs-light-blue rounded-3 flex items-start gap-3 border px-4 py-3.5">
       <Icon
         icon="lucide:flask-conical"
         width={17}
         height={17}
-        className="mt-0.5 shrink-0 text-blue-deep"
+        className="text-ehs-dark-blue mt-0.5 shrink-0"
         aria-hidden
       />
       <div className="min-w-0">
-        <p className="text4 text-blue-deep">Sample data — not a real host</p>
-        <p className="mt-1 text6 text-gray">
-          This environment does not run the deploy pipeline, so the API answered 503.
-          Everything below is placeholder data for layout work. Only production
-          serves the real snapshot.
+        <p className="text-ehs-dark-blue text4">
+          Sample data — not a real host
+        </p>
+        <p className="text-ehs-muted-text mt-1 text8">
+          This environment does not run the deploy pipeline, so the API answered
+          503. Everything below is placeholder data for layout work. Only
+          production serves the real snapshot.
         </p>
       </div>
     </div>
   );
 }
 
-export function DeploymentsPage() {
-  const [activeTab, setActiveTab] = useState(TAB_APPS);
+/** Live problems get the loud pill; nothing broken gets the quiet one. */
+function AlertCountPill({ unresolved }: Readonly<{ unresolved: number }>) {
+  if (unresolved === 0) {
+    return <DeployStatusPill tone="ok" label="All clear" dot />;
+  }
 
+  return (
+    <DeployStatusPill
+      tone="danger"
+      label={`${unresolved} live`}
+      dot
+      title="Alerts whose underlying problem has not cleared yet."
+    />
+  );
+}
+
+export function DeploymentsPage() {
   const statusQuery = useDeployStatus();
   const historyQuery = useDeployHistory();
   const alertsQuery = useDeployAlerts();
@@ -158,7 +169,7 @@ export function DeploymentsPage() {
 
   if (statusQuery.isPending) {
     return (
-      <div className="flex flex-col gap-6 pb-4">
+      <div className="flex flex-col gap-3.5 pb-4">
         {header}
         <LoadingState />
       </div>
@@ -167,93 +178,75 @@ export function DeploymentsPage() {
 
   if (statusQuery.isError || !status) {
     return (
-      <div className="flex flex-col gap-6 pb-4">
+      <div className="flex flex-col gap-3.5 pb-4">
         {header}
         <ErrorState error={statusQuery.error} onRetry={refreshAll} />
       </div>
     );
   }
 
-  const tabs = [
-    { id: "apps", label: `Apps (${status.apps.length})` },
-    { id: "history", label: "Deploy history" },
-    { id: "alerts", label: "Alerts", badge: unresolvedCount },
-  ];
-
   return (
-    <div className="flex flex-col gap-6 pb-4">
+    <div className="flex flex-col gap-3.5 pb-4">
       {header}
 
       {isSample ? <SampleDataNotice /> : null}
 
-      <DeployStatusBanner status={status} />
+      <DeployStatusHero status={status} />
 
-      {status.deploy.inProgress ? (
-        <DeployInProgressStrip startedAt={status.deploy.startedAt} />
-      ) : null}
+      {/*
+        Apps first and full width: it is a five-column table whose richest
+        column is the running commit, and boxed into half the page that column
+        is the one that loses. History and alerts are lists of short lines, so
+        they pair below on the house 8/5 split — the log of what shipped beside
+        the log of what broke, both visible at once instead of hidden behind
+        tabs that made you click to find out whether anything was wrong.
+      */}
+      <DeploySectionCard
+        title="Apps on this host"
+        description="What each systemd unit is currently running, and whether it is answering."
+        action={
+          <DeployStatusPill
+            tone="muted"
+            label={`${status.apps.length} app${status.apps.length === 1 ? "" : "s"}`}
+          />
+        }
+      >
+        <DeployAppsPanel apps={status.apps} />
+      </DeploySectionCard>
 
-      <div className="grid grid-cols-2 gap-4 rounded-[20px] border border-white/90 bg-white/62 px-5 py-4 shadow-lg backdrop-blur-[10px] sm:grid-cols-3 xl:grid-cols-5">
-        <MetaChip label="Host" value={status.host || "—"} />
-        <MetaChip
-          label="Snapshot age"
-          value={formatElapsed(status.ageSeconds)}
-          title={`Written ${formatInstant(status.generatedAt)}`}
-        />
-        <MetaChip
-          label="Next check"
-          value={formatRelativeOrRaw(status.deploy.timerNext)}
-          title="The timer polls main every 2 minutes."
-        />
-        <MetaChip
-          label="Last cycle"
-          value={formatRelative(status.deploy.lastFinished)}
-          title={formatInstant(status.deploy.lastFinished)}
-        />
-        <MetaChip
-          label="Cycle result"
-          value={status.deploy.lastResult || "—"}
-          title="systemd Result. A cycle that skipped an app for a failing build exits non-zero on purpose, so exit-code is not automatically bad — judge by the stuck line on the app row."
-        />
+      <div className="stagger-cards grid gap-3.5 xl:grid-cols-13">
+        <DeploySectionCard
+          title="Recent deploy cycles"
+          description="Only cycles that changed something are recorded, newest first."
+          className="h-full xl:col-span-8"
+        >
+          <DeployHistoryPanel
+            history={history}
+            isLoading={historyQuery.isPending}
+          />
+        </DeploySectionCard>
+
+        <DeploySectionCard
+          title="Deploy alerts"
+          description="Written when the failure state changes — one entry per broken build, not one per cycle."
+          className="h-full xl:col-span-5"
+          action={<AlertCountPill unresolved={unresolvedCount} />}
+        >
+          <DeployAlertsPanel alerts={alerts} isLoading={alertsQuery.isPending} />
+        </DeploySectionCard>
       </div>
 
-      <div>
-        <TabBar
-          tabs={tabs}
-          activeIndex={activeTab}
-          onChange={setActiveTab}
-          label="Deployment sections"
+      <p className="text-ehs-muted-text flex items-start gap-2 px-1 text8">
+        <Icon
+          icon="lucide:info"
+          width={13}
+          height={13}
+          className="mt-px shrink-0"
+          aria-hidden
         />
-
-        <div className="pt-5">
-          {activeTab === TAB_APPS ? (
-            <DeployAppsPanel apps={status.apps} />
-          ) : null}
-
-          {activeTab === TAB_HISTORY ? (
-            <DeploySectionCard
-              title="Recent deploy cycles"
-              description="Only cycles that changed something are recorded, newest first."
-            >
-              <DeployHistoryPanel history={history} />
-            </DeploySectionCard>
-          ) : null}
-
-          {activeTab === TAB_ALERTS ? (
-            <DeploySectionCard
-              title="Deploy alerts"
-              description="Written when the failure state changes — one entry per broken build, not one per cycle."
-            >
-              <DeployAlertsPanel alerts={alerts} />
-            </DeploySectionCard>
-          ) : null}
-        </div>
-      </div>
-
-      <p className="flex items-start gap-2 px-1 text7 text-[#8892a3]">
-        <Icon icon="lucide:info" width={13} height={13} className="mt-px shrink-0" aria-hidden />
-        Read-only by design. Deploys are driven by merging to <code>main</code> and
-        alerts clear themselves when the underlying problem does, so there is no
-        redeploy or acknowledge action here.
+        Read-only by design. Deploys are driven by merging to <code>main</code>{" "}
+        and alerts clear themselves when the underlying problem does, so there is
+        no redeploy or acknowledge action here.
       </p>
     </div>
   );

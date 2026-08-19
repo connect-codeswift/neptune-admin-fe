@@ -8,6 +8,11 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
+import {
+  ehsIconButtonGhostClass,
+  ehsIconButtonPrimaryClass,
+  ehsIconButtonTertiaryClass,
+} from "@/lib/ehs-classes";
 
 export type IconButtonVariant = "soft" | "solid" | "ghost";
 export type IconButtonShape = "rounded" | "circle";
@@ -25,7 +30,26 @@ export type IconButtonProps = Omit<
   size?: IconButtonSize;
   href?: string;
   children?: ReactNode;
+  /**
+   * Why this control is disabled. See the note on `Button.disabledReason` —
+   * `disabled:pointer-events-none` stops a disabled button from ever showing
+   * its own `title`, so the reason needs an enabled wrapper to live on.
+   *
+   * It is appended to the accessible name too: on an icon-only control the
+   * label is the *only* thing announced, and "Delete site" with no explanation
+   * of why it does nothing is worse here than on a button with visible text.
+   */
+  disabledReason?: string;
 };
+
+/**
+ * `ehsIconButtonBaseClass` without its box: that recipe is a fixed 40px
+ * rounded-lg square, and this button's `size` / `shape` props own those two
+ * axes. Declaring a radius or a width twice leaves the winner to stylesheet
+ * order rather than to the props the call site passed.
+ */
+const BASE_CLASS =
+  "inline-flex shrink-0 cursor-pointer items-center justify-center transition-colors outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50";
 
 const SIZE_CLASS: Record<IconButtonSize, { box: string; icon: number }> = {
   sm: { box: "size-8", icon: 16 },
@@ -34,15 +58,19 @@ const SIZE_CLASS: Record<IconButtonSize, { box: string; icon: number }> = {
 };
 
 const SHAPE_CLASS: Record<IconButtonShape, string> = {
-  rounded: "rounded-[10px]",
+  rounded: "rounded-2.5",
   circle: "rounded-full",
 };
 
+/**
+ * `soft` — the default, and the one that sits on glass cards and table rows —
+ * takes the EHSS *tertiary* recipe rather than the light-blue *secondary* one:
+ * it is the frosted neutral chip, which is what `soft` has always been here.
+ */
 const VARIANT_CLASS: Record<IconButtonVariant, string> = {
-  soft: "border border-darkest/10 bg-lightgray text-darkest hover:bg-blue-lightest hover:text-blue-deep",
-  solid: "bg-blue-normal text-white hover:opacity-95",
-  ghost:
-    "border border-transparent bg-transparent text-gray hover:border-darkest/10 hover:bg-lightgray hover:text-darkest",
+  soft: ehsIconButtonTertiaryClass,
+  solid: ehsIconButtonPrimaryClass,
+  ghost: ehsIconButtonGhostClass,
 };
 
 export const IconButton = forwardRef<
@@ -58,6 +86,7 @@ export const IconButton = forwardRef<
     href,
     className = "",
     disabled,
+    disabledReason,
     type = "button",
     onClick,
     children,
@@ -67,6 +96,8 @@ export const IconButton = forwardRef<
 ) {
   const router = useRouter();
   const sizeToken = SIZE_CLASS[size];
+  const shownReason = disabled ? disabledReason : undefined;
+  const accessibleName = shownReason ? `${label} — ${shownReason}` : label;
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     onClick?.(event);
@@ -74,15 +105,15 @@ export const IconButton = forwardRef<
     router.push(href);
   };
 
-  return (
+  const button = (
     <button
       ref={ref}
       type={type}
       disabled={disabled}
-      aria-label={label}
-      title={label}
+      aria-label={accessibleName}
+      title={accessibleName}
       onClick={handleClick}
-      className={`inline-flex cursor-pointer items-center justify-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-blue-normal/30 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`${BASE_CLASS} ${
         VARIANT_CLASS[variant]
       } ${SHAPE_CLASS[shape]} ${sizeToken.box} ${className}`.trim()}
       {...props}
@@ -96,5 +127,15 @@ export const IconButton = forwardRef<
         />
       )}
     </button>
+  );
+
+  if (!shownReason) return button;
+
+  // An enabled wrapper, purely so the tooltip has something that receives
+  // hover. `inline-flex` keeps the button's box and alignment unchanged.
+  return (
+    <span title={accessibleName} className="inline-flex">
+      {button}
+    </span>
   );
 });

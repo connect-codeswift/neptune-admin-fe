@@ -102,7 +102,7 @@ export function GrantFullAccessModal({
       onPrimary={() => onConfirm(selected.choice)}
     >
       <div className="flex flex-col gap-4">
-        <p className="text5 text-gray">
+        <p className="text4 text-gray">
           Choose how long {clientName} should keep access after the trial. This
           replaces the current trial window, or clears it for permanent access.
         </p>
@@ -119,7 +119,7 @@ export function GrantFullAccessModal({
                   "flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 transition-colors",
                   isSelected
                     ? "border-blue-normal bg-blue-normal/8"
-                    : "border-darkest/12 bg-white hover:border-darkest/20",
+                    : "border-ehs-border-ink/12 bg-ehs-surface hover:border-ehs-border-ink/20",
                 ].join(" ")}
               >
                 <span className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export function GrantFullAccessModal({
                     {option.title}
                   </span>
                 </span>
-                <span className="pl-6 text6 text-gray">{option.description}</span>
+                <span className="pl-6 text8 text-gray">{option.description}</span>
               </label>
             );
           })}
