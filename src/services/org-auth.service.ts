@@ -32,18 +32,18 @@ export type SelectSiteResponse = {
 };
 
 /**
- * POST /Auth/login
+ * POST /v1/auth/login
  *
  * Unlike the SuperAdmin flow this can return a full session immediately: when
  * the account has MFA disabled the response carries `accessToken` and there is
  * no `mfaToken` at all. Store it here so an MFA-off admin is not stranded.
  *
  * In the admin portal this endpoint is only reached by `Ehs_Director` tenant
- * admins; `Ehs_Lead` is rejected at `/AdminPortalAuth/login` and cannot browse
+ * admins; `Ehs_Lead` is rejected at `/v1/admin/auth/login` and cannot browse
  * the admin portal.
  */
 export async function orgLogin(payload: LoginPayload) {
-  const { data } = await axiosInstance.post<LoginResponse>("/Auth/login", payload);
+  const { data } = await axiosInstance.post<LoginResponse>("/v1/auth/login", payload);
   setAuthEmail(payload.email);
   const accessToken = extractAccessToken(data);
   if (accessToken) {
@@ -55,10 +55,10 @@ export async function orgLogin(payload: LoginPayload) {
   return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
-/** POST /Auth/verify-mfa */
+/** POST /v1/auth/verify-mfa */
 export async function orgVerifyMfa(payload: VerifyMfaPayload) {
   const { data } = await axiosInstance.post<VerifyMfaResponse>(
-    "/Auth/verify-mfa",
+    "/v1/auth/verify-mfa",
     payload,
   );
   const accessToken = extractAccessToken(data);
@@ -71,10 +71,10 @@ export async function orgVerifyMfa(payload: VerifyMfaPayload) {
   return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
-/** POST /Auth/mfa/setup — bearer credential is the login mfaToken. */
+/** POST /v1/auth/mfa/setup — bearer credential is the login mfaToken. */
 export async function orgMfaSetup(mfaToken: string) {
   const { data } = await axiosInstance.post<MfaSetupResponse>(
-    "/Auth/mfa/setup",
+    "/v1/auth/mfa/setup",
     undefined,
     {
       headers: { Authorization: `Bearer ${mfaToken}` },
@@ -83,11 +83,11 @@ export async function orgMfaSetup(mfaToken: string) {
   return data;
 }
 
-/** POST /Auth/mfa/enable */
+/** POST /v1/auth/mfa/enable */
 export async function orgMfaEnable(mfaToken: string, code: string) {
   const payload: OrgEnableMfaPayload = { code };
   const { data } = await axiosInstance.post<MfaEnableResponse>(
-    "/Auth/mfa/enable",
+    "/v1/auth/mfa/enable",
     payload,
     {
       headers: { Authorization: `Bearer ${mfaToken}` },
@@ -103,22 +103,22 @@ export async function orgMfaEnable(mfaToken: string, code: string) {
   return { ...data, accessToken: accessToken ?? data.accessToken };
 }
 
-/** GET /Auth/Org/me — org context + the sites this tenant admin may switch to. */
+/** GET /v1/organizations/me — org context + the sites this tenant admin may switch to. */
 export async function getOrgMe() {
   const { data } = await axiosInstance.get<ApiResponse<OrgMeResponse>>(
-    "/Auth/Org/me",
+    "/v1/organizations/me",
   );
   return data;
 }
 
 /**
- * POST /Auth/select-site — reissues the org token with a new SiteId. Same contract
+ * POST /v1/auth/select-site — reissues the org token with a new SiteId. Same contract
  * the EHSS app uses; required for multi-site tenant Admins in this portal.
  * Only `Ehs_Director` tenant admins reach this path in the admin portal.
  */
 export async function selectOrgSite(siteId: number) {
   const { data } = await axiosInstance.post<ApiResponse<SelectSiteResponse>>(
-    "/Auth/select-site",
+    "/v1/auth/select-site",
     { siteId },
   );
 

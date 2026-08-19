@@ -22,10 +22,10 @@ export {
 export * from "./org-auth.service";
 export * from "./super-admin-auth.service";
 
-/** POST /Auth/register */
+/** POST /v1/auth/register */
 export async function register(payload: RegisterPayload) {
   const { data } = await axiosInstance.post<ApiResponse<RegisterResponse>>(
-    "/Auth/register",
+    "/v1/auth/register",
     payload,
   );
   return data;

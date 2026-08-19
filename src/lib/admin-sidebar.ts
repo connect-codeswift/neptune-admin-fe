@@ -51,6 +51,11 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     icon: "lucide:shield-check",
   },
   {
+    label: "KPI Targets",
+    href: "/kpi-targets",
+    icon: "lucide:target",
+  },
+  {
     label: "Document Categories",
     href: "/doc-categories",
     icon: "lucide:layers",

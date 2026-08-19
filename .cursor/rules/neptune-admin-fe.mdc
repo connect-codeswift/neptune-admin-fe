@@ -1,16 +1,53 @@
 ---
-description: Neptune Admin FE stack & layout
+description: Neptune Admin FE — stack, layout, auth model, branch policy
 alwaysApply: true
 ---
 
 # neptune-admin-fe
 
-Next 16 App Router `src/`, React 19, TS strict, TW v4 (`globals.css` `@theme`), RQ + axios, Iconify/sonner/recharts/libphonenumber-js. `@/*`→`./src/*`. React Compiler on — no gratuitous memo.
+**Read [AGENTS.md](../../AGENTS.md) at the repo root before writing code.** It is the source of
+truth; this file is the short form. The other `.mdc` files here cover DTOs (`api-dtos`), UI
+components (`ui-components`), Tailwind tokens (`tailwind-tokens`), and Sonar/a11y
+(`sonarqube`).
 
-Dirs: `inputs/` forms · `ui/` chrome (Button/Table/Modal/…) · `layouts/` shells · `utils/` `lib/` `providers/` `types/` · `dtos/req` + `dtos/res` (Payload/Response) · `public/sidebar/` Figma assets.
+Next 16 App Router `src/`, React 19, TS strict, TW v4 (`globals.css` `@theme`), RQ + axios,
+Iconify/sonner/recharts/libphonenumber-js. `@/*`→`./src/*`. React Compiler on — no gratuitous
+memo. Read `node_modules/next/dist/docs/` before using a new Next API.
 
-Named exports. Barrel `components/*/index.ts`. `"use client"` only when needed. Tokens: `blue-normal` `#0891a6`, `darkest`, `gray`, `lightgray`, `green`/`red`/`yellow`. Glass: `bg-white/62`, `rounded-[20px]`, soft dual shadow.
+## Branches
 
-API DTOs: see `api-dtos.mdc` — request types end in `Payload`, responses in `Response`.
+Work on `hamid`, push `origin/hamid`, PR into **`origin/dev`** (the latest). The backend is `connect-codeswift/Neptune-Ehss-BE`
+on `origin/Staging`, and it serves five frontends.
 
-Read `node_modules/next/dist/docs/` before new Next APIs.
+## Two apps, one tree
+
+`(auth)/` unified login+MFA · `[company]/[site]/` org admin (org token) · `super/(dashboard)/`
+CodeSwift staff (staff token) · `super/(auth)/` bootstrap only. No middleware — gating is
+client-side via `DashboardAuthGate` and `TenantContextProvider`.
+
+Three tokens in `src/lib/auth-tokens.ts` (auth / org / mfa). `src/lib/axiosInstance.ts` picks
+one per request from `BODY_CREDENTIAL_AUTH_PATHS`, `MFA_BEARER_AUTH_PATHS`,
+`STAFF_ONLY_AUTH_PATHS`, else `orgToken || authToken`. A new endpoint that doesn't follow
+"org token if present" must be added to the right list.
+
+## Data layer
+
+`src/services/*.service.ts` (axios only) → `src/hooks/use*.ts` (React Query, exported query-key
+consts) → `src/components/features/*`. Unwrap `ApiResponse<T>` with `assertApiSuccess` +
+`unwrapDataModel`/`unwrapList` from `src/lib/api-response.ts` — never read `.dataModel` in a
+component. The contract is `FEGuides/AdminDashboard.md` in `connect-codeswift/Neptune-Ehss-BE`, not
+`.docs/swagger.json`.
+
+## Dirs
+
+`inputs/` forms · `ui/` chrome (Button/Table/Modal/…) · `layouts/` shells · `features/<domain>/`
+page composition · `utils/` `lib/` `providers/` `types/` · `dtos/req` + `dtos/res`
+(Payload/Response) · `public/sidebar/` Figma assets.
+
+Named exports. Barrel `components/*/index.ts`. `"use client"` only when needed. Tokens:
+`blue-normal` `#0891a6`, `darkest`, `gray`, `lightgray`, `green`/`red`/`yellow`. Glass:
+`bg-white/62`, `rounded-[20px]`, soft dual shadow.
+
+## Verify
+
+`npm run lint` and `npm run build`. No tests.

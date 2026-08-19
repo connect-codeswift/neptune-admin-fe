@@ -179,7 +179,7 @@ export async function switchOrganizationSite(input: {
 }
 
 /**
- * Tenant `Ehs_Director` admin path: POST /Auth/select-site, replace the org
+ * Tenant `Ehs_Director` admin path: POST /v1/auth/select-site, replace the org
  * token, update cache. Falls back to refreshing Org/me for the site list when
  * the cache is empty. `Ehs_Lead` is rejected by the admin portal login gate.
  */

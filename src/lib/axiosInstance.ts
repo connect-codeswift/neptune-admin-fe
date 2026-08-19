@@ -14,26 +14,26 @@ import {
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 const BODY_CREDENTIAL_AUTH_PATHS = [
-  "/Auth/login",
-  "/Auth/verify-mfa",
-  "/AdminPortalAuth/login",
-  "/SuperAdminAuth/login",
-  "/SuperAdminAuth/verify-mfa",
-  "/SuperAdminAuth/mfa/setup",
-  "/SuperAdminAuth/mfa/enable",
-  "/SuperAdminAuth/forgot-password",
-  "/SuperAdminAuth/reset-password",
-  "/SuperAdminAuth/bootstrap",
+  "/v1/auth/login",
+  "/v1/auth/verify-mfa",
+  "/v1/admin/auth/login",
+  "/v1/super-admin/auth/login",
+  "/v1/super-admin/auth/verify-mfa",
+  "/v1/super-admin/auth/mfa/setup",
+  "/v1/super-admin/auth/mfa/enable",
+  "/v1/super-admin/auth/forgot-password",
+  "/v1/super-admin/auth/reset-password",
+  "/v1/super-admin/auth/bootstrap",
 ] as const;
 
-const MFA_BEARER_AUTH_PATHS = ["/Auth/mfa/setup", "/Auth/mfa/enable"] as const;
+const MFA_BEARER_AUTH_PATHS = ["/v1/auth/mfa/setup", "/v1/auth/mfa/enable"] as const;
 
 /** Endpoints that must always use the staff token, even if an org token exists. */
 const STAFF_ONLY_AUTH_PATHS = [
-  "/SuperAdminCompanies",
-  "/SuperAdminAuth/select-company",
-  "/SuperAdminAuth/create",
-  "/PlatformOps",
+  "/v1/super-admin/companies",
+  "/v1/super-admin/auth/select-company",
+  "/v1/super-admin/staff",
+  "/v1/platform-ops",
 ] as const;
 
 const axiosInstance = axios.create({

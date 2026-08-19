@@ -16,47 +16,47 @@ export type GetSuperAdminRolesParams = {
   pageSize?: number;
 };
 
-/** GET /SuperAdminRoles */
+/** GET /v1/super-admin/roles */
 export async function getAllRoles(params?: GetSuperAdminRolesParams) {
   const { data } = await axiosInstance.get<ApiResponse<RoleResponse[]>>(
-    "/SuperAdminRoles",
+    "/v1/super-admin/roles",
     { params },
   );
   return data;
 }
 
-/** GET /SuperAdminRoles/permissions */
+/** GET /v1/super-admin/roles/permissions */
 export async function getAllPermissions() {
   const { data } = await axiosInstance.get<ApiResponse<PermissionResponse[]>>(
-    "/SuperAdminRoles/permissions",
+    "/v1/super-admin/roles/permissions",
   );
   return data;
 }
 
-/** GET /SuperAdminRoles/with-permissions */
+/** GET /v1/super-admin/roles/with-permissions */
 export async function getAllRolesPermissions() {
   const { data } = await axiosInstance.get<
     ApiResponse<RoleWithPermissionsResponse[]>
-  >("/SuperAdminRoles/with-permissions");
+  >("/v1/super-admin/roles/with-permissions");
   return data;
 }
 
-/** POST /SuperAdminRoles */
+/** POST /v1/super-admin/roles */
 export async function createRole(payload: CreateRolePayload) {
   const { data } = await axiosInstance.post<ApiResponse<CreateRoleResponse>>(
-    "/SuperAdminRoles",
+    "/v1/super-admin/roles",
     payload,
   );
   return data;
 }
 
-/** PUT /SuperAdminRoles/{roleId}/permissions — full replace */
+/** PUT /v1/super-admin/roles/{roleId}/permissions — full replace */
 export async function assignRolePermissions(
   roleId: number,
   payload: AssignPermissionsPayload,
 ) {
   const { data } = await axiosInstance.put<ApiResponse<unknown>>(
-    `/SuperAdminRoles/${roleId}/permissions`,
+    `/v1/super-admin/roles/${roleId}/permissions`,
     payload,
   );
   return data;
@@ -73,14 +73,14 @@ export async function assignPermissions(input: {
 }
 
 /**
- * DELETE /SuperAdminRoles/{roleId}
+ * DELETE /v1/super-admin/roles/{roleId}
  *
  * Anyone holding the role is moved to No_Permission and has no access at all until they
  * are given another one. The backend refuses Ehs_Director and the shared preset roles.
  */
 export async function deleteRole(roleId: number) {
   const { data } = await axiosInstance.delete<ApiResponse>(
-    `/SuperAdminRoles/${roleId}`,
+    `/v1/super-admin/roles/${roleId}`,
   );
   return data;
 }

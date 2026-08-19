@@ -39,7 +39,7 @@ export function canAccessSuperDashboard(): boolean {
  * `Ehs_Director` admin of their own org.
  *
  * `Ehs_Lead` is a site authority and is rejected by the backend at
- * `/AdminPortalAuth/login`. This function additionally defends against any
+ * `/v1/admin/auth/login`. This function additionally defends against any
  * locally-stored org token that explicitly carries the `Ehs_Lead` role from
  * being treated as an admin portal admin.
  */

@@ -15,11 +15,11 @@ import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiResponse } from "@/types/api.types";
 
-/** GET /SuperAdminCompanies/{organizationId} */
+/** GET /v1/super-admin/companies/{organizationId} */
 export async function getCompanyById(organizationId: number) {
   const { data } = await axiosInstance.get<
     ApiResponse<SuperAdminCompanyDetailResponse>
-  >(`/SuperAdminCompanies/${organizationId}`);
+  >(`/v1/super-admin/companies/${organizationId}`);
   return data;
 }
 
@@ -27,87 +27,87 @@ export type GetCompanySitesParams = {
   includeDeleted?: boolean;
 };
 
-/** GET /SuperAdminCompanies/{organizationId}/sites */
+/** GET /v1/super-admin/companies/{organizationId}/sites */
 export async function getCompanySites(
   organizationId: number,
   params?: GetCompanySitesParams,
 ) {
   const { data } = await axiosInstance.get<ApiResponse<SuperAdminSiteRow[]>>(
-    `/SuperAdminCompanies/${organizationId}/sites`,
+    `/v1/super-admin/companies/${organizationId}/sites`,
     { params },
   );
   return data;
 }
 
-/** PUT /SuperAdminCompanies/{organizationId} */
+/** PUT /v1/super-admin/companies/{organizationId} */
 export async function updateCompany(
   organizationId: number,
   payload: UpdateCompanyProfilePayload,
 ) {
   const { data } = await axiosInstance.put<
     ApiResponse<SuperAdminCompanyDetailResponse>
-  >(`/SuperAdminCompanies/${organizationId}`, payload);
+  >(`/v1/super-admin/companies/${organizationId}`, payload);
   return data;
 }
 
-/** PUT /SuperAdminCompanies/{organizationId}/modules */
+/** PUT /v1/super-admin/companies/{organizationId}/modules */
 export async function updateCompanyModules(
   organizationId: number,
   payload: UpdateActivatedModulesPayload,
 ) {
   const { data } = await axiosInstance.put<
     ApiResponse<SuperAdminCompanyDetailResponse>
-  >(`/SuperAdminCompanies/${organizationId}/modules`, payload);
+  >(`/v1/super-admin/companies/${organizationId}/modules`, payload);
   return data;
 }
 
-/** POST /SuperAdminCompanies/{organizationId}/access */
+/** POST /v1/super-admin/companies/{organizationId}/access */
 export async function setCompanyAccessWindow(
   organizationId: number,
   payload: SetAccessWindowPayload,
 ) {
   const { data } = await axiosInstance.post<ApiResponse<AccessWindowResponse>>(
-    `/SuperAdminCompanies/${organizationId}/access`,
+    `/v1/super-admin/companies/${organizationId}/access`,
     payload,
     { neptuneUseStaffToken: true },
   );
   return data;
 }
 
-/** DELETE /SuperAdminCompanies/{organizationId}/access */
+/** DELETE /v1/super-admin/companies/{organizationId}/access */
 export async function clearCompanyAccessWindow(organizationId: number) {
   const { data } = await axiosInstance.delete<ApiResponse<unknown>>(
-    `/SuperAdminCompanies/${organizationId}/access`,
+    `/v1/super-admin/companies/${organizationId}/access`,
     { neptuneUseStaffToken: true },
   );
   return data;
 }
 
-/** GET /SuperAdminCompanies/{organizationId}/access/history */
+/** GET /v1/super-admin/companies/{organizationId}/access/history */
 export async function getCompanyAccessHistory(organizationId: number) {
   const { data } = await axiosInstance.get<ApiResponse<AccessHistoryRow[]>>(
-    `/SuperAdminCompanies/${organizationId}/access/history`,
+    `/v1/super-admin/companies/${organizationId}/access/history`,
   );
   return data;
 }
 
-/** PUT /SuperAdminCompanies/{organizationId}/limits */
+/** PUT /v1/super-admin/companies/{organizationId}/limits */
 export async function setOrganizationLimits(
   organizationId: number,
   payload: SetOrganizationLimitsPayload,
 ) {
   const { data } = await axiosInstance.put<
     ApiResponse<OrganizationLimitsResponse>
-  >(`/SuperAdminCompanies/${organizationId}/limits`, payload, {
+  >(`/v1/super-admin/companies/${organizationId}/limits`, payload, {
     neptuneUseStaffToken: true,
   });
   return data;
 }
 
-/** GET /SuperAdminCompanies/{organizationId}/limits/history */
+/** GET /v1/super-admin/companies/{organizationId}/limits/history */
 export async function getOrganizationLimitsHistory(organizationId: number) {
   const { data } = await axiosInstance.get<ApiResponse<LimitHistoryRow[]>>(
-    `/SuperAdminCompanies/${organizationId}/limits/history`,
+    `/v1/super-admin/companies/${organizationId}/limits/history`,
   );
   return data;
 }

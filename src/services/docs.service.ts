@@ -5,150 +5,162 @@ import type {
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiPayload, ApiResponse } from "@/types/api.types";
 
-/** POST /Document/document */
+/** POST /v1/documents */
 export async function createDocument(payload: ApiPayload) {
   const { data } = await axiosInstance.post<ApiResponse>(
-    "/Document/document",
+    "/v1/documents",
     payload,
   );
   return data;
 }
 
-/** PUT /Document/document */
-export async function updateDocument(payload: ApiPayload) {
+/** PUT /v1/documents/{id} — the id used to travel in the body; it is now a path segment. */
+export async function updateDocument(id: string | number, payload: ApiPayload) {
   const { data } = await axiosInstance.put<ApiResponse>(
-    "/Document/document",
+    `/v1/documents/${id}`,
     payload,
   );
   return data;
 }
 
-/** POST /Document/document_version */
-export async function createDocumentVersion(payload: ApiPayload) {
+/** POST /v1/documents/{documentId}/versions */
+export async function createDocumentVersion(
+  documentId: string | number,
+  payload: ApiPayload,
+) {
   const { data } = await axiosInstance.post<ApiResponse>(
-    "/Document/document_version",
+    `/v1/documents/${documentId}/versions`,
     payload,
   );
   return data;
 }
 
-/** PUT /Document/Acknowledgement */
-export async function updateAcknowledgement(payload: ApiPayload) {
-  const { data } = await axiosInstance.put<ApiResponse>(
-    "/Document/Acknowledgement",
-    payload,
-  );
-  return data;
-}
-
-/** PUT /Document/DocApproval */
-export async function updateDocApproval(payload: ApiPayload) {
-  const { data } = await axiosInstance.put<ApiResponse>(
-    "/Document/DocApproval",
-    payload,
-  );
-  return data;
-}
-
-/** POST /Document/allDocuments */
-export async function getAllDocuments(payload?: ApiPayload) {
+/**
+ * POST /v1/document-versions/{versionId}/acknowledge
+ *
+ * Was `PUT /Document/Acknowledgement`. Both the verb and the shape changed: acknowledging is
+ * a transition on one version, not an update of an "Acknowledgement" resource.
+ */
+export async function updateAcknowledgement(
+  versionId: string | number,
+  payload?: ApiPayload,
+) {
   const { data } = await axiosInstance.post<ApiResponse>(
-    "/Document/allDocuments",
+    `/v1/document-versions/${versionId}/acknowledge`,
     payload ?? {},
   );
   return data;
 }
 
-/** POST /Document/AddDepartment */
+/** POST /v1/documents/{id}/approval — was `PUT /Document/DocApproval`. */
+export async function updateDocApproval(
+  id: string | number,
+  payload?: ApiPayload,
+) {
+  const { data } = await axiosInstance.post<ApiResponse>(
+    `/v1/documents/${id}/approval`,
+    payload ?? {},
+  );
+  return data;
+}
+
+/** POST /v1/documents/search — body-filtered read. */
+export async function getAllDocuments(payload?: ApiPayload) {
+  const { data } = await axiosInstance.post<ApiResponse>(
+    "/v1/documents/search",
+    payload ?? {},
+  );
+  return data;
+}
+
+/** POST /v1/departments — departments left DocumentController; they are org-level. */
 export async function addDepartment(payload: ApiPayload) {
   const { data } = await axiosInstance.post<ApiResponse>(
-    "/Document/AddDepartment",
+    "/v1/departments",
     payload,
   );
   return data;
 }
 
-/** GET /Document/GetAllDepartments */
+/** GET /v1/departments */
 export async function getAllDepartments() {
-  const { data } = await axiosInstance.get<ApiResponse>(
-    "/Document/GetAllDepartments",
-  );
+  const { data } = await axiosInstance.get<ApiResponse>("/v1/departments");
   return data;
 }
 
-/** POST /Document/AddCategory */
+/** POST /v1/document-categories */
 export async function addCategory(payload: AddDocCategoryPayload) {
   const { data } = await axiosInstance.post<ApiResponse>(
-    "/Document/AddCategory",
+    "/v1/document-categories",
     payload,
   );
   return data;
 }
 
-/** PUT /Document/Category/{id} */
+/** PUT /v1/document-categories/{id} */
 export async function updateCategory(
   id: string | number,
   payload: UpdateDocCategoryPayload,
 ) {
   const { data } = await axiosInstance.put<ApiResponse>(
-    `/Document/Category/${id}`,
+    `/v1/document-categories/${id}`,
     payload,
   );
   return data;
 }
 
-/** DELETE /Document/Category/{id} */
+/** DELETE /v1/document-categories/{id} */
 export async function deleteCategory(id: string | number) {
   const { data } = await axiosInstance.delete<ApiResponse>(
-    `/Document/Category/${id}`,
+    `/v1/document-categories/${id}`,
   );
   return data;
 }
 
-/** GET /Document/GetAllCategories */
+/** GET /v1/document-categories */
 export async function getAllCategories() {
   const { data } = await axiosInstance.get<ApiResponse>(
-    "/Document/GetAllCategories",
+    "/v1/document-categories",
   );
   return data;
 }
 
-/** GET /Document/dashboard-kpis */
+/** GET /v1/documents/dashboard-kpis */
 export async function getDocumentDashboardKpis() {
   const { data } = await axiosInstance.get<ApiResponse>(
-    "/Document/dashboard-kpis",
+    "/v1/documents/dashboard-kpis",
   );
   return data;
 }
 
-/** GET /Document/category-stats */
+/** GET /v1/documents/category-stats */
 export async function getCategoryStats() {
   const { data } = await axiosInstance.get<ApiResponse>(
-    "/Document/category-stats",
+    "/v1/documents/category-stats",
   );
   return data;
 }
 
-/** GET /Document/versions/{documentVersionId}/acknowledgements */
+/** GET /v1/document-versions/{documentVersionId}/acknowledgements */
 export async function getVersionAcknowledgements(
   documentVersionId: string | number,
 ) {
   const { data } = await axiosInstance.get<ApiResponse>(
-    `/Document/versions/${documentVersionId}/acknowledgements`,
+    `/v1/document-versions/${documentVersionId}/acknowledgements`,
   );
   return data;
 }
 
-/** GET /Document/{documentId}/versions */
+/** GET /v1/documents/{documentId}/versions */
 export async function getDocumentVersions(documentId: string | number) {
   const { data } = await axiosInstance.get<ApiResponse>(
-    `/Document/${documentId}/versions`,
+    `/v1/documents/${documentId}/versions`,
   );
   return data;
 }
 
-/** GET /Document/{id} */
+/** GET /v1/documents/{id} */
 export async function getDocumentById(id: string | number) {
-  const { data } = await axiosInstance.get<ApiResponse>(`/Document/${id}`);
+  const { data } = await axiosInstance.get<ApiResponse>(`/v1/documents/${id}`);
   return data;
 }
