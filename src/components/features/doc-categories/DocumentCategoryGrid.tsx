@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/ui";
+import {
+  FeatureEmptyState,
+  FeatureErrorCard,
+  FeatureLoadingGrid,
+} from "@/components/features/shared";
+import { Button, ConfirmDialog } from "@/components/ui";
 import {
   useDeleteDocCategory,
   useDocCategories,
@@ -15,11 +20,24 @@ import {
   type CategoryDraft,
 } from "./DocumentCategoryCard";
 
-export function DocumentCategoryGrid() {
+/** The grid recipe the catalog screens share: 3 → 2 → 1 across breakpoints. */
+const CARD_GRID_CLASS =
+  "stagger-cards grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3";
+
+type DocumentCategoryGridProps = Readonly<{
+  /**
+   * Opens the create form. The empty state is the one place a first-time user
+   * lands, so it needs the same primary action the page header carries.
+   */
+  onCreate?: () => void;
+}>;
+
+export function DocumentCategoryGrid({ onCreate }: DocumentCategoryGridProps) {
+  const sectionHeadingId = useId();
   // `isPending` (not `isLoading`) so the query stays in its loading state while
   // it is still gated on the tenant scope — a disabled query reports
   // `isLoading === false` with no data, which would flash the empty state.
-  const { data: categories = [], isPending, isError, error } =
+  const { data: categories = [], isPending, isError, error, refetch } =
     useDocCategories();
   const updateMutation = useUpdateDocCategory();
   const deleteMutation = useDeleteDocCategory();
@@ -75,66 +93,94 @@ export function DocumentCategoryGrid() {
     }
   };
 
+  let body: ReactNode;
   if (isPending) {
-    return (
-      <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px]">
-        Loading categories…
-      </p>
+    body = (
+      <FeatureLoadingGrid
+        count={3}
+        label="Loading document categories…"
+        className={CARD_GRID_CLASS}
+        cardClassName="min-h-52"
+      />
     );
-  }
-
-  if (isError) {
-    return (
-      <p className="rounded-[20px] border border-red/20 bg-red/5 px-5 py-8 text-center text5 text-red shadow-lg backdrop-blur-[10px]">
-        {error instanceof Error ? error.message : "Failed to load categories."}
-      </p>
+  } else if (isError) {
+    body = (
+      <FeatureErrorCard
+        title="Couldn’t load categories"
+        message={
+          error instanceof Error ? error.message : "Failed to load categories."
+        }
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  } else if (viewModels.length === 0) {
+    body = (
+      <FeatureEmptyState
+        icon="lucide:folder-open"
+        title="No categories yet"
+        description="Categories are how documents get filed, found and — where the category demands it — routed for approval. None exist for this organization."
+        action={
+          onCreate ? (
+            <Button size="sm" leftIcon="lucide:folder-plus" onClick={onCreate}>
+              Add your first category
+            </Button>
+          ) : null
+        }
+      />
+    );
+  } else {
+    body = (
+      <div className={CARD_GRID_CLASS}>
+        {viewModels.map((category) => (
+          <DocumentCategoryCard
+            key={category.id}
+            category={category}
+            isEditing={editingId === category.id}
+            draft={draft}
+            onDraftChange={setDraft}
+            onEdit={() => startEdit(category)}
+            onCancel={cancelEdit}
+            onSave={() => void saveEdit(category.id)}
+            onDelete={
+              category.deletable ? () => setDeleteTarget(category) : undefined
+            }
+          />
+        ))}
+      </div>
     );
   }
 
   return (
-    <>
+    <section aria-labelledby={sectionHeadingId} className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id={sectionHeadingId} className="text3 text-ehs-darker">
+          All Categories
+        </h2>
+        {!isPending && !isError && viewModels.length > 0 ? (
+          <p className="text8 text-ehs-muted-text">
+            {viewModels.length} categor{viewModels.length === 1 ? "y" : "ies"}
+          </p>
+        ) : null}
+      </div>
+
+      {body}
+
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="Delete Category"
-        description={
-          deleteTarget ? (
-            <>
-              Delete <strong>{deleteTarget.name}</strong>? This cannot be undone.
-            </>
-          ) : null
-        }
-        cancelLabel="Cancel"
-        confirmLabel="Delete"
+        title={`Delete ${deleteTarget?.name ?? "category"}?`}
+        // State the consequence, not "are you sure". Only categories with no
+        // documents can reach this dialog, so the consequence is about the
+        // pickers the category disappears from rather than about lost files.
+        description="No documents are filed under this category, so nothing is lost. It will disappear from every document picker and cannot be restored."
+        cancelLabel="Keep category"
+        confirmLabel="Delete category"
         confirmVariant="danger"
+        loading={deleteMutation.isPending}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
       />
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        {viewModels.length === 0 ? (
-          <p className="rounded-[20px] border border-white/90 bg-white/62 px-5 py-8 text-center text5 text-gray shadow-lg backdrop-blur-[10px] xl:col-span-2">
-            No categories yet. Create the first one to get started.
-          </p>
-        ) : (
-          viewModels.map((category) => (
-            <DocumentCategoryCard
-              key={category.id}
-              category={category}
-              isEditing={editingId === category.id}
-              draft={draft}
-              onDraftChange={setDraft}
-              onEdit={() => startEdit(category)}
-              onCancel={cancelEdit}
-              onSave={() => void saveEdit(category.id)}
-              onDelete={
-                category.deletable
-                  ? () => setDeleteTarget(category)
-                  : undefined
-              }
-            />
-          ))
-        )}
-      </div>
-    </>
+    </section>
   );
 }

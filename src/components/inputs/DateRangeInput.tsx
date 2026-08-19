@@ -75,13 +75,13 @@ export function DateRangeInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -166,7 +166,7 @@ export function DateRangeInput({
       className={`relative flex flex-col gap-1.5 ${containerClassName}`.trim()}
     >
       {label ? (
-        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
+        <label htmlFor={inputId} className="text7 text-darkest">
           {label}
         </label>
       ) : null}
@@ -179,45 +179,45 @@ export function DateRangeInput({
         aria-controls={panelId}
         aria-describedby={describedBy}
         onClick={handleToggle}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-[10px] border bg-white px-3.5 text-left text5 shadow-lg outline-none transition-colors focus-visible:ring-2 disabled:cursor-not-allowed disabled:bg-lightgray disabled:opacity-60 ${
+        className={`flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-2.5 border bg-ehs-surface/55 px-3.5 text-left text4 backdrop-blur-1.25 outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${
           error
-            ? "border-red focus:border-red focus-visible:ring-red/30"
-            : "border-darkest/12 focus:border-blue-normal focus-visible:ring-blue-normal/30"
+            ? "border-ehs-red focus:border-ehs-red focus:ring-0.75 focus:ring-ehs-red/15"
+            : "border-ehs-border-ink/8 hover:border-ehs-border-ink/18 hover:bg-ehs-surface/70 focus:border-ehs-normal-blue focus:ring-0.75 focus:ring-ehs-normal-blue/15"
         } ${className}`.trim()}
       >
-        <span className={start ? "text-darkest" : "text-darkest/50"}>
+        <span className={start ? "text-ehs-darker" : "text-ehs-muted-text"}>
           {displayLabel}
         </span>
         <Icon
           icon="mdi:calendar-range"
           width={20}
           height={20}
-          className="shrink-0 text-gray"
+          className="shrink-0 text-ehs-muted-text"
           aria-hidden
         />
       </button>
       {open ? (
         <div
           id={panelId}
-          className="absolute top-[calc(100%+0.25rem)] left-0 z-20 w-74 rounded-[10px] border border-darkest/12 bg-white p-3 shadow-lg"
+          className="animate-popover-in absolute top-[calc(100%+0.25rem)] left-0 z-20 w-74 rounded-xl border border-ehs-hairline/70 bg-ehs-surface/96 p-3 shadow-(--ehs-shadow-popover) backdrop-blur-xl"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
             <button
               type="button"
               aria-label="Previous month"
               onClick={() => setViewMonth((current) => addMonths(current, -1))}
-              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-gray transition-colors hover:bg-lightgray hover:text-darkest"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-ehs-muted-text transition-colors hover:bg-ehs-light-bg/60 hover:text-ehs-darker"
             >
               <Icon icon="mdi:chevron-left" width={20} height={20} />
             </button>
-            <p className="text5 font-semibold text-darkest">
+            <p className="text5 text-darkest">
               {formatMonthLabel(viewMonth)}
             </p>
             <button
               type="button"
               aria-label="Next month"
               onClick={() => setViewMonth((current) => addMonths(current, 1))}
-              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-gray transition-colors hover:bg-lightgray hover:text-darkest"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-ehs-muted-text transition-colors hover:bg-ehs-light-bg/60 hover:text-ehs-darker"
             >
               <Icon icon="mdi:chevron-right" width={20} height={20} />
             </button>
@@ -250,11 +250,11 @@ export function DateRangeInput({
               const dayDisabled = isDisabledDay(day);
 
               let dayClass =
-                "text-darkest hover:bg-blue-lightest";
+                "text-ehs-darker hover:bg-ehs-light-blue";
               if (isStart || isEnd) {
-                dayClass = "bg-blue-normal font-semibold text-white";
+                dayClass = "bg-ehs-normal-blue font-semibold text-ehs-on-accent";
               } else if (inRange) {
-                dayClass = "bg-blue-lightest text-blue-deep";
+                dayClass = "bg-ehs-light-blue text-ehs-darker";
               }
 
               return (
@@ -264,14 +264,14 @@ export function DateRangeInput({
                   disabled={dayDisabled}
                   aria-pressed={isStart || isEnd}
                   onClick={() => handleDayClick(day)}
-                  className={`flex size-9 cursor-pointer items-center justify-center rounded-lg text5 transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${dayClass}`}
+                  className={`flex size-9 cursor-pointer items-center justify-center rounded-lg text4 transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${dayClass}`}
                 >
                   {day.getDate()}
                 </button>
               );
             })}
           </div>
-          <p className="mt-2 text6 text-gray">
+          <p className="mt-2 text8 text-gray">
             {draftStart && !end
               ? "Select an end date"
               : "Select a start date, then an end date"}

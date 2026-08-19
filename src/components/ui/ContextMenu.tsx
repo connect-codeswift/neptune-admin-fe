@@ -241,14 +241,14 @@ export function ContextMenu({
           left: coords?.left ?? 0,
           visibility: coords ? "visible" : "hidden",
         }}
-        className={`z-50 min-w-44 overflow-hidden rounded-[10px] border border-darkest/12 bg-white p-1 shadow-lg ${menuClassName}`.trim()}
+        className={`border-ehs-border-ink/10 bg-ehs-surface z-50 min-w-44 overflow-hidden rounded-2.5 border p-1 shadow-(--ehs-shadow-popover) ${menuClassName}`.trim()}
       >
         {items.map((item) => {
           if (isSeparator(item)) {
             return (
               <hr
                 key={item.id}
-                className="my-1 border-0 border-t border-darkest/10"
+                className="border-ehs-border-ink/10 my-1 border-0 border-t"
               />
             );
           }
@@ -264,10 +264,10 @@ export function ContextMenu({
                 item.onSelect?.();
                 setOpen(false);
               }}
-              className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`text4 flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 item.danger
-                  ? "text-red hover:bg-red/5"
-                  : "text-darkest hover:bg-lightgray"
+                  ? "text-ehs-red hover:bg-ehs-red/10"
+                  : "text-ehs-darker hover:bg-ehs-surface-raised"
               }`}
             >
               {item.icon ? (

@@ -51,13 +51,13 @@ export function MultiBadgesInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -109,22 +109,22 @@ export function MultiBadgesInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="text5 font-semibold text-darkest"
+          className="text7 text-darkest"
         >
           {label}
         </label>
       ) : null}
       <div
-        className={`flex min-h-12 w-full flex-wrap items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 shadow-lg transition-colors focus-within:ring-2 ${
+        className={`flex min-h-12 w-full flex-wrap items-center gap-1.5 rounded-2.5 border bg-ehs-surface/55 px-3 py-2 backdrop-blur-1.25 transition ${
           error
-            ? "border-red focus-within:border-red focus-within:ring-red/30"
-            : "border-darkest/12 focus-within:border-blue-normal focus-within:ring-blue-normal/30"
-        } ${disabled ? "cursor-not-allowed bg-lightgray opacity-60" : ""} ${className}`.trim()}
+            ? "border-ehs-red focus-within:border-ehs-red focus-within:ring-0.75 focus-within:ring-ehs-red/15"
+            : "border-ehs-border-ink/8 hover:border-ehs-border-ink/18 focus-within:border-ehs-normal-blue focus-within:ring-0.75 focus-within:ring-ehs-normal-blue/15"
+        } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`.trim()}
       >
         {value.map((badge) => (
           <span
             key={badge}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-lightest px-2 py-1 text6 text-blue-deep"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-lightest px-2 py-1 text7 text-blue-deep"
           >
             {badge}
             <button
@@ -149,7 +149,7 @@ export function MultiBadgesInput({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={() => addBadge(draft)}
-          className="min-w-32 flex-1 bg-transparent py-1 text5 text-darkest outline-none placeholder:text-darkest/50 disabled:cursor-not-allowed"
+          className="min-w-32 flex-1 bg-transparent py-1 text4 text-darkest outline-none placeholder:text-ehs-muted-text disabled:cursor-not-allowed"
         />
       </div>
       {fieldMessage}

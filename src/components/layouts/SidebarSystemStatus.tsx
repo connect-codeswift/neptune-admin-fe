@@ -8,8 +8,8 @@ type SystemStatusItem = {
 };
 
 const TONE_DOT: Record<SystemStatusTone, string> = {
-  ok: "bg-green",
-  warn: "bg-yellow",
+  ok: "bg-ehs-green",
+  warn: "bg-ehs-yellow",
 };
 
 const DEFAULT_STATUS_ITEMS: SystemStatusItem[] = [
@@ -33,15 +33,15 @@ export function SidebarSystemStatus({
   return (
     <section
       aria-label="System status"
-      className={`flex w-full flex-col gap-2.5 rounded-xl border border-blue-normal/8 bg-blue-normal/5 p-3 ${className}`.trim()}
+      className={`flex w-full flex-col gap-2.5 rounded-xl border border-ehs-normal-blue/12 bg-ehs-normal-blue-bg-light p-3 ${className}`.trim()}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text8 tracking-[0.5px] text-[#8892a3] uppercase">
+        <p className="text6 text-ehs-muted-text">
           System Status
         </p>
         <div className="flex items-center gap-1">
-          <span className="size-1.5 rounded-full bg-green" aria-hidden />
-          <span className="text8 text-green">{overallLabel}</span>
+          <span className="size-1.5 rounded-full bg-ehs-green" aria-hidden />
+          <span className="text8 text-ehs-green">{overallLabel}</span>
         </div>
       </div>
 
@@ -53,9 +53,9 @@ export function SidebarSystemStatus({
                 className={`size-1 shrink-0 rounded-full ${TONE_DOT[item.tone]}`}
                 aria-hidden
               />
-              <span className="truncate text7 text-gray">{item.label}</span>
+              <span className="text8 truncate text-ehs-gray">{item.label}</span>
             </div>
-            <span className="shrink-0 text7 text-darkest">
+            <span className="text7 shrink-0 text-ehs-darker">
               {item.value}
             </span>
           </li>

@@ -69,13 +69,13 @@ export function DropzoneInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -116,17 +116,18 @@ export function DropzoneInput({
     if (event.dataTransfer.files?.length) addFiles(event.dataTransfer.files);
   };
 
-  let dropzoneBorder = "border-darkest/20";
+  let dropzoneBorder =
+    "border-ehs-border-strong hover:border-ehs-normal-blue hover:bg-ehs-normal-blue-bg-light";
   if (error) {
-    dropzoneBorder = "border-red";
+    dropzoneBorder = "border-ehs-red";
   } else if (dragging) {
-    dropzoneBorder = "border-blue-normal";
+    dropzoneBorder = "border-ehs-normal-blue";
   }
 
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`.trim()}>
       {label ? (
-        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
+        <label htmlFor={inputId} className="text7 text-darkest">
           {label}
         </label>
       ) : null}
@@ -134,18 +135,18 @@ export function DropzoneInput({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`rounded-[10px] border border-dashed bg-white p-6 text-center shadow-lg transition-colors ${dropzoneBorder} ${
-          dragging ? "bg-blue-lightest/40" : ""
+        className={`rounded-2.5 border border-dashed bg-ehs-surface/55 p-6 text-center backdrop-blur-1.25 transition-colors ${dropzoneBorder} ${
+          dragging ? "ring-0.75 ring-ehs-normal-blue/15" : ""
         } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`.trim()}
       >
         <Icon
           icon="mdi:cloud-upload-outline"
           width={28}
           height={28}
-          className="mx-auto text-blue-normal"
+          className="mx-auto text-ehs-normal-blue"
           aria-hidden
         />
-        <p className="mt-2 text5 text-darkest">{placeholder}</p>
+        <p className="mt-2 text4 text-darkest">{placeholder}</p>
         <button
           type="button"
           disabled={disabled}
@@ -174,7 +175,7 @@ export function DropzoneInput({
           {value.map((file) => (
             <li
               key={`${file.name}-${file.size}-${file.lastModified}`}
-              className="flex items-center justify-between gap-2 rounded-lg border border-darkest/10 bg-lightgray px-3 py-2 text5"
+              className="flex items-center justify-between gap-2 rounded-lg border border-ehs-border-ink/10 bg-ehs-surface-raised px-3 py-2 text4"
             >
               <span className="min-w-0 truncate text-darkest">
                 {file.name}{" "}
@@ -185,7 +186,7 @@ export function DropzoneInput({
                 disabled={disabled}
                 aria-label={`Remove ${file.name}`}
                 onClick={() => removeFile(file)}
-                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray transition-colors hover:bg-white hover:text-darkest disabled:cursor-not-allowed"
+                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ehs-muted-text transition-colors hover:bg-ehs-surface hover:text-ehs-darker disabled:cursor-not-allowed"
               >
                 <Icon icon="mdi:close" width={16} height={16} />
               </button>

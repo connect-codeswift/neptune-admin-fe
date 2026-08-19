@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
@@ -14,17 +13,23 @@ import {
   setAuthToken,
   setOrgToken,
 } from "@/lib/auth-tokens";
+import { clearMfaToken, PORTAL_AUTH } from "@/lib/auth-flow";
 import {
-  clearMfaToken,
-  getMfaToken,
-  PORTAL_AUTH,
-} from "@/lib/auth-flow";
-import {
-  getPortalAccountType,
   getPortalMfaConfig,
   type PortalAccountType,
 } from "@/lib/portal-auth";
-import { AuthDivider, AuthFormHeader } from "./AuthFormChrome";
+import {
+  AuthBackLink,
+  AuthDivider,
+  AuthFormHeader,
+  AuthNextStepNote,
+  AuthStatus,
+} from "./AuthFormChrome";
+import { useMfaSession } from "./useMfaSession";
+
+/** Fixed so the submit button can point `aria-describedby` at the field's own error message. */
+const CODE_FIELD_ID = "mfa-verify-code";
+const CODE_ERROR_ID = `${CODE_FIELD_ID}-error`;
 
 function persistSession(accountType: PortalAccountType, accessToken: string) {
   if (accountType === "staff") {
@@ -45,33 +50,41 @@ function hasPersistedSession(accountType: PortalAccountType): boolean {
 
 export function MfaVerifyForm() {
   const router = useRouter();
-  const [storedMfaToken] = useState(() => getMfaToken());
-  const [accountType] = useState(() => getPortalAccountType());
+  const session = useMfaSession();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasSession = Boolean(session.mfaToken) && Boolean(session.accountType);
 
   useEffect(() => {
-    if (!storedMfaToken || !accountType) {
-      router.replace(PORTAL_AUTH.loginPath);
-    }
-  }, [accountType, router, storedMfaToken]);
+    // Only once browser storage has actually been read. Redirecting on the first render would
+    // bounce every visitor back to sign-in, because nothing is known at that point.
+    if (!session.isReady || hasSession) return;
+    router.replace(PORTAL_AUTH.loginPath);
+  }, [hasSession, router, session.isReady]);
 
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!storedMfaToken || !accountType || code.length !== 6) return;
+
+    const { mfaToken, accountType } = session;
+    if (!mfaToken || !accountType) return;
+
+    if (code.length !== 6) {
+      setError("Enter all 6 digits from your authenticator app.");
+      return;
+    }
 
     const mfaConfig = getPortalMfaConfig(accountType);
 
+    setError(null);
     setLoading(true);
     try {
-      const response = await mfaConfig.verifyMfa({
-        mfaToken: storedMfaToken,
-        code,
-      });
+      const response = await mfaConfig.verifyMfa({ mfaToken, code });
 
       const accessToken = extractAccessToken(response);
       if (!accessToken) {
-        toast.error("Session was not issued. Please sign in again.");
+        setError("No session was issued. Go back and sign in again.");
         return;
       }
 
@@ -81,38 +94,85 @@ export function MfaVerifyForm() {
 
       clearMfaToken();
       window.location.assign(mfaConfig.resolveDashboardPath(accessToken));
-    } catch (error) {
+    } catch (caught) {
       const message =
-        error instanceof Error ? error.message : "Verification failed.";
-      toast.error(message);
+        caught instanceof Error ? caught.message : "Verification failed.";
+
       if (message.toLowerCase().includes("expired")) {
+        // An inline message would be unmounted by the redirect, so this one has to be a toast.
+        toast.error("Your sign-in expired. Please sign in again.");
         clearMfaToken();
         router.replace(PORTAL_AUTH.loginPath);
+        return;
       }
+
+      setError(message);
+      setCode("");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!storedMfaToken || !accountType) {
-    return null;
+  if (!session.isReady) {
+    return (
+      <div>
+        <AuthFormHeader
+          title="Two-factor authentication"
+          description="One moment while we pick up where your sign-in left off."
+        />
+        <div className="pt-6">
+          <AuthStatus>Checking your sign-in…</AuthStatus>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasSession) {
+    return (
+      <div>
+        <AuthFormHeader
+          title="Your sign-in has expired"
+          description="This step stays open for a few minutes only. Start again from the sign-in screen."
+        />
+        <div className="flex flex-col gap-6 pt-6">
+          <AuthStatus visuallyHidden>
+            Sign-in expired. Returning you to the sign-in screen.
+          </AuthStatus>
+          <AuthBackLink href={PORTAL_AUTH.loginPath}>
+            Back to sign in
+          </AuthBackLink>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
       <AuthFormHeader
+        step="Step 2 of 2 — verify"
         title="Two-factor authentication"
-        description="Enter the 6-digit code from your authenticator app"
+        description="Your password was accepted. Enter the 6-digit code from your authenticator app to finish signing in."
       />
-      <AuthDivider />
+      <AuthDivider label="verification code" />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 pt-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-5">
         <OtpInput
+          id={CODE_FIELD_ID}
+          label="Authentication code"
+          helperText="The code changes every 30 seconds — enter the one showing now."
           value={code}
-          onChange={setCode}
+          onChange={(next) => {
+            setCode(next);
+            if (error) setError(null);
+          }}
+          error={error ?? undefined}
           autoFocus
           disabled={loading}
         />
+
+        <AuthStatus visuallyHidden>
+          {loading ? "Verifying your code…" : ""}
+        </AuthStatus>
 
         <Button
           type="submit"
@@ -121,17 +181,23 @@ export function MfaVerifyForm() {
           loading={loading}
           loadingText="Verifying…"
           disabled={code.length !== 6}
+          aria-busy={loading || undefined}
+          aria-describedby={error ? CODE_ERROR_ID : undefined}
         >
-          Verify
+          Verify and continue
         </Button>
 
-        <Link
+        <AuthNextStepNote>
+          Next stop is your dashboard. Lost access to your authenticator app?
+          Ask an administrator to reset it for you.
+        </AuthNextStepNote>
+
+        <AuthBackLink
           href={PORTAL_AUTH.loginPath}
           onClick={() => clearMfaToken()}
-          className="text-center text5 text-blue-normal hover:text-blue-deep"
         >
           Back to sign in
-        </Link>
+        </AuthBackLink>
       </form>
     </div>
   );

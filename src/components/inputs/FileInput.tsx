@@ -50,13 +50,13 @@ export function FileInput({
   let fieldMessage = null;
   if (error) {
     fieldMessage = (
-      <p id={`${inputId}-error`} className="text6 text-red" role="alert">
+      <p id={`${inputId}-error`} className="text8 text-red" role="alert">
         {error}
       </p>
     );
   } else if (helperText) {
     fieldMessage = (
-      <p id={`${inputId}-helper`} className="text6 text-gray">
+      <p id={`${inputId}-helper`} className="text8 text-gray">
         {helperText}
       </p>
     );
@@ -65,14 +65,14 @@ export function FileInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`.trim()}>
       {label ? (
-        <label htmlFor={inputId} className="text5 font-semibold text-darkest">
+        <label htmlFor={inputId} className="text7 text-darkest">
           {label}
         </label>
       ) : null}
       <div
-        className={`flex h-12 items-center gap-2 rounded-[10px] border bg-white px-3 shadow-lg ${
-          error ? "border-red" : "border-darkest/12"
-        } ${disabled ? "bg-lightgray opacity-60" : ""} ${className}`.trim()}
+        className={`flex h-12 items-center gap-2 rounded-2.5 border bg-ehs-surface/55 px-3 backdrop-blur-1.25 ${
+          error ? "border-ehs-red" : "border-ehs-border-ink/8"
+        } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`.trim()}
       >
         <button
           type="button"
@@ -87,7 +87,7 @@ export function FileInput({
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
-          className="min-w-0 flex-1 cursor-pointer truncate text-left text5 disabled:cursor-not-allowed"
+          className="min-w-0 flex-1 cursor-pointer truncate text-left text4 disabled:cursor-not-allowed"
         >
           {value ? (
             <span className="text-darkest">
@@ -95,7 +95,7 @@ export function FileInput({
               <span className="text-gray">({formatFileSize(value.size)})</span>
             </span>
           ) : (
-            <span className="text-darkest/50">{placeholder}</span>
+            <span className="text-ehs-muted-text">{placeholder}</span>
           )}
         </button>
         {value ? (
@@ -107,7 +107,7 @@ export function FileInput({
               onChange?.(null);
               if (inputRef.current) inputRef.current.value = "";
             }}
-            className="flex size-7 cursor-pointer items-center justify-center rounded-md text-gray transition-colors hover:bg-lightgray hover:text-darkest disabled:cursor-not-allowed"
+            className="flex size-7 cursor-pointer items-center justify-center rounded-md text-ehs-muted-text transition-colors hover:bg-ehs-light-bg/60 hover:text-ehs-darker disabled:cursor-not-allowed"
           >
             <Icon icon="mdi:close" width={16} height={16} />
           </button>

@@ -72,7 +72,7 @@ export function SetOrganizationLimitsModal({
       }}
     >
       <div className="flex flex-col gap-4">
-        <p className="text5 text-gray">
+        <p className="text4 text-gray">
           Set seat and site caps for {companyName}. Leave blank or type
           &quot;unlimited&quot; for no cap on that dimension. At least one cap
           must be set, or use Clear limits to remove both.

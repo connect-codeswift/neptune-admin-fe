@@ -50,6 +50,18 @@ export {
   DashboardAuthGate,
   type DashboardAuthGateProps,
 } from "./DashboardAuthGate";
+export {
+  DashboardShell,
+  useDashboardDrawer,
+  type DashboardShellProps,
+  type DashboardDrawer,
+} from "./DashboardShell";
+export { AuthShell, type AuthShellProps } from "./AuthShell";
+export {
+  SidebarNavShell,
+  type SidebarNavShellProps,
+  type SidebarNavShellUser,
+} from "./SidebarNavShell";
 
 /** @deprecated Use AdminDashboardHeader or SuperAdminDashboardHeader */
 export { AdminDashboardHeader as DashboardHeader } from "./AdminDashboardHeader";
