@@ -167,7 +167,7 @@ function ModuleRow({
                   : "bg-ehs-border-ink/8 text-ehs-muted-text"
               }`}
             >
-              <Icon icon={getModuleIcon(module.name)} width={15} height={15} aria-hidden />
+              <Icon icon={getModuleIcon(module.code)} width={15} height={15} aria-hidden />
             </span>
 
             <span className="min-w-0">

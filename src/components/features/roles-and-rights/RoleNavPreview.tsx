@@ -24,10 +24,10 @@ const FOCUS_RING =
 /**
  * One sidebar row as this role would see it.
  *
- * Three states, and they are deliberately distinguishable: granted and licensed
- * (shown in the app), licensed but not granted (hidden, and one click from being
- * shown), and not licensed (hidden no matter what the role holds, because the
- * company has not bought it — clicking would be a lie).
+ * Two states: shown in the app, or hidden and one click from being shown. There
+ * is no third "not licensed" state here — unlicensed modules do not reach this
+ * list at all, because the app's own sidebar does not show them and a preview
+ * that did would not be a preview.
  */
 function NavRow({
   item,
@@ -38,23 +38,22 @@ function NavRow({
   disabled: boolean;
   onToggle: (permissionId: number) => void;
 }>) {
-  const visible = item.granted && item.licensed;
-  const locked = disabled || !item.licensed || item.permissionId === undefined;
+  const visible = item.granted;
+  const locked = disabled || item.permissionId === undefined;
 
   let tone = "border-transparent text-ehs-muted-text";
   if (visible) {
     tone = "border-blue-normal/25 bg-blue-normal/8 text-darkest";
-  } else if (!item.licensed) {
-    tone = "border-transparent text-ehs-muted-text/50";
   }
 
-  const title = (() => {
-    if (!item.licensed) return `${item.module.name} — not licensed for this company`;
-    if (item.permissionId === undefined) return `${item.module.name} — no View right defined yet`;
-    return visible
-      ? `${item.module.name} — visible; click to hide`
-      : `${item.module.name} — hidden; click to show`;
-  })();
+  let title: string;
+  if (item.permissionId === undefined) {
+    title = `${item.module.name} — no View right defined yet`;
+  } else if (visible) {
+    title = `${item.module.name} — visible; click to hide`;
+  } else {
+    title = `${item.module.name} — hidden; click to show`;
+  }
 
   return (
     <button
@@ -67,17 +66,13 @@ function NavRow({
     >
       <Icon icon={item.icon} width={15} height={15} aria-hidden className="shrink-0" />
       <span className="min-w-0 flex-1 truncate text8">{item.module.name}</span>
-      {!item.licensed ? (
-        <span className="shrink-0 text8 opacity-70">not licensed</span>
-      ) : (
-        <Icon
-          icon={visible ? "lucide:eye" : "lucide:eye-off"}
-          width={13}
-          height={13}
-          aria-hidden
-          className="shrink-0"
-        />
-      )}
+      <Icon
+        icon={visible ? "lucide:eye" : "lucide:eye-off"}
+        width={13}
+        height={13}
+        aria-hidden
+        className="shrink-0"
+      />
     </button>
   );
 }
@@ -100,21 +95,24 @@ export function RoleNavPreview({
   const groups = resolveNavPreview(modules, selectedIds);
   const visibleCount = countVisibleNavItems(groups);
 
-  // Only licensed modules can be shown at all, so bulk actions never promise
-  // something the licence will refuse.
   const togglableIds = groups
     .flatMap((group) => group.items)
-    .filter((item) => item.licensed && item.permissionId !== undefined)
+    .filter((item) => item.permissionId !== undefined)
     .map((item) => item.permissionId as number);
 
   const allShown =
     togglableIds.length > 0 &&
     togglableIds.every((id) => selectedIds.includes(id));
 
-  if (modules.length === 0) {
+  // Distinguishes an empty catalogue from a company that simply has nothing
+  // switched on — the second is common and fixable, and saying so beats a blank
+  // panel that reads as a bug.
+  if (groups.length === 0) {
     return (
       <p className="text-ehs-muted-text text8" role="status">
-        No modules in the catalogue yet.
+        {modules.length === 0
+          ? "No modules in the catalogue yet."
+          : "This company has no modules licensed, so no role can see anything in the app. CodeSwift can switch modules on from Client Accounts."}
       </p>
     );
   }

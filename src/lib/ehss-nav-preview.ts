@@ -91,27 +91,33 @@ const ICON_BY_CODE = new Map(
   ),
 );
 
-/** Fallback icons for anything outside the sidebar: the platform modules. */
-const ICON_BY_NAME: Readonly<Record<string, string>> = {
-  locations: "mdi:map-marker-outline",
-  departments: "mdi:office-building-outline",
-  files: "mdi:paperclip",
-  notifications: "mdi:bell-outline",
-  "root cause analysis": "mdi:sitemap-outline",
-  "kpi targets": "mdi:target",
-  "command center": "mdi:monitor-dashboard",
-  "admin portal": "mdi:shield-account-outline",
+/**
+ * Icons for modules that have no sidebar entry: the shared platform registers and
+ * the admin portal. Keyed by code like the sidebar map, because module names are
+ * display text and change more freely than codes do.
+ */
+const PLATFORM_ICONS: Readonly<Record<string, string>> = {
+  LOCATIONS: "mdi:map-marker-outline",
+  DEPARTMENTS: "mdi:office-building-outline",
+  FILES: "mdi:paperclip",
+  NOTIFICATIONS: "mdi:bell-outline",
+  RCA: "mdi:sitemap-outline",
+  KPI_TARGETS: "mdi:target",
+  COMMAND_CENTER: "mdi:monitor-dashboard",
+  ADMIN_PORTAL: "mdi:shield-account-outline",
 };
 
-/** An icon for a module, by code where the sidebar knows it and by name otherwise. */
-export function getModuleIcon(nameOrCode: string): string {
-  const key = nameOrCode.trim();
+/**
+ * An icon for a module, by its code.
+ *
+ * Pass the code, not the name. Both maps are keyed by code, so a name only
+ * resolves when it happens to equal its code — which is why Hazard and CAPA had
+ * icons while Incidents, Near Miss and Audits fell back to a generic glyph.
+ */
+export function getModuleIcon(code: string): string {
+  const key = code.trim().toUpperCase();
 
-  return (
-    ICON_BY_CODE.get(key.toUpperCase()) ??
-    ICON_BY_NAME[key.toLowerCase()] ??
-    "mdi:puzzle-outline"
-  );
+  return ICON_BY_CODE.get(key) ?? PLATFORM_ICONS[key] ?? "mdi:puzzle-outline";
 }
 
 export type ResolvedNavItem = Readonly<{
@@ -133,16 +139,22 @@ export type ResolvedNavGroup = Readonly<{
 /**
  * The sidebar this role would see, grouped as the app groups it.
  *
- * Every licensable module is accounted for: one the groups above do not mention
- * falls into "Other" rather than vanishing, so a module added on the backend
- * shows up here without anyone remembering to edit this file.
+ * **Unlicensed modules are not in it at all.** They used to render greyed with a
+ * "not licensed" note, which was wrong for this screen specifically: the app's
+ * sidebar does not show them, so a preview that does is not a preview. The Rights
+ * grid still lists them, greyed and disabled, because there the point is the
+ * opposite one — that the grants survive and come back when the module does.
+ *
+ * A module the groups above do not mention falls into "Other" rather than
+ * vanishing, so one added on the backend shows up without anyone editing this file.
  */
 export function resolveNavPreview(
   modules: readonly CatalogModule[],
   selectedIds: readonly number[],
 ): ResolvedNavGroup[] {
   const selected = new Set(selectedIds);
-  const byCode = new Map(modules.map((module) => [module.code.toUpperCase(), module]));
+  const licensedOnly = modules.filter((module) => module.isLicensed);
+  const byCode = new Map(licensedOnly.map((module) => [module.code.toUpperCase(), module]));
   const placed = new Set<string>();
 
   const toItem = (module: CatalogModule, icon: string): ResolvedNavItem => {
@@ -171,14 +183,14 @@ export function resolveNavPreview(
     return { title: group.title, items };
   }).filter((group) => group.items.length > 0);
 
-  const leftover = modules.filter(
+  const leftover = licensedOnly.filter(
     (module) => !placed.has(module.code.toUpperCase()),
   );
 
   if (leftover.length > 0) {
     groups.push({
       title: "Other",
-      items: leftover.map((module) => toItem(module, getModuleIcon(module.name))),
+      items: leftover.map((module) => toItem(module, getModuleIcon(module.code))),
     });
   }
 
@@ -188,8 +200,7 @@ export function resolveNavPreview(
 /** How many sidebar entries this role would actually see. */
 export function countVisibleNavItems(groups: readonly ResolvedNavGroup[]): number {
   return groups.reduce(
-    (total, group) =>
-      total + group.items.filter((item) => item.granted && item.licensed).length,
+    (total, group) => total + group.items.filter((item) => item.granted).length,
     0,
   );
 }
