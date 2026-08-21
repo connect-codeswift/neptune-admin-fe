@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { useState } from "react";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import {
@@ -13,14 +12,16 @@ import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
-  useAllPermissions,
+  usePermissionCatalog,
   useRolesWithPermissions,
 } from "@/hooks/useRolesAndRights";
 import {
-  filterPermissionGroups,
-  sortPermissionGroupsForDisplay,
-  type PermissionGroup,
-  type PermissionOption,
+  filterModules,
+  getAllModules,
+  getModulePermissions,
+  type CatalogModule,
+  type CatalogPermission,
+  type PermissionCatalog,
   type RoleViewModel,
 } from "@/lib/mappers/roles.mapper";
 import { RoleSummaryCard } from "./RoleSummaryCard";
@@ -30,43 +31,47 @@ type RoleDetailPageProps = Readonly<{
   roleId: string;
 }>;
 
-function GrantedRightChip({ option }: Readonly<{ option: PermissionOption }>) {
+/**
+ * One granted right. Shows the action, because the module is the section
+ * heading right above it; the full claim string stays in the tooltip for
+ * whoever needs to match it against a [HasPermission] gate.
+ */
+function GrantedRightChip({ permission }: Readonly<{ permission: CatalogPermission }>) {
   return (
     <span
       className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-ehs-border-ink/6 px-2 py-1 font-mono text8 text-darkest"
-      title={
-        option.locked ? `${option.label} — always granted` : option.label
-      }
+      title={permission.displayName}
     >
-      {option.locked ? (
-        <Icon
-          icon="lucide:lock"
-          width={12}
-          height={12}
-          className="shrink-0 text-ehs-muted-text"
-          aria-hidden="true"
-        />
-      ) : null}
-      <span className="min-w-0 truncate">{option.label}</span>
+      <span className="min-w-0 truncate">{permission.action}</span>
     </span>
   );
 }
 
+/** One module's granted rights, with how many of its actions that represents. */
 function GrantedRightsGroup({
-  group,
-  totalInGroup,
-}: Readonly<{ group: PermissionGroup; totalInGroup: number }>) {
+  module,
+  granted,
+}: Readonly<{ module: CatalogModule; granted: CatalogPermission[] }>) {
+  const total = getModulePermissions(module).length;
+
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="min-w-0 truncate text5 text-darkest">{group.group}</h3>
+        <h3 className="min-w-0 truncate text5 text-darkest">
+          {module.name}
+          {module.isLicensed ? null : (
+            <span className="ml-2 text8 font-normal text-ehs-muted-text">
+              not licensed
+            </span>
+          )}
+        </h3>
         <span className="shrink-0 text7 text-ehs-muted-text tabular-nums">
-          {group.permissions.length} of {totalInGroup}
+          {granted.length} of {total}
         </span>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {group.permissions.map((option) => (
-          <GrantedRightChip key={option.id} option={option} />
+        {granted.map((permission) => (
+          <GrantedRightChip key={permission.id} permission={permission} />
         ))}
       </div>
     </section>
@@ -75,11 +80,11 @@ function GrantedRightsGroup({
 
 function GrantedRights({
   role,
-  groups,
+  catalog,
   editHref,
 }: Readonly<{
   role: RoleViewModel;
-  groups: PermissionGroup[];
+  catalog: PermissionCatalog;
   editHref: string;
 }>) {
   const [query, setQuery] = useState("");
@@ -99,19 +104,20 @@ function GrantedRights({
     );
   }
 
-  // Catalog totals per group, so each section can say "3 of 14" against the
-  // filtered granted-only view below.
-  const totalsByGroup = new Map(
-    groups.map((group) => [group.group, group.permissions.length]),
-  );
+  // Modules this role touches at all, each carrying only the actions it holds.
+  // An unlicensed module is still listed: the role does hold those rights, they
+  // are simply inert until the module is switched back on, and hiding them would
+  // make the role look smaller than it is.
+  const held = new Set(role.permissionIds);
 
-  const grantedGroups = sortPermissionGroupsForDisplay(
-    filterPermissionGroups(groups, {
-      query,
-      selectedOnly: true,
-      selectedIds: role.permissionIds,
-    }),
-  );
+  const grantedGroups = filterModules(getAllModules(catalog), query)
+    .map((module) => ({
+      module,
+      granted: getModulePermissions(module).filter((permission) =>
+        held.has(permission.id),
+      ),
+    }))
+    .filter((entry) => entry.granted.length > 0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -128,11 +134,11 @@ function GrantedRights({
           {`No granted rights match “${query.trim()}”.`}
         </p>
       ) : (
-        grantedGroups.map((group) => (
+        grantedGroups.map((entry) => (
           <GrantedRightsGroup
-            key={group.group}
-            group={group}
-            totalInGroup={totalsByGroup.get(group.group) ?? group.permissions.length}
+            key={entry.module.id}
+            module={entry.module}
+            granted={entry.granted}
           />
         ))
       )}
@@ -163,7 +169,7 @@ export function RoleDetailPage({ roleId }: RoleDetailPageProps) {
     isError: permissionsError,
     error: permissionsLoadError,
     refetch: refetchPermissions,
-  } = useAllPermissions();
+  } = usePermissionCatalog();
 
   const role = roles.find((entry) => entry.id === roleId);
 
@@ -310,7 +316,13 @@ export function RoleDetailPage({ roleId }: RoleDetailPageProps) {
           {!permissionsLoading && !permissionsError ? (
             <GrantedRights
               role={role}
-              groups={permissionsCatalog?.groups ?? []}
+              catalog={
+                permissionsCatalog ?? {
+                  modules: [],
+                  platform: [],
+                  adminPortal: [],
+                }
+              }
               editHref={editHref}
             />
           ) : null}
