@@ -52,6 +52,10 @@ export function getDummyDeployStatus(): DeployStatusResponse {
     deploy: {
       inProgress: true,
       startedAt: isoAgo(134),
+      // Two apps in the cycle, one of them mid-build: the case the panel now
+      // has to render, and one you cannot reach outside production.
+      apps: ["admin-fe", "hub-fe"],
+      currentApp: "admin-fe",
       lastResult: "exit-code",
       lastFinished: isoAgo(160),
       timerNext: isoAhead(86),
@@ -108,6 +112,7 @@ export function getDummyDeployStatus(): DeployStatusResponse {
         health: 0,
         stuckOnFailedSha: null,
         isHealthy: false,
+        isDeploying: true,
       },
       {
         name: "admin-fe",
@@ -121,6 +126,8 @@ export function getDummyDeployStatus(): DeployStatusResponse {
         health: 200,
         stuckOnFailedSha: null,
         isHealthy: true,
+        isDeploying: true,
+        isBuilding: true,
       },
     ],
   };

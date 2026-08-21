@@ -112,7 +112,44 @@ export function DeployStatusBanner({ status }: Readonly<DeployStatusBannerProps>
 
 export type DeployInProgressStripProps = {
   startedAt: string | null;
+  /** Apps in the running cycle. Empty means the script did not say. */
+  apps?: string[] | null;
+  /** The one being built right now, when known. */
+  currentApp?: string | null;
 };
+
+/**
+ * What the strip says a deploy is actually doing.
+ *
+ * Three levels of knowledge, because the marker file the API reads may carry
+ * any of them: the app being built right now, the set of apps in this cycle,
+ * or nothing at all. The last case is the pre-existing behaviour and must stay
+ * honest — an empty list while a deploy runs means the script did not report
+ * it, not that zero apps are deploying.
+ */
+function describeDeployTarget(
+  apps: string[] | null | undefined,
+  currentApp: string | null | undefined,
+): string | null {
+  const named = (apps ?? []).filter((name) => name.trim() !== "");
+  const current = currentApp?.trim();
+
+  if (current) {
+    const others = named.filter(
+      (name) => name.toLowerCase() !== current.toLowerCase(),
+    );
+    if (others.length > 0) {
+      return `Building ${current} · ${others.length} more in this cycle`;
+    }
+    return `Building ${current}`;
+  }
+
+  if (named.length > 0) {
+    return `Building ${joinAppNames(named)}`;
+  }
+
+  return null;
+}
 
 /** Wall clock as an external store, so the counter ticks without setState churn. */
 function subscribeToSecond(onTick: () => void) {
@@ -136,6 +173,8 @@ function getServerSecondSnapshot(): number {
  */
 export function DeployInProgressStrip({
   startedAt,
+  apps,
+  currentApp,
 }: Readonly<DeployInProgressStripProps>) {
   const tick = useSyncExternalStore(
     subscribeToSecond,
@@ -148,6 +187,8 @@ export function DeployInProgressStrip({
     elapsed = secondsSince(startedAt);
   }
 
+  const target = describeDeployTarget(apps, currentApp);
+
   return (
     <div className="border-ehs-normal-blue/25 bg-ehs-normal-blue/8 rounded-3 overflow-hidden border">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
@@ -155,7 +196,9 @@ export function DeployInProgressStrip({
           <span className="bg-ehs-normal-blue/70 absolute inline-flex size-full rounded-full motion-safe:animate-ping" />
           <span className="bg-ehs-normal-blue relative inline-flex size-2 rounded-full" />
         </span>
-        <p className="text-ehs-dark-blue text5">Deploy running</p>
+        <p className="text-ehs-dark-blue text5">
+          {target ?? "Deploy running"}
+        </p>
         <p className="text-ehs-muted-text text8">
           Started {formatInstant(startedAt)}
           {elapsed === null ? null : ` · ${formatElapsed(elapsed)} elapsed`}
