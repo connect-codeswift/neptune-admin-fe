@@ -48,7 +48,11 @@ export function DeployStatusHero({ status }: Readonly<DeployStatusHeroProps>) {
       <DeployStatusBanner status={status} />
 
       {status.deploy.inProgress ? (
-        <DeployInProgressStrip startedAt={status.deploy.startedAt} />
+        <DeployInProgressStrip
+          startedAt={status.deploy.startedAt}
+          apps={status.deploy.apps}
+          currentApp={status.deploy.currentApp}
+        />
       ) : null}
 
       <div className="border-ehs-hairline/70 grid grid-cols-2 gap-x-4 gap-y-3.5 border-t pt-4 sm:grid-cols-3 xl:grid-cols-5">
