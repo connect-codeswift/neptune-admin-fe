@@ -10,13 +10,39 @@ import {
 } from "@/lib/deploy-status";
 import { DeploySha, DeployStatusPill } from "./DeployPills";
 
+/**
+ * The pulsing dot marks the row a deploy is touching right now, so the answer
+ * to "which app is building" is on the app itself rather than only in the
+ * page-level strip. `isBuilding` is the app being built at this moment;
+ * `isDeploying` is the wider set in the same cycle, which is all an older
+ * deploy script reports.
+ */
 function AppNameCell({ app }: Readonly<{ app: DeployAppResponse }>) {
+  let deployLabel: string | null = null;
+  if (app.isBuilding) {
+    deployLabel = "Building now";
+  } else if (app.isDeploying) {
+    deployLabel = "In this deploy";
+  }
+
   return (
     <div className="min-w-0">
-      <p className="text-ehs-darker truncate text5">{app.name}</p>
-      <p className="truncate text7 text-ehs-muted-text">
-        {app.unit} · :{app.port}
-      </p>
+      <div className="flex min-w-0 items-center gap-1.5">
+        {deployLabel ? (
+          <span className="relative flex size-2 shrink-0" aria-hidden>
+            <span className="bg-ehs-normal-blue/70 absolute inline-flex size-full rounded-full motion-safe:animate-ping" />
+            <span className="bg-ehs-normal-blue relative inline-flex size-2 rounded-full" />
+          </span>
+        ) : null}
+        <p className="text-ehs-darker truncate text5">{app.name}</p>
+      </div>
+      {deployLabel ? (
+        <p className="text-ehs-normal-blue truncate text7">{deployLabel}</p>
+      ) : (
+        <p className="truncate text7 text-ehs-muted-text">
+          {app.unit} · :{app.port}
+        </p>
+      )}
     </div>
   );
 }

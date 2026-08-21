@@ -27,6 +27,10 @@ export type DeployAppResponse = {
   stuckOnFailedSha: string | null;
   /** Precomputed: active + 2xx/3xx health + nothing stuck. */
   isHealthy: boolean;
+  /** Precomputed: this app is part of the cycle running right now. */
+  isDeploying?: boolean;
+  /** Precomputed: this app is the one being built at this moment. At most one. */
+  isBuilding?: boolean;
 };
 
 /** Deploy-cycle block of the snapshot. */
@@ -34,6 +38,14 @@ export type DeployCycleResponse = {
   /** Computed live from a marker file, not from the snapshot. */
   inProgress: boolean;
   startedAt: string | null;
+  /**
+   * Apps this cycle is deploying. Read from the running marker, so an older
+   * deploy script leaves it empty while `inProgress` is still true — empty
+   * while running means *unknown*, not *none*.
+   */
+  apps?: string[] | null;
+  /** The app being built at this moment, where the script reports that far. */
+  currentApp?: string | null;
   /** systemd `Result` — `success` or `exit-code`. Non-zero can still be fine. */
   lastResult: string | null;
   lastFinished: string | null;
