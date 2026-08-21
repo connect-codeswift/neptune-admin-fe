@@ -202,3 +202,142 @@ export function getNonNavPageOptions(
     (option) => !NAV_PERMISSIONS.has(option.label.trim().toLowerCase()),
   );
 }
+
+/* ————————————————————————————————————————————————————————————————
+   Module identity, shared by the Pages preview and the Actions / Buttons
+   matrices so one module wears one icon everywhere in the editor.
+   ———————————————————————————————————————————————————————————————— */
+
+/** `Regulatory Compliance` / `regulatory-compliance` / `Compliance` → `regulatorycompliance`. */
+function normalizeModuleKey(name: string): string {
+  return name.trim().toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+}
+
+const NAV_ICON_BY_KEY = new Map<string, string>(
+  EHSS_NAV_PREVIEW.flatMap((group) =>
+    group.items.flatMap((item) => {
+      const fromLabel = normalizeModuleKey(item.label);
+      const fromSlug = normalizeModuleKey(item.permission.replace(/^page:/, ""));
+      // Singular too: the permission catalogue says "Audit", the sidebar says
+      // "Audits", and they are the same module.
+      const keys = new Set([fromLabel, fromSlug]);
+      for (const key of [...keys]) {
+        if (key.endsWith("s")) keys.add(key.slice(0, -1));
+      }
+      return [...keys].map((key) => [key, item.icon] as const);
+    }),
+  ),
+);
+
+/** Categories the catalogue has that the sidebar does not, given a sensible face. */
+const EXTRA_MODULE_ICONS: Readonly<Record<string, string>> = {
+  department: "mdi:sitemap-outline",
+  file: "mdi:paperclip",
+  location: "mdi:map-marker-outline",
+  notification: "mdi:bell-outline",
+  document: "mdi:file-document-outline",
+  user: "mdi:account-outline",
+  role: "mdi:shield-account-outline",
+  site: "mdi:office-building-outline",
+  organization: "mdi:domain",
+  ehscommandcenter: "mdi:view-dashboard-outline",
+  kpi: "mdi:target",
+  kpitarget: "mdi:target",
+};
+
+/** The icon for a permission category or module name. Never throws, never blank. */
+export function getModuleIcon(name: string): string {
+  const key = normalizeModuleKey(name);
+  return (
+    NAV_ICON_BY_KEY.get(key) ??
+    EXTRA_MODULE_ICONS[key] ??
+    (key.endsWith("s") ? NAV_ICON_BY_KEY.get(key.slice(0, -1)) : undefined) ??
+    "mdi:key-outline"
+  );
+}
+
+/**
+ * The part of a permission label worth reading once its module is already the
+ * heading: `Incident.Create` → `Create`, `button:report-hazard` → `Report
+ * hazard`. Falls back to the whole label, so an unrecognised shape is shown
+ * verbatim rather than mangled.
+ */
+export function shortPermissionLabel(label: string, moduleName = ""): string {
+  const trimmed = label.trim();
+
+  const buttonSlug = /^button:(.+)$/i.exec(trimmed)?.[1];
+  if (buttonSlug) {
+    const words = buttonSlug.replaceAll(/[-_]/g, " ").trim();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  }
+
+  const pageSlug = /^page:(.+)$/i.exec(trimmed)?.[1];
+  if (pageSlug) {
+    const words = pageSlug.replaceAll(/[-_]/g, " ").trim();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  }
+
+  // `Module.Action` — drop the module only when it really is this module's.
+  const dot = trimmed.indexOf(".");
+  if (dot > 0) {
+    const head = trimmed.slice(0, dot);
+    const tail = trimmed.slice(dot + 1);
+    if (
+      tail.trim() !== "" &&
+      (moduleName === "" ||
+        normalizeModuleKey(head) === normalizeModuleKey(moduleName))
+    ) {
+      return tail;
+    }
+  }
+
+  return trimmed;
+}
+
+/**
+ * Regroup a flat category into modules.
+ *
+ * Buttons arrive from the API in one bucket ("UI Buttons"), which as a single
+ * card would be a wall of ~90 chips — the very thing the module-first layout
+ * exists to avoid. `button:report-hazard` names its module in the slug, so the
+ * longest sidebar slug appearing in it wins ("hazard"), and anything that
+ * matches nothing lands in a final "Other" group rather than being dropped.
+ */
+export function regroupByModule(
+  options: readonly PermissionOption[],
+  fallbackGroup = "Other",
+): { group: string; permissions: PermissionOption[] }[] {
+  const slugs = EHSS_NAV_PREVIEW.flatMap((group) =>
+    group.items.map((item) => ({
+      slug: item.permission.replace(/^page:/, ""),
+      label: item.label,
+    })),
+  ).toSorted((left, right) => right.slug.length - left.slug.length);
+
+  const buckets = new Map<string, PermissionOption[]>();
+
+  for (const option of options) {
+    const haystack = option.label
+      .trim()
+      .toLowerCase()
+      .replace(/^(button|page):/, "");
+    const hit = slugs.find(
+      (entry) =>
+        haystack === entry.slug ||
+        haystack.includes(`-${entry.slug}`) ||
+        haystack.startsWith(`${entry.slug}-`),
+    );
+
+    const key = hit?.label ?? fallbackGroup;
+    buckets.set(key, [...(buckets.get(key) ?? []), option]);
+  }
+
+  return [...buckets.entries()]
+    .toSorted(([left], [right]) => {
+      // "Other" is a remainder, so it sits last however it sorts.
+      if (left === fallbackGroup) return 1;
+      if (right === fallbackGroup) return -1;
+      return left.localeCompare(right);
+    })
+    .map(([group, permissions]) => ({ group, permissions }));
+}
