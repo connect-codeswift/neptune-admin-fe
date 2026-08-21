@@ -1,13 +1,10 @@
-import { PlaceholderPage } from "@/components/layouts";
+import { RoleDetailPage } from "@/components/features/roles-and-rights/RoleDetailPage";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = Readonly<{
+  params: Promise<{ company: string; site: string; id: string }>;
+}>;
 
-export default async function RoleDetailPage({ params }: Props) {
+export default async function OrgSiteRoleDetailRoute({ params }: Props) {
   const { id } = await params;
-  return (
-    <PlaceholderPage
-      title="Role Details"
-      description={`Placeholder for role ${id}.`}
-    />
-  );
+  return <RoleDetailPage roleId={id} />;
 }
