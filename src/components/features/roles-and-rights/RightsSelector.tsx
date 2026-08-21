@@ -6,13 +6,15 @@ import { FeatureEmptyState } from "@/components/features/shared";
 import { SearchInput } from "@/components/inputs";
 import { Button } from "@/components/ui";
 import {
-  countGroupSelection,
   filterPermissionGroups,
   getSelectablePermissionIds,
   sortPermissionGroupsForDisplay,
   type PermissionGroup,
   type PermissionKindFilter,
 } from "@/lib/mappers/roles.mapper";
+import { regroupByModule } from "@/lib/ehss-nav-preview";
+import { RoleNavPreview } from "./RoleNavPreview";
+import { RolePermissionMatrix } from "./RolePermissionMatrix";
 
 type RightsSelectorProps = Readonly<{
   groups: PermissionGroup[];
@@ -22,212 +24,48 @@ type RightsSelectorProps = Readonly<{
   showHeader?: boolean;
 }>;
 
-const KIND_FILTERS: readonly { id: PermissionKindFilter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "api", label: "API" },
-  { id: "pages", label: "Pages" },
-  { id: "buttons", label: "Buttons" },
+/**
+ * The editor's three tabs, in the order an admin thinks about a role: what they
+ * can *see*, what they can *do*, and which in-page controls appear.
+ *
+ * These replaced a row of filter chips over one flat list. The chips were a
+ * lens on 258 rows; these are three different questions, and only one of them
+ * ("Pages") is answered by a checkbox list at all — it is answered by drawing
+ * the sidebar instead.
+ */
+const RIGHTS_TABS = [
+  {
+    id: "pages" as const,
+    label: "Pages",
+    icon: "mdi:view-sequential-outline",
+    hint: "What this role sees in the app sidebar",
+  },
+  {
+    id: "api" as const,
+    label: "Actions",
+    icon: "mdi:key-outline",
+    hint: "What this role may do — the rights the API enforces",
+  },
+  {
+    id: "buttons" as const,
+    label: "Buttons",
+    icon: "mdi:gesture-tap-button",
+    hint: "In-page controls this role sees",
+  },
 ];
+
+type RightsTabId = (typeof RIGHTS_TABS)[number]["id"];
+
+/** The tab's slice of the catalogue, in `filterPermissionGroups` terms. */
+const TAB_KIND: Record<RightsTabId, PermissionKindFilter> = {
+  pages: "pages",
+  api: "api",
+  buttons: "buttons",
+};
 
 /** Shared by every focusable control in here so the ring never goes missing. */
 const FOCUS_RING =
   "outline-none focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/40 focus-visible:ring-offset-1 focus-visible:ring-offset-ehs-surface";
-
-function PermissionCheckbox({
-  label,
-  selected,
-  locked,
-  onToggle,
-}: Readonly<{
-  label: string;
-  selected: boolean;
-  locked: boolean;
-  onToggle: () => void;
-}>) {
-  if (locked) {
-    // Not a disabled checkbox: a disabled control reads as "you may be able to
-    // change this later". This right is part of the platform and never moves,
-    // so it is shown as a fact with the reason attached.
-    return (
-      <div className="flex items-start gap-2.5 px-2 py-2 text8 text-ehs-muted-text">
-        <Icon
-          icon="lucide:lock"
-          width={14}
-          height={14}
-          className="mt-0.5 shrink-0"
-          aria-hidden="true"
-        />
-        <span className="min-w-0 break-all font-mono leading-snug">
-          {label}
-          <span className="sr-only"> — always granted, cannot be changed</span>
-        </span>
-        <span className="ml-auto shrink-0 text8 text-ehs-muted-text">
-          Always on
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    // `focus-within` rather than a ring on the input: the whole row is the
-    // target, so the whole row is what should light up when it is tabbed to.
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-ehs-border-ink/6 has-[:checked]:bg-ehs-normal-blue/6 focus-within:ring-2 focus-within:ring-ehs-normal-blue/40">
-      <input
-        type="checkbox"
-        checked={selected}
-        onChange={() => onToggle()}
-        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border border-ehs-border-ink/20 accent-blue-normal outline-none"
-      />
-      <span className="min-w-0 break-all font-mono text8 leading-snug text-darkest">
-        {label}
-      </span>
-    </label>
-  );
-}
-
-function CategoryNavItem({
-  group,
-  selectedCount,
-  totalCount,
-  active,
-  onClick,
-}: Readonly<{
-  group: string;
-  selectedCount: number;
-  totalCount: number;
-  active: boolean;
-  onClick: () => void;
-}>) {
-  let toneClass =
-    "bg-transparent text-darkest hover:bg-ehs-border-ink/6";
-  if (active) {
-    toneClass = "bg-blue-normal/10 text-blue-normal";
-  }
-
-  let badgeClass = "bg-ehs-border-ink/8 text-gray";
-  if (selectedCount > 0) {
-    badgeClass = "bg-green/15 text-green";
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? "true" : undefined}
-      className={`flex w-full items-center justify-between gap-2 border-b border-ehs-border-ink/6 px-3 py-2.5 text-left transition-colors ${FOCUS_RING} focus-visible:ring-inset ${toneClass}`}
-    >
-      <span className="min-w-0 truncate text8 font-semibold">{group}</span>
-      <span
-        className={`shrink-0 rounded-full px-2 py-0.5 text7 tabular-nums ${badgeClass}`}
-      >
-        {selectedCount}/{totalCount}
-        <span className="sr-only"> permissions granted</span>
-      </span>
-    </button>
-  );
-}
-
-/**
- * The header a category carries in both layouts: what it is called, how much of
- * it is granted, and the two bulk controls that used to live in a single
- * toolbar far away from the checkboxes they acted on.
- */
-function GroupHeader({
-  group,
-  selectedCount,
-  selectableCount,
-  onSelectAll,
-  onClear,
-}: Readonly<{
-  group: string;
-  selectedCount: number;
-  selectableCount: number;
-  onSelectAll: () => void;
-  onClear: () => void;
-}>) {
-  return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-ehs-border-ink/8 bg-ehs-surface/95 px-2 py-2 backdrop-blur-sm">
-      <h3 className="min-w-0 truncate text8 font-semibold text-darkest">
-        {group}
-        <span className="ml-2 font-normal text-gray tabular-nums">
-          {selectedCount} of {selectableCount} granted
-        </span>
-      </h3>
-      <div className="flex shrink-0 items-center gap-3">
-        <button
-          type="button"
-          onClick={onSelectAll}
-          disabled={selectableCount === 0 || selectedCount === selectableCount}
-          className={`rounded text8 font-semibold text-blue-normal transition-opacity disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING}`}
-        >
-          Select all
-          <span className="sr-only"> in {group}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onClear}
-          disabled={selectedCount === 0}
-          className={`rounded text8 font-semibold text-gray transition-opacity disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING}`}
-        >
-          Clear
-          <span className="sr-only"> {group}</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * One category: its header and its checkboxes. Both layouts render the same
- * thing — the browse pane shows a single panel, the filtered list stacks them —
- * so the count arithmetic and the bulk controls only exist once.
- */
-function GroupPanel({
-  entry,
-  selectedIds,
-  selectedSet,
-  onToggle,
-  onSelectAll,
-  onClear,
-  as = "div",
-}: Readonly<{
-  entry: PermissionGroup;
-  selectedIds: number[];
-  selectedSet: Set<number>;
-  onToggle: (permissionId: number) => void;
-  onSelectAll: () => void;
-  onClear: () => void;
-  as?: "div" | "section";
-}>) {
-  const counts = countGroupSelection(entry, selectedIds);
-  const Wrapper = as;
-  // Stacked panels need air between them; the single browse pane fills its box.
-  let spacingClass = "";
-  if (as === "section") {
-    spacingClass = " mb-4 last:mb-0";
-  }
-
-  return (
-    <Wrapper className={`flex min-w-0 flex-col${spacingClass}`}>
-      <GroupHeader
-        group={entry.group}
-        selectedCount={counts.selected}
-        selectableCount={counts.selectable}
-        onSelectAll={onSelectAll}
-        onClear={onClear}
-      />
-      {entry.permissions.map((permission) => (
-        <PermissionCheckbox
-          key={permission.id}
-          label={permission.label}
-          selected={selectedSet.has(permission.id)}
-          locked={permission.locked}
-          onToggle={() => onToggle(permission.id)}
-        />
-      ))}
-    </Wrapper>
-  );
-}
 
 export function RightsSelector({
   groups,
@@ -237,11 +75,22 @@ export function RightsSelector({
   showHeader = true,
 }: RightsSelectorProps) {
   const [query, setQuery] = useState("");
-  const [kindFilter, setKindFilter] = useState<PermissionKindFilter>("all");
+  const [tab, setTab] = useState<RightsTabId>("pages");
   const [selectedOnly, setSelectedOnly] = useState(false);
-  const [pickedGroup, setPickedGroup] = useState<string | null>(null);
+
+  const kindFilter = TAB_KIND[tab];
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  // Every page row in one flat list, whatever category the backend filed it
+  // under — the preview matches them by label, not by group.
+  const pageOptions = useMemo(
+    () =>
+      filterPermissionGroups(groups, { kind: "pages" }).flatMap(
+        (entry) => entry.permissions,
+      ),
+    [groups],
+  );
 
   const sortedGroups = useMemo(
     () => sortPermissionGroupsForDisplay(groups),
@@ -258,6 +107,20 @@ export function RightsSelector({
       }),
     [sortedGroups, query, kindFilter, selectedOnly, selectedIds],
   );
+
+  /**
+   * What the matrix renders. Buttons arrive in one API category, so they are
+   * regrouped by the module named in their slug; Actions already come grouped
+   * by module and pass through untouched.
+   */
+  const moduleGroups = useMemo(() => {
+    if (tab !== "buttons") {
+      return filteredGroups;
+    }
+
+    const flat = filteredGroups.flatMap((entry) => entry.permissions);
+    return regroupByModule(flat);
+  }, [tab, filteredGroups]);
 
   const flatResults = useMemo(
     () =>
@@ -281,22 +144,6 @@ export function RightsSelector({
     0,
   );
 
-  const activeGroup = useMemo(() => {
-    if (filteredGroups.length === 0) return null;
-    if (
-      pickedGroup &&
-      filteredGroups.some((entry) => entry.group === pickedGroup)
-    ) {
-      return pickedGroup;
-    }
-    return filteredGroups[0].group;
-  }, [filteredGroups, pickedGroup]);
-
-  const activeEntry = useMemo(
-    () => filteredGroups.find((entry) => entry.group === activeGroup) ?? null,
-    [filteredGroups, activeGroup],
-  );
-
   const togglePermission = (permissionId: number) => {
     const permission = groups
       .flatMap((group) => group.permissions)
@@ -312,13 +159,15 @@ export function RightsSelector({
     onChange([...selectedIds, permissionId]);
   };
 
-  const selectAllInGroup = (entry: PermissionGroup) => {
-    onChange([...new Set([...selectedIds, ...getSelectablePermissionIds(entry)])]);
-  };
+  /** Grant or revoke a known set in one go — the preview's "show/hide all". */
+  const setMany = (permissionIds: number[], granted: boolean) => {
+    if (granted) {
+      onChange([...new Set([...selectedIds, ...permissionIds])]);
+      return;
+    }
 
-  const clearGroup = (entry: PermissionGroup) => {
-    const groupIds = new Set(entry.permissions.map((permission) => permission.id));
-    onChange(selectedIds.filter((id) => !groupIds.has(id)));
+    const drop = new Set(permissionIds);
+    onChange(selectedIds.filter((id) => !drop.has(id)));
   };
 
   const selectAllVisible = () => {
@@ -335,7 +184,6 @@ export function RightsSelector({
 
   const clearFilters = () => {
     setQuery("");
-    setKindFilter("all");
     setSelectedOnly(false);
   };
 
@@ -351,49 +199,61 @@ export function RightsSelector({
       ) : null}
 
       <div className="flex flex-col gap-3">
-        <SearchInput
-          placeholder="Filter permissions…"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          aria-label="Filter permissions"
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="sr-only" id="rights-kind-filter-label">
-            Filter permissions by kind
-          </span>
-          {KIND_FILTERS.map((filter) => {
-            const active = kindFilter === filter.id;
-            let toneClass =
-              "border-ehs-border-ink/12 bg-ehs-surface text-darkest hover:border-ehs-border-ink/20";
+        {/* Three questions, not three filters. The active tab's hint sits
+            directly under the row so the tab never has to be self-explanatory
+            from one word. */}
+        <div
+          role="tablist"
+          aria-label="Rights sections"
+          className="border-ehs-border-ink/10 bg-ehs-border-ink/4 flex gap-1 rounded-xl border p-1"
+        >
+          {RIGHTS_TABS.map((entry) => {
+            const active = tab === entry.id;
+            let toneClass = "text-gray hover:text-darkest hover:bg-ehs-surface/60";
             if (active) {
-              toneClass = "border-blue-normal bg-blue-normal text-ehs-on-accent";
+              toneClass = "bg-ehs-surface text-darkest shadow-(--ehs-shadow-card)";
             }
 
             return (
               <button
-                key={filter.id}
+                key={entry.id}
                 type="button"
-                aria-pressed={active}
-                aria-describedby="rights-kind-filter-label"
-                onClick={() => setKindFilter(filter.id)}
-                className={`rounded-full border px-3 py-1 text8 font-semibold transition-colors ${FOCUS_RING} ${toneClass}`}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(entry.id)}
+                className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text8 font-semibold transition-colors ${FOCUS_RING} ${toneClass}`}
               >
-                {filter.label}
+                <Icon icon={entry.icon} width={15} height={15} aria-hidden />
+                {entry.label}
               </button>
             );
           })}
-
-          <label className="ml-auto inline-flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 text8 font-medium text-darkest focus-within:ring-2 focus-within:ring-ehs-normal-blue/40">
-            <input
-              type="checkbox"
-              checked={selectedOnly}
-              onChange={(event) => setSelectedOnly(event.target.checked)}
-              className="size-4 cursor-pointer rounded border border-ehs-border-ink/20 accent-blue-normal outline-none"
-            />
-            Show granted only
-          </label>
         </div>
+
+        <p className="text-ehs-muted-text text8">
+          {RIGHTS_TABS.find((entry) => entry.id === tab)?.hint}
+        </p>
+
+        {tab === "pages" ? null : (
+          <>
+            <SearchInput
+              placeholder="Filter permissions…"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Filter permissions"
+            />
+
+            <label className="text-darkest focus-within:ring-ehs-normal-blue/40 inline-flex cursor-pointer items-center gap-2 self-start rounded-lg px-1 py-1 text8 font-medium focus-within:ring-2">
+              <input
+                type="checkbox"
+                checked={selectedOnly}
+                onChange={(event) => setSelectedOnly(event.target.checked)}
+                className="border-ehs-border-ink/20 accent-blue-normal size-4 cursor-pointer rounded border outline-none"
+              />
+              Show granted only
+            </label>
+          </>
+        )}
 
         {/* The one line that answers "how much have I given this role?" — it is
             polite-live so a keyboard user hears the count move as they tick. */}
@@ -412,7 +272,7 @@ export function RightsSelector({
             </span>
           </p>
 
-          {!browseMode && visiblePermissionCount > 0 ? (
+          {tab !== "pages" && !browseMode && visiblePermissionCount > 0 ? (
             <div className="flex shrink-0 items-center gap-3">
               <button
                 type="button"
@@ -442,7 +302,16 @@ export function RightsSelector({
         />
       ) : null}
 
-      {groups.length > 0 && filteredGroups.length === 0 ? (
+      {groups.length > 0 && tab === "pages" ? (
+        <RoleNavPreview
+          pageOptions={pageOptions}
+          selectedIds={selectedIds}
+          onToggle={togglePermission}
+          onSetMany={setMany}
+        />
+      ) : null}
+
+      {groups.length > 0 && tab !== "pages" && filteredGroups.length === 0 ? (
         <FeatureEmptyState
           icon="mdi:filter-remove-outline"
           title="No permissions match your filters"
@@ -460,62 +329,18 @@ export function RightsSelector({
         />
       ) : null}
 
-      {filteredGroups.length > 0 && browseMode ? (
-        <div className="grid min-w-0 grid-cols-1 overflow-hidden rounded-xl border border-ehs-border-ink/10 bg-ehs-surface md:min-h-[480px] md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)]">
-          {/* Capped short on phones so the checkboxes are still on screen
-              without scrolling past a full-height category list. */}
-          <nav
-            className="max-h-56 overflow-y-auto border-b border-ehs-border-ink/10 bg-ehs-border-ink/3 md:max-h-[min(64vh,560px)] md:border-r md:border-b-0"
-            aria-label="Permission categories"
-          >
-            {filteredGroups.map((entry) => {
-              const counts = countGroupSelection(entry, selectedIds);
-              return (
-                <CategoryNavItem
-                  key={entry.group}
-                  group={entry.group}
-                  selectedCount={counts.selected}
-                  totalCount={counts.selectable}
-                  active={entry.group === activeGroup}
-                  onClick={() => setPickedGroup(entry.group)}
-                />
-              );
-            })}
-          </nav>
-
-          <div className="min-w-0 max-h-[min(60vh,560px)] overflow-y-auto">
-            {activeEntry ? (
-              <GroupPanel
-                entry={activeEntry}
-                selectedIds={selectedIds}
-                selectedSet={selectedSet}
-                onToggle={togglePermission}
-                onSelectAll={() => selectAllInGroup(activeEntry)}
-                onClear={() => clearGroup(activeEntry)}
-              />
-            ) : null}
-          </div>
+      {tab !== "pages" && moduleGroups.length > 0 ? (
+        <div className="min-w-0 max-h-[min(64vh,620px)] overflow-y-auto pr-0.5">
+          <RolePermissionMatrix
+            groups={moduleGroups}
+            selectedIds={selectedIds}
+            onToggle={togglePermission}
+            onSetMany={setMany}
+          />
         </div>
       ) : null}
 
-      {filteredGroups.length > 0 && !browseMode ? (
-        <div className="min-w-0 max-h-[min(60vh,560px)] overflow-y-auto rounded-xl border border-ehs-border-ink/10 bg-ehs-surface p-2">
-          {filteredGroups.map((entry) => (
-            <GroupPanel
-              key={entry.group}
-              as="section"
-              entry={entry}
-              selectedIds={selectedIds}
-              selectedSet={selectedSet}
-              onToggle={togglePermission}
-              onSelectAll={() => selectAllInGroup(entry)}
-              onClear={() => clearGroup(entry)}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {filtersActive && filteredGroups.length > 0 ? (
+      {tab !== "pages" && filtersActive && filteredGroups.length > 0 ? (
         <p className="text8 text-ehs-muted-text">
           Filters only change what is listed here — permissions you granted
           under another filter stay granted.
