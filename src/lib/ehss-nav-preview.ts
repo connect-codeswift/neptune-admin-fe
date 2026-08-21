@@ -1,343 +1,206 @@
-import type { PermissionOption } from "@/lib/mappers/roles.mapper";
+import type { CatalogModule } from "@/lib/mappers/roles.mapper";
+import { getModuleViewPermission } from "@/lib/mappers/roles.mapper";
 
 /**
- * The EHSS app's sidebar, mirrored so the role editor can *show* an admin what
- * a role will see instead of asking them to picture it from `page:hazcom`.
+ * The EHSS app's sidebar, mirrored so the role editor can *show* an admin what a
+ * role will see rather than asking them to picture it from a permission name.
  *
- * ## Why a copy
+ * ## What changed
  *
- * The real catalogue is `APP_NAV_GROUPS` in `neptune-ehss-fe/src/lib/app-nav.ts`,
- * which this portal cannot import across repos. Keep the two in step: an entry
- * added there and not here simply drops out of the preview (it still appears
- * under "Other pages" below the sidebar, so nothing becomes unreachable), and an
- * entry here with no matching permission row renders as unavailable rather than
- * pretending to work.
+ * This used to be keyed on `page:` slugs copied from `app-nav.ts` in the other
+ * repo, which meant two hand-maintained lists that drifted silently. It is now
+ * keyed on **module code**, which is backend data both repos already agree on,
+ * so the only thing left here is presentation: which group a module sits under
+ * and which icon it wears. A module missing from the groups below still renders,
+ * under "Other", so nothing can disappear from the preview by omission.
  *
  * ## The rule this mirrors
  *
- * `app-nav.ts` derives an item's permission from its href — `/dashboard/hazcom`
- * becomes `page:hazcom` — and matches it **exactly**. Not by prefix: a role
- * holding `page:hazcom-sds` but not `page:hazcom` does not see HazCom in the
- * sidebar. That is the whole reason `SeedModulePagePermissions` gave every
- * sidebar entry a module-level row: one box hides one module.
+ * A sidebar entry appears when the company has licensed the module **and** the
+ * role holds that module's `View`. Chat, Dashboard and Settings sit outside the
+ * module catalogue entirely — every user needs Settings to reach their own
+ * account — so they are always shown and cannot be granted or revoked here.
  */
-export type NavPreviewItem = Readonly<{
-  label: string;
-  /** The exact `page:` permission that gates this entry. */
-  permission: string;
+export type NavPreviewEntry = Readonly<{
+  /** Module code, matching `Modules.Code` on the backend. */
+  code: string;
   icon: string;
-  /**
-   * Shown whatever the role's page grants are. Chat, Dashboard and Settings sit
-   * outside the page catalogue — every user needs Settings to reach their own
-   * account — so the page gate must not hide them.
-   */
-  alwaysVisible?: boolean;
-  /** Also requires the company to license the module (a separate gate). */
-  licensed?: boolean;
 }>;
 
 export type NavPreviewGroup = Readonly<{
   title: string;
-  items: readonly NavPreviewItem[];
+  entries: readonly NavPreviewEntry[];
 }>;
+
+/** Rows the app shows to everyone, with no module and no permission behind them. */
+export const ALWAYS_VISIBLE_NAV: readonly {
+  label: string;
+  icon: string;
+  group: string;
+}[] = [
+  { label: "Chat", icon: "ri:chat-ai-line", group: "Neptune AI" },
+  { label: "Dashboard", icon: "mdi:view-grid-outline", group: "Dashboard" },
+  { label: "Settings", icon: "mdi:cog-outline", group: "System" },
+];
 
 export const EHSS_NAV_PREVIEW: readonly NavPreviewGroup[] = [
   {
-    title: "Neptune AI",
-    items: [
-      {
-        label: "Chat",
-        permission: "page:neptune-ai",
-        icon: "ri:chat-ai-line",
-        alwaysVisible: true,
-      },
-    ],
-  },
-  {
-    title: "Dashboard",
-    items: [
-      {
-        label: "Dashboard",
-        permission: "page:dashboard",
-        icon: "mdi:view-grid-outline",
-        alwaysVisible: true,
-      },
-    ],
-  },
-  {
     title: "Safety",
-    items: [
-      { label: "Incidents", permission: "page:incidents", icon: "mdi:alert-outline", licensed: true },
-      { label: "Near Miss", permission: "page:near-miss", icon: "mdi:eye-outline", licensed: true },
-      { label: "Hazard", permission: "page:hazard", icon: "mdi:alert-octagon-outline", licensed: true },
-      { label: "Lockout/Tagout", permission: "page:lockout-tagout", icon: "mdi:lock-outline", licensed: true },
-      { label: "Fleet Management", permission: "page:fleet-management", icon: "mdi:steering", licensed: true },
-      { label: "CAPA", permission: "page:capa", icon: "mdi:refresh", licensed: true },
-      { label: "HazCom", permission: "page:hazcom", icon: "healthicons:chemical-burn", licensed: true },
+    entries: [
+      { code: "INCIDENT", icon: "mdi:alert-outline" },
+      { code: "NEAR_MISS", icon: "mdi:eye-outline" },
+      { code: "HAZARD", icon: "mdi:alert-octagon-outline" },
+      { code: "LOCKOUT_TAGOUT", icon: "mdi:lock-outline" },
+      { code: "FLEET_MANAGEMENT", icon: "mdi:steering" },
+      { code: "CAPA", icon: "mdi:refresh" },
+      { code: "HAZCOM", icon: "healthicons:chemical-burn" },
     ],
   },
   {
     title: "Compliance",
-    items: [
-      { label: "Audits", permission: "page:audits", icon: "mdi:shield-check-outline", licensed: true },
-      { label: "Inspections", permission: "page:inspections", icon: "mdi:clipboard-text-outline", licensed: true },
-      { label: "BBS", permission: "page:bbs", icon: "mdi:clipboard-outline", licensed: true },
-      { label: "Walk & Talk", permission: "page:walk-talk", icon: "mdi:account-multiple-outline", licensed: true },
-      {
-        label: "Regulatory Compliance",
-        permission: "page:regulatory-compliance",
-        icon: "mdi:file-document-outline",
-        licensed: true,
-      },
-      { label: "PPE Management", permission: "page:ppe-management", icon: "mdi:tshirt-crew-outline", licensed: true },
-      { label: "Policy Maker", permission: "page:policy-maker", icon: "mdi:folder-outline", licensed: true },
+    entries: [
+      { code: "AUDITS", icon: "mdi:shield-check-outline" },
+      { code: "INSPECTIONS", icon: "mdi:clipboard-text-outline" },
+      { code: "BEHAVIOUR_BASED_SAFETY", icon: "mdi:clipboard-outline" },
+      { code: "WALK_AND_TALKS", icon: "mdi:account-multiple-outline" },
+      { code: "REGULATORY_COMPLIANCE", icon: "mdi:file-document-outline" },
+      { code: "PPE_MANAGEMENT", icon: "mdi:tshirt-crew-outline" },
+      { code: "POLICY_MAKER", icon: "mdi:folder-outline" },
     ],
   },
   {
     title: "Insights",
-    items: [
-      { label: "Analytics", permission: "page:analytics", icon: "mdi:chart-line", licensed: true },
-      { label: "Reports", permission: "page:reports", icon: "mdi:file-chart-outline", licensed: true },
+    entries: [
+      { code: "ANALYTICS", icon: "mdi:chart-line" },
+      { code: "REPORTS", icon: "mdi:file-chart-outline" },
     ],
   },
   {
     title: "Environment",
-    items: [
-      { label: "Emissions", permission: "page:emissions", icon: "mdi:leaf", licensed: true },
-    ],
+    entries: [{ code: "EMISSIONS", icon: "mdi:leaf" }],
   },
   {
     title: "Health",
-    items: [
-      {
-        label: "Industrial Hygiene",
-        permission: "page:industrial-hygiene",
-        icon: "mdi:flask-outline",
-        licensed: true,
-      },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      {
-        label: "Settings",
-        permission: "page:settings",
-        icon: "mdi:cog-outline",
-        alwaysVisible: true,
-      },
-    ],
+    entries: [{ code: "INDUSTRIAL_HYGIENE", icon: "mdi:flask-outline" }],
   },
 ];
 
-/** Every `page:` permission the mirrored sidebar accounts for. */
-const NAV_PERMISSIONS = new Set(
-  EHSS_NAV_PREVIEW.flatMap((group) => group.items.map((item) => item.permission)),
+const ICON_BY_CODE = new Map(
+  EHSS_NAV_PREVIEW.flatMap((group) =>
+    group.entries.map((entry) => [entry.code.toUpperCase(), entry.icon] as const),
+  ),
 );
 
-/** One sidebar row, resolved against the catalogue and the current selection. */
+/**
+ * Icons for modules that have no sidebar entry: the shared platform registers and
+ * the admin portal. Keyed by code like the sidebar map, because module names are
+ * display text and change more freely than codes do.
+ */
+const PLATFORM_ICONS: Readonly<Record<string, string>> = {
+  LOCATIONS: "mdi:map-marker-outline",
+  DEPARTMENTS: "mdi:office-building-outline",
+  FILES: "mdi:paperclip",
+  NOTIFICATIONS: "mdi:bell-outline",
+  RCA: "mdi:sitemap-outline",
+  KPI_TARGETS: "mdi:target",
+  COMMAND_CENTER: "mdi:monitor-dashboard",
+  ADMIN_PORTAL: "mdi:shield-account-outline",
+};
+
+/**
+ * An icon for a module, by its code.
+ *
+ * Pass the code, not the name. Both maps are keyed by code, so a name only
+ * resolves when it happens to equal its code — which is why Hazard and CAPA had
+ * icons while Incidents, Near Miss and Audits fell back to a generic glyph.
+ */
+export function getModuleIcon(code: string): string {
+  const key = code.trim().toUpperCase();
+
+  return ICON_BY_CODE.get(key) ?? PLATFORM_ICONS[key] ?? "mdi:puzzle-outline";
+}
+
 export type ResolvedNavItem = Readonly<{
-  item: NavPreviewItem;
-  /** The catalogue row that grants it. Null when the backend has no such row. */
-  option: PermissionOption | null;
+  module: CatalogModule;
+  icon: string;
+  /** The role holds this module's View. */
   granted: boolean;
-  /** Visible in the app: granted, or always visible regardless of grants. */
-  visible: boolean;
+  /** The company has licensed it. Ungranted and unlicensed read differently. */
+  licensed: boolean;
+  /** The View permission's id, absent only if the module defines no View. */
+  permissionId?: number;
 }>;
 
 export type ResolvedNavGroup = Readonly<{
   title: string;
   items: readonly ResolvedNavItem[];
-  visibleCount: number;
 }>;
 
 /**
- * Resolve the mirrored sidebar against the live permission catalogue and the
- * ids currently ticked.
+ * The sidebar this role would see, grouped as the app groups it.
  *
- * `pageOptions` is the API's `UI Pages` category, so the preview can only ever
- * offer a toggle for a row that really exists — a nav entry with no permission
- * row resolves to `option: null` and is shown as unavailable rather than as an
- * unchecked box that would silently do nothing.
+ * **Unlicensed modules are not in it at all.** They used to render greyed with a
+ * "not licensed" note, which was wrong for this screen specifically: the app's
+ * sidebar does not show them, so a preview that does is not a preview. The Rights
+ * grid still lists them, greyed and disabled, because there the point is the
+ * opposite one — that the grants survive and come back when the module does.
+ *
+ * A module the groups above do not mention falls into "Other" rather than
+ * vanishing, so one added on the backend shows up without anyone editing this file.
  */
 export function resolveNavPreview(
-  pageOptions: readonly PermissionOption[],
+  modules: readonly CatalogModule[],
   selectedIds: readonly number[],
 ): ResolvedNavGroup[] {
-  const byLabel = new Map(
-    pageOptions.map((option) => [option.label.trim().toLowerCase(), option]),
-  );
   const selected = new Set(selectedIds);
+  const licensedOnly = modules.filter((module) => module.isLicensed);
+  const byCode = new Map(licensedOnly.map((module) => [module.code.toUpperCase(), module]));
+  const placed = new Set<string>();
 
-  return EHSS_NAV_PREVIEW.map((group) => {
-    const items = group.items.map((item): ResolvedNavItem => {
-      const option = byLabel.get(item.permission) ?? null;
-      const granted = option !== null && selected.has(option.id);
-
-      return {
-        item,
-        option,
-        granted,
-        visible: granted || item.alwaysVisible === true,
-      };
-    });
+  const toItem = (module: CatalogModule, icon: string): ResolvedNavItem => {
+    const view = getModuleViewPermission(module);
 
     return {
-      title: group.title,
-      items,
-      visibleCount: items.filter((entry) => entry.visible).length,
+      module,
+      icon,
+      granted: view ? selected.has(view.id) : false,
+      licensed: module.isLicensed,
+      permissionId: view?.id,
     };
-  });
-}
+  };
 
-/**
- * Page rows that gate a route *inside* a module rather than a sidebar entry —
- * `page:hazcom-sds` and friends. They still matter, so they are listed rather
- * than dropped; they just do not move the sidebar.
- */
-export function getNonNavPageOptions(
-  pageOptions: readonly PermissionOption[],
-): PermissionOption[] {
-  return pageOptions.filter(
-    (option) => !NAV_PERMISSIONS.has(option.label.trim().toLowerCase()),
+  const groups: ResolvedNavGroup[] = EHSS_NAV_PREVIEW.map((group) => {
+    const items = group.entries
+      .map((entry) => {
+        // Not named `module`: Next forbids assigning to that identifier.
+        const found = byCode.get(entry.code.toUpperCase());
+        if (!found) return null;
+        placed.add(found.code.toUpperCase());
+        return toItem(found, entry.icon);
+      })
+      .filter((item): item is ResolvedNavItem => item !== null);
+
+    return { title: group.title, items };
+  }).filter((group) => group.items.length > 0);
+
+  const leftover = licensedOnly.filter(
+    (module) => !placed.has(module.code.toUpperCase()),
   );
+
+  if (leftover.length > 0) {
+    groups.push({
+      title: "Other",
+      items: leftover.map((module) => toItem(module, getModuleIcon(module.code))),
+    });
+  }
+
+  return groups;
 }
 
-/* ————————————————————————————————————————————————————————————————
-   Module identity, shared by the Pages preview and the Actions / Buttons
-   matrices so one module wears one icon everywhere in the editor.
-   ———————————————————————————————————————————————————————————————— */
-
-/** `Regulatory Compliance` / `regulatory-compliance` / `Compliance` → `regulatorycompliance`. */
-function normalizeModuleKey(name: string): string {
-  return name.trim().toLowerCase().replaceAll(/[^a-z0-9]/g, "");
-}
-
-const NAV_ICON_BY_KEY = new Map<string, string>(
-  EHSS_NAV_PREVIEW.flatMap((group) =>
-    group.items.flatMap((item) => {
-      const fromLabel = normalizeModuleKey(item.label);
-      const fromSlug = normalizeModuleKey(item.permission.replace(/^page:/, ""));
-      // Singular too: the permission catalogue says "Audit", the sidebar says
-      // "Audits", and they are the same module.
-      const keys = new Set([fromLabel, fromSlug]);
-      for (const key of [...keys]) {
-        if (key.endsWith("s")) keys.add(key.slice(0, -1));
-      }
-      return [...keys].map((key) => [key, item.icon] as const);
-    }),
-  ),
-);
-
-/** Categories the catalogue has that the sidebar does not, given a sensible face. */
-const EXTRA_MODULE_ICONS: Readonly<Record<string, string>> = {
-  department: "mdi:sitemap-outline",
-  file: "mdi:paperclip",
-  location: "mdi:map-marker-outline",
-  notification: "mdi:bell-outline",
-  document: "mdi:file-document-outline",
-  user: "mdi:account-outline",
-  role: "mdi:shield-account-outline",
-  site: "mdi:office-building-outline",
-  organization: "mdi:domain",
-  ehscommandcenter: "mdi:view-dashboard-outline",
-  kpi: "mdi:target",
-  kpitarget: "mdi:target",
-};
-
-/** The icon for a permission category or module name. Never throws, never blank. */
-export function getModuleIcon(name: string): string {
-  const key = normalizeModuleKey(name);
-  return (
-    NAV_ICON_BY_KEY.get(key) ??
-    EXTRA_MODULE_ICONS[key] ??
-    (key.endsWith("s") ? NAV_ICON_BY_KEY.get(key.slice(0, -1)) : undefined) ??
-    "mdi:key-outline"
+/** How many sidebar entries this role would actually see. */
+export function countVisibleNavItems(groups: readonly ResolvedNavGroup[]): number {
+  return groups.reduce(
+    (total, group) => total + group.items.filter((item) => item.granted).length,
+    0,
   );
-}
-
-/**
- * The part of a permission label worth reading once its module is already the
- * heading: `Incident.Create` → `Create`, `button:report-hazard` → `Report
- * hazard`. Falls back to the whole label, so an unrecognised shape is shown
- * verbatim rather than mangled.
- */
-export function shortPermissionLabel(label: string, moduleName = ""): string {
-  const trimmed = label.trim();
-
-  const buttonSlug = /^button:(.+)$/i.exec(trimmed)?.[1];
-  if (buttonSlug) {
-    const words = buttonSlug.replaceAll(/[-_]/g, " ").trim();
-    return words.charAt(0).toUpperCase() + words.slice(1);
-  }
-
-  const pageSlug = /^page:(.+)$/i.exec(trimmed)?.[1];
-  if (pageSlug) {
-    const words = pageSlug.replaceAll(/[-_]/g, " ").trim();
-    return words.charAt(0).toUpperCase() + words.slice(1);
-  }
-
-  // `Module.Action` — drop the module only when it really is this module's.
-  const dot = trimmed.indexOf(".");
-  if (dot > 0) {
-    const head = trimmed.slice(0, dot);
-    const tail = trimmed.slice(dot + 1);
-    if (
-      tail.trim() !== "" &&
-      (moduleName === "" ||
-        normalizeModuleKey(head) === normalizeModuleKey(moduleName))
-    ) {
-      return tail;
-    }
-  }
-
-  return trimmed;
-}
-
-/**
- * Regroup a flat category into modules.
- *
- * Buttons arrive from the API in one bucket ("UI Buttons"), which as a single
- * card would be a wall of ~90 chips — the very thing the module-first layout
- * exists to avoid. `button:report-hazard` names its module in the slug, so the
- * longest sidebar slug appearing in it wins ("hazard"), and anything that
- * matches nothing lands in a final "Other" group rather than being dropped.
- */
-export function regroupByModule(
-  options: readonly PermissionOption[],
-  fallbackGroup = "Other",
-): { group: string; permissions: PermissionOption[] }[] {
-  const slugs = EHSS_NAV_PREVIEW.flatMap((group) =>
-    group.items.map((item) => ({
-      slug: item.permission.replace(/^page:/, ""),
-      label: item.label,
-    })),
-  ).toSorted((left, right) => right.slug.length - left.slug.length);
-
-  const buckets = new Map<string, PermissionOption[]>();
-
-  for (const option of options) {
-    const haystack = option.label
-      .trim()
-      .toLowerCase()
-      .replace(/^(button|page):/, "");
-    const hit = slugs.find(
-      (entry) =>
-        haystack === entry.slug ||
-        haystack.includes(`-${entry.slug}`) ||
-        haystack.startsWith(`${entry.slug}-`),
-    );
-
-    const key = hit?.label ?? fallbackGroup;
-    buckets.set(key, [...(buckets.get(key) ?? []), option]);
-  }
-
-  return [...buckets.entries()]
-    .toSorted(([left], [right]) => {
-      // "Other" is a remainder, so it sits last however it sorts.
-      if (left === fallbackGroup) return 1;
-      if (right === fallbackGroup) return -1;
-      return left.localeCompare(right);
-    })
-    .map(([group, permissions]) => ({ group, permissions }));
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import { FeatureErrorCard } from "@/components/features/shared";
@@ -10,18 +10,18 @@ import { TextAreaInput, TextInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import {
-  useAllPermissions,
   useCreateRoleWithPermissions,
+  usePermissionCatalog,
   useRolesWithPermissions,
 } from "@/hooks/useRolesAndRights";
 import {
-  countSelectedByPermissionGroup,
-  matchPermissionIdsByLabels,
+  countSelectedByModule,
+  type PermissionCatalog,
 } from "@/lib/mappers/roles.mapper";
 import {
   DEFAULT_PRESET_ID,
+  getPresetPermissionIds,
   getPresetRightCount,
-  getPresetRights,
   ROLE_PRESETS,
 } from "@/lib/presets";
 import { RightsSelector } from "./RightsSelector";
@@ -46,36 +46,28 @@ export function CreateRolePage() {
     isError: permissionsError,
     error: permissionsLoadError,
     refetch: refetchPermissions,
-  } = useAllPermissions();
+  } = usePermissionCatalog();
   const { data: existingRoles = [] } = useRolesWithPermissions();
   const createRoleMutation = useCreateRoleWithPermissions();
 
-  const permissionGroups = permissionsCatalog?.groups ?? [];
-  const allPermissions = permissionsCatalog?.permissions ?? [];
+  const emptyCatalog: PermissionCatalog = {
+    modules: [],
+    platform: [],
+    adminPortal: [],
+  };
+  const catalog = permissionsCatalog ?? emptyCatalog;
 
-  const presetDefaultIds = useMemo(
-    () =>
-      allPermissions.length > 0
-        ? matchPermissionIdsByLabels(
-            allPermissions,
-            getPresetRights(DEFAULT_PRESET_ID),
-          )
-        : [],
-    [allPermissions],
-  );
-
+  const presetDefaultIds = getPresetPermissionIds(catalog, DEFAULT_PRESET_ID);
   const resolvedSelectedIds = selectedPermissionIds ?? presetDefaultIds;
 
-  const groupSummary = countSelectedByPermissionGroup(
-    permissionGroups,
+  const groupSummary = countSelectedByModule(
+    [...catalog.modules, ...catalog.platform, ...catalog.adminPortal],
     resolvedSelectedIds,
   );
 
   const handlePresetSelect = (presetId: string) => {
     setActivePresetId(presetId);
-    setSelectedPermissionIds(
-      matchPermissionIdsByLabels(allPermissions, getPresetRights(presetId)),
-    );
+    setSelectedPermissionIds(getPresetPermissionIds(catalog, presetId));
   };
 
   const handleCopyFromRole = (roleId: string) => {
@@ -237,7 +229,7 @@ export function CreateRolePage() {
 
             {!permissionsLoading && !permissionsError ? (
               <RightsSelector
-                groups={permissionGroups}
+                catalog={catalog}
                 selectedIds={resolvedSelectedIds}
                 onChange={setSelectedPermissionIds}
                 showHeader={false}
@@ -277,7 +269,7 @@ export function CreateRolePage() {
                         {preset.name}
                       </span>
                       <span className="shrink-0 text7 text-gray">
-                        {getPresetRightCount(preset.id)} rights
+                        {getPresetRightCount(catalog, preset.id)} rights
                       </span>
                     </button>
                   </li>
@@ -324,10 +316,10 @@ export function CreateRolePage() {
                 .filter((entry) => entry.count > 0)
                 .map((entry) => (
                   <div
-                    key={entry.group}
+                    key={entry.module}
                     className="flex items-center justify-between gap-3 rounded-lg bg-ehs-border-ink/6 px-2.5 py-1.5 text8 text-darkest"
                   >
-                    <span className="min-w-0 truncate">{entry.group}</span>
+                    <span className="min-w-0 truncate">{entry.module}</span>
                     <span className="shrink-0 font-semibold tabular-nums">
                       {entry.count}
                     </span>
