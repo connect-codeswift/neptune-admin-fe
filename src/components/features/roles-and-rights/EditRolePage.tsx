@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,39 +20,33 @@ import {
 } from "@/hooks/useRolesAndRights";
 import type { RoleViewModel } from "@/lib/mappers/roles.mapper";
 import { RightsSelector } from "./RightsSelector";
+import { RoleSummaryCard } from "./RoleSummaryCard";
 import { useRolesAndRightsPaths } from "./useRolesAndRightsPaths";
 
 type EditRolePageProps = Readonly<{
   roleId: string;
 }>;
 
-function SummaryRow({
-  label,
-  value,
-}: Readonly<{ label: string; value: string }>) {
+/**
+ * Copy-on-write, explained before the save that triggers it. A preset is one
+ * definition shared by every company; the backend answers the first edit by
+ * taking a private copy for this company and moving its users onto it — same
+ * name, so every role gate behaves identically. Other companies keep the
+ * original. The card that used to sit here said presets could not be edited
+ * at all, which stopped being true when the backend learned to clone them.
+ */
+function SystemRoleNotice({ roleName }: Readonly<{ roleName: string }>) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-ehs-border-ink/8 py-3 text4 last:border-b-0">
-      <span className="text-gray">{label}</span>
-      <span className="text-right font-semibold text-darkest tabular-nums">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function RoleSummaryCard({
-  role,
-  grantedCount,
-}: Readonly<{ role: RoleViewModel; grantedCount: number }>) {
-  return (
-    <DetailCard title="Role Summary">
-      <SummaryRow label="Users assigned" value={String(role.userCount)} />
-      <SummaryRow
-        label="Type"
-        value={role.isSystem ? "System" : "Custom"}
+    <div className="flex items-start gap-2.5 rounded-xl border border-blue-normal/15 bg-blue-normal/5 px-4 py-3">
+      <Icon
+        icon="mdi:content-copy"
+        className="mt-0.5 size-4 shrink-0 text-blue-normal"
+        aria-hidden="true"
       />
-      <SummaryRow label="Rights" value={`${grantedCount} granted`} />
-    </DetailCard>
+      <p className="min-w-0 text8 leading-relaxed text-ehs-slate">
+        {`${roleName} is a shared preset. Saving your changes gives this company its own copy of the role — holders keep the name and pick up the new rights at their next sign-in, while other companies keep the original preset.`}
+      </p>
+    </div>
   );
 }
 
@@ -105,7 +100,11 @@ function EditRoleEditor({
         roleId: role.numericId,
         permissionIds: selectedPermissionIds,
       });
-      toast.success("Role permissions saved.");
+      toast.success(
+        role.isSystem
+          ? `Saved. This company now has its own copy of ${role.name}.`
+          : "Role permissions saved.",
+      );
       router.push(basePath);
     } catch (error) {
       toast.error(
@@ -118,7 +117,11 @@ function EditRoleEditor({
     <div className="flex min-w-0 flex-col gap-6 pb-4">
       <PageHeader
         title={`Role: ${role.name}`}
-        description={role.description || "No description provided."}
+        description={
+          role.isSystem
+            ? `Shared preset · ${role.description || "No description provided."}`
+            : role.description || "No description provided."
+        }
         breadcrumbs={[
           { label: "Admin", href: adminHref },
           { label: "Roles & Rights", href: basePath },
@@ -148,6 +151,8 @@ function EditRoleEditor({
           </>
         }
       />
+
+      {role.isSystem ? <SystemRoleNotice roleName={role.name} /> : null}
 
       {isDirty ? (
         <p className="text8 text-ehs-muted-text" role="status">
@@ -311,28 +316,10 @@ export function EditRolePage({ roleId }: EditRolePageProps) {
     );
   }
 
-  if (role.isSystem) {
-    return (
-      <div className="flex min-w-0 flex-col gap-6 pb-4">
-        <PageHeader
-          title={role.name}
-          description="System role"
-          breadcrumbs={[...deadEndCrumbs, { label: role.name }]}
-        />
-        <FeatureEmptyState
-          icon="mdi:shield-lock-outline"
-          title="System roles cannot be edited"
-          description="Presets are a single definition shared by every company, so changing one here would change it everywhere. Create a custom role with these rights as a starting point instead."
-          action={
-            <Button size="sm" leftIcon="lucide:plus" href={`${basePath}/new`}>
-              Create a custom role
-            </Button>
-          }
-        />
-      </div>
-    );
-  }
-
+  // System presets are editable too: the backend answers the first edit with a
+  // private per-company copy (copy-on-write), so the old "system roles cannot
+  // be edited" dead end no longer reflects the contract. SystemRoleNotice in
+  // the editor is where that behaviour is explained to the admin.
   return (
     <EditRoleEditor
       key={role.id}
