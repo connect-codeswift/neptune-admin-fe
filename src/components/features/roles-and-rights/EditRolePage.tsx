@@ -14,11 +14,11 @@ import {
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import {
-  useAllPermissions,
   useAssignRolePermissions,
+  usePermissionCatalog,
   useRolesWithPermissions,
 } from "@/hooks/useRolesAndRights";
-import type { RoleViewModel } from "@/lib/mappers/roles.mapper";
+import { isDirectorRole, type RoleViewModel } from "@/lib/mappers/roles.mapper";
 import { RightsSelector } from "./RightsSelector";
 import { RoleSummaryCard } from "./RoleSummaryCard";
 import { useRolesAndRightsPaths } from "./useRolesAndRightsPaths";
@@ -61,7 +61,7 @@ function EditRoleEditor({
   basePath,
 }: Readonly<{
   role: RoleViewModel;
-  permissionsCatalog: ReturnType<typeof useAllPermissions>["data"];
+  permissionsCatalog: ReturnType<typeof usePermissionCatalog>["data"];
   permissionsLoading: boolean;
   permissionsError: boolean;
   permissionsLoadError: Error | null;
@@ -205,10 +205,17 @@ function EditRoleEditor({
 
           {!permissionsLoading && !permissionsError ? (
             <RightsSelector
-              groups={permissionsCatalog?.groups ?? []}
+              catalog={
+                permissionsCatalog ?? {
+                  modules: [],
+                  platform: [],
+                  adminPortal: [],
+                }
+              }
               selectedIds={selectedPermissionIds}
               onChange={setSelectedPermissionIds}
               showHeader={false}
+              disabled={isDirectorRole(role)}
             />
           ) : null}
         </DetailCard>
@@ -239,7 +246,7 @@ export function EditRolePage({ roleId }: EditRolePageProps) {
     isError: permissionsError,
     error: permissionsLoadError,
     refetch: refetchPermissions,
-  } = useAllPermissions();
+  } = usePermissionCatalog();
 
   const role = roles.find((entry) => entry.id === roleId);
 

@@ -4,6 +4,7 @@ import type {
 } from "@/dtos/req/roles.req";
 import type {
   CreateRoleResponse,
+  PermissionCatalogResponse,
   PermissionResponse,
   RoleResponse,
   RoleWithPermissionsResponse,
@@ -29,6 +30,21 @@ export async function getAllRoles(params?: GetSuperAdminRolesParams) {
 export async function getAllPermissions() {
   const { data } = await axiosInstance.get<ApiResponse<PermissionResponse[]>>(
     "/v1/super-admin/roles/permissions",
+  );
+  return data;
+}
+
+/**
+ * GET /v1/super-admin/roles/catalog
+ *
+ * The whole grid in one call: modules, which of them this company licensed, and
+ * the CRUD plus named-extra actions grantable in each. Prefer this over
+ * `getAllPermissions`, which returns the same rows flat and leaves the client
+ * to work out module membership for itself.
+ */
+export async function getPermissionCatalog() {
+  const { data } = await axiosInstance.get<ApiResponse<PermissionCatalogResponse>>(
+    "/v1/super-admin/roles/catalog",
   );
   return data;
 }
