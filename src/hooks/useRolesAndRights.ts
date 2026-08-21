@@ -159,6 +159,10 @@ export function useAssignRolePermissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ROLES_PERMISSIONS_QUERY_KEY });
+      // Saving a shared preset replaces it in the role lists with this
+      // company's own copy (new id, isSystem false), so the plain roles list
+      // and its summary tiles change too — not just the permission matrix.
+      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
     },
   });
 }
