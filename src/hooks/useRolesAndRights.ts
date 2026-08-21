@@ -3,17 +3,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateRolePayload } from "@/dtos/req/roles.req";
 import type {
+  PermissionCatalogResponse,
   PermissionResponse,
   RoleResponse,
   RoleWithPermissionsResponse,
 } from "@/dtos/res/roles.res";
 import { type TenantScope, useTenantScope } from "@/hooks/useTenantScope";
-import { assertApiSuccess, unwrapList } from "@/lib/api-response";
+import { assertApiSuccess, unwrapDataModel, unwrapList } from "@/lib/api-response";
 import {
   extractCreatedRoleId,
-  groupPermissions,
+  mapPermissionCatalog,
   mapRolesWithPermissionsToViewModels,
-  type PermissionGroup,
+  type PermissionCatalog,
   type RoleViewModel,
 } from "@/lib/mappers/roles.mapper";
 import {
@@ -23,6 +24,7 @@ import {
   getAllPermissions,
   getAllRoles,
   getAllRolesPermissions,
+  getPermissionCatalog,
 } from "@/services/roles.service";
 
 /**
@@ -55,19 +57,24 @@ export function rolesPermissionsQueryKey(scope: TenantScope) {
   return [...ROLES_PERMISSIONS_QUERY_KEY, ...scope.key] as const;
 }
 
-type PermissionsCatalog = {
-  permissions: PermissionResponse[];
-  groups: PermissionGroup[];
-};
-
-async function fetchPermissionsCatalog(): Promise<PermissionsCatalog> {
-  const response = await getAllPermissions();
-  assertApiSuccess(response, "Failed to load permissions.");
-  const permissions = unwrapList<PermissionResponse>(response);
-  return {
-    permissions,
-    groups: groupPermissions(permissions),
-  };
+/**
+ * The module catalogue for the selected company, already carrying which modules
+ * are licensed. One call: the grid needs modules, licensing and actions
+ * together, and joining them client-side is what left the old screen guessing a
+ * permission's module from its slug.
+ */
+async function fetchPermissionCatalog(): Promise<PermissionCatalog> {
+  const response = await getPermissionCatalog();
+  assertApiSuccess(response, "Failed to load the permission catalog.");
+  // An empty catalog is a real answer for a company with nothing licensed, so a
+  // missing body maps to empty sections rather than throwing.
+  return mapPermissionCatalog(
+    unwrapDataModel<PermissionCatalogResponse>(response) ?? {
+      modules: [],
+      platform: [],
+      adminPortal: [],
+    },
+  );
 }
 
 async function fetchRolesWithPermissions(): Promise<RoleViewModel[]> {
@@ -101,12 +108,12 @@ async function fetchRolesWithPermissions(): Promise<RoleViewModel[]> {
   );
 }
 
-export function useAllPermissions() {
+export function usePermissionCatalog() {
   const scope = useTenantScope();
 
   return useQuery({
     queryKey: permissionsQueryKey(scope),
-    queryFn: fetchPermissionsCatalog,
+    queryFn: fetchPermissionCatalog,
     enabled: scope.ready,
   });
 }
