@@ -83,14 +83,15 @@ export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
               size="sm"
               href={`${basePath}/${role.id}`}
             />
-            {!role.isSystem ? (
-              <IconButton
-                icon="lucide:pencil"
-                label={`Edit ${role.name}`}
-                size="sm"
-                href={`${basePath}/${role.id}/edit`}
-              />
-            ) : null}
+            {/* Presets are editable too — the backend clones one for this
+                company on first edit (copy-on-write), which the editor
+                explains before the save. */}
+            <IconButton
+              icon="lucide:pencil"
+              label={`Edit ${role.name}`}
+              size="sm"
+              href={`${basePath}/${role.id}/edit`}
+            />
             {/*
               A system role gets no delete control at all rather than one that errors: a
               preset is a single row shared by every company, so removing it here would
