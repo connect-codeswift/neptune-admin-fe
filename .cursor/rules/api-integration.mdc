@@ -1,9 +1,14 @@
 ---
-name: api-integration
-description: Wire a Neptune backend endpoint into this app — DTO, service, mapper, TanStack Query hook, then the Content component. Use whenever asked to connect a screen to an API, add a new endpoint call, or replace placeholder data with real data.
+description: Wiring a Neptune backend endpoint — DTO → service → mapper → TanStack Query hook → Content component
+globs:
+  - "src/dtos/**/*.ts"
+  - "src/services/**/*.ts"
+  - "src/hooks/**/*.ts"
+  - "src/components/**/*Content.tsx"
+alwaysApply: false
 ---
 
-<!-- Mirror of .cursor/rules/api-integration.mdc — edit both, keep the bodies identical. -->
+<!-- Mirror of .claude/skills/api-integration/SKILL.md — edit both, keep the bodies identical. -->
 
 # Wiring an endpoint
 
