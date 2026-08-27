@@ -1,157 +1,124 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { useMemo, useState } from "react";
-import { FeatureEmptyState } from "@/components/features/shared";
+import { useState } from "react";
 import { SearchInput } from "@/components/inputs";
-import { Button } from "@/components/ui";
 import {
-  filterPermissionGroups,
-  getSelectablePermissionIds,
-  sortPermissionGroupsForDisplay,
-  type PermissionGroup,
-  type PermissionKindFilter,
+  filterModules,
+  getAllCatalogPermissions,
+  getModulePermissions,
+  type CatalogModule,
+  type PermissionCatalog,
 } from "@/lib/mappers/roles.mapper";
-import { regroupByModule } from "@/lib/ehss-nav-preview";
 import { RoleNavPreview } from "./RoleNavPreview";
 import { RolePermissionMatrix } from "./RolePermissionMatrix";
 
 type RightsSelectorProps = Readonly<{
-  groups: PermissionGroup[];
+  catalog: PermissionCatalog;
   selectedIds: number[];
   onChange: (selectedIds: number[]) => void;
   grantedLabel?: string;
   showHeader?: boolean;
+  /** Read-only for Ehs_Director, which always holds everything. */
+  disabled?: boolean;
 }>;
 
 /**
- * The editor's three tabs, in the order an admin thinks about a role: what they
- * can *see*, what they can *do*, and which in-page controls appear.
+ * Two tabs, in the order an admin thinks about a role: what it can *see*, and
+ * what it can *do*.
  *
- * These replaced a row of filter chips over one flat list. The chips were a
- * lens on 258 rows; these are three different questions, and only one of them
- * ("Pages") is answered by a checkbox list at all — it is answered by drawing
- * the sidebar instead.
+ * There used to be three — Pages, Actions and Buttons — over a flat catalogue of
+ * 258 rows in which the same capability appeared up to three times. Pages and
+ * buttons are gone as separately grantable things: what a role sees is now
+ * derived from whether it holds a module's `View`, so the Sidebar tab and the
+ * Rights tab are two views of one set of ticks rather than two catalogues to
+ * keep in agreement.
  */
 const RIGHTS_TABS = [
   {
-    id: "pages" as const,
-    label: "Pages",
+    id: "sidebar" as const,
+    label: "Sidebar",
     icon: "mdi:view-sequential-outline",
-    hint: "What this role sees in the app sidebar",
+    hint: "What this role sees in the app",
   },
   {
-    id: "api" as const,
-    label: "Actions",
+    id: "rights" as const,
+    label: "Rights",
     icon: "mdi:key-outline",
     hint: "What this role may do — the rights the API enforces",
-  },
-  {
-    id: "buttons" as const,
-    label: "Buttons",
-    icon: "mdi:gesture-tap-button",
-    hint: "In-page controls this role sees",
   },
 ];
 
 type RightsTabId = (typeof RIGHTS_TABS)[number]["id"];
 
-/** The tab's slice of the catalogue, in `filterPermissionGroups` terms. */
-const TAB_KIND: Record<RightsTabId, PermissionKindFilter> = {
-  pages: "pages",
-  api: "api",
-  buttons: "buttons",
-};
-
-/** Shared by every focusable control in here so the ring never goes missing. */
 const FOCUS_RING =
   "outline-none focus-visible:ring-2 focus-visible:ring-ehs-normal-blue/40 focus-visible:ring-offset-1 focus-visible:ring-offset-ehs-surface";
 
+/** A titled block of module rows: EHS modules, then Platform, then Admin Portal. */
+function ModuleSection({
+  title,
+  hint,
+  modules,
+  selectedIds,
+  disabled,
+  onToggle,
+  onSetMany,
+}: Readonly<{
+  title: string;
+  hint: string;
+  modules: readonly CatalogModule[];
+  selectedIds: number[];
+  disabled: boolean;
+  onToggle: (id: number) => void;
+  onSetMany: (ids: number[], granted: boolean) => void;
+}>) {
+  if (modules.length === 0) return null;
+
+  return (
+    <section className="flex min-w-0 flex-col gap-2">
+      <div>
+        <h4 className="text-darkest text5">{title}</h4>
+        <p className="text-ehs-muted-text text8">{hint}</p>
+      </div>
+      <RolePermissionMatrix
+        modules={modules}
+        selectedIds={selectedIds}
+        disabled={disabled}
+        onToggle={onToggle}
+        onSetMany={onSetMany}
+      />
+    </section>
+  );
+}
+
 export function RightsSelector({
-  groups,
+  catalog,
   selectedIds,
   onChange,
   grantedLabel = "granted",
   showHeader = true,
+  disabled = false,
 }: RightsSelectorProps) {
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<RightsTabId>("pages");
-  const [selectedOnly, setSelectedOnly] = useState(false);
+  const [tab, setTab] = useState<RightsTabId>("sidebar");
 
-  const kindFilter = TAB_KIND[tab];
+  const totalSelectable = getAllCatalogPermissions(catalog).length;
 
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const filtered = {
+    modules: filterModules(catalog.modules, query),
+    platform: filterModules(catalog.platform, query),
+    adminPortal: filterModules(catalog.adminPortal, query),
+  };
 
-  // Every page row in one flat list, whatever category the backend filed it
-  // under — the preview matches them by label, not by group.
-  const pageOptions = useMemo(
-    () =>
-      filterPermissionGroups(groups, { kind: "pages" }).flatMap(
-        (entry) => entry.permissions,
-      ),
-    [groups],
-  );
-
-  const sortedGroups = useMemo(
-    () => sortPermissionGroupsForDisplay(groups),
-    [groups],
-  );
-
-  const filteredGroups = useMemo(
-    () =>
-      filterPermissionGroups(sortedGroups, {
-        query,
-        kind: kindFilter,
-        selectedOnly,
-        selectedIds,
-      }),
-    [sortedGroups, query, kindFilter, selectedOnly, selectedIds],
-  );
-
-  /**
-   * What the matrix renders. Buttons arrive in one API category, so they are
-   * regrouped by the module named in their slug; Actions already come grouped
-   * by module and pass through untouched.
-   */
-  const moduleGroups = useMemo(() => {
-    if (tab !== "buttons") {
-      return filteredGroups;
-    }
-
-    const flat = filteredGroups.flatMap((entry) => entry.permissions);
-    return regroupByModule(flat);
-  }, [tab, filteredGroups]);
-
-  const flatResults = useMemo(
-    () =>
-      filteredGroups.flatMap((entry) =>
-        entry.permissions.map((permission) => ({
-          group: entry.group,
-          permission,
-        })),
-      ),
-    [filteredGroups],
-  );
-
-  const visiblePermissionCount = flatResults.length;
-  const browseMode = !query.trim() && !selectedOnly;
-  const filtersActive = Boolean(query.trim()) || selectedOnly || kindFilter !== "all";
-
-  // Denominator for the headline count. Locked rights are excluded because they
-  // are not part of what this control can grant.
-  const totalSelectableCount = groups.reduce(
-    (total, entry) => total + getSelectablePermissionIds(entry).length,
-    0,
-  );
+  const nothingMatches =
+    filtered.modules.length === 0 &&
+    filtered.platform.length === 0 &&
+    filtered.adminPortal.length === 0;
 
   const togglePermission = (permissionId: number) => {
-    const permission = groups
-      .flatMap((group) => group.permissions)
-      .find((entry) => entry.id === permissionId);
+    if (disabled) return;
 
-    if (permission?.locked) return;
-
-    if (selectedSet.has(permissionId)) {
+    if (selectedIds.includes(permissionId)) {
       onChange(selectedIds.filter((id) => id !== permissionId));
       return;
     }
@@ -159,8 +126,9 @@ export function RightsSelector({
     onChange([...selectedIds, permissionId]);
   };
 
-  /** Grant or revoke a known set in one go — the preview's "show/hide all". */
   const setMany = (permissionIds: number[], granted: boolean) => {
+    if (disabled) return;
+
     if (granted) {
       onChange([...new Set([...selectedIds, ...permissionIds])]);
       return;
@@ -170,182 +138,111 @@ export function RightsSelector({
     onChange(selectedIds.filter((id) => !drop.has(id)));
   };
 
-  const selectAllVisible = () => {
-    const idsToAdd = filteredGroups.flatMap((entry) =>
-      getSelectablePermissionIds(entry),
-    );
-    onChange([...new Set([...selectedIds, ...idsToAdd])]);
-  };
-
-  const clearAllVisible = () => {
-    const visibleIds = new Set(flatResults.map((entry) => entry.permission.id));
-    onChange(selectedIds.filter((id) => !visibleIds.has(id)));
-  };
-
-  const clearFilters = () => {
-    setQuery("");
-    setSelectedOnly(false);
-  };
-
   return (
     <div className="flex min-w-0 flex-col gap-4">
       {showHeader ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text3 text-darkest">Rights</h3>
           <p className="text8 text-gray tabular-nums">
-            {selectedIds.length} {grantedLabel}
+            {selectedIds.length} of {totalSelectable} {grantedLabel}
           </p>
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3">
-        {/* Three questions, not three filters. The active tab's hint sits
-            directly under the row so the tab never has to be self-explanatory
-            from one word. */}
-        <div
-          role="tablist"
-          aria-label="Rights sections"
-          className="border-ehs-border-ink/10 bg-ehs-border-ink/4 flex gap-1 rounded-xl border p-1"
+      {disabled ? (
+        <p
+          className="border-ehs-border-ink/12 bg-ehs-border-ink/5 text-ehs-muted-text rounded-lg border px-3 py-2 text8"
+          role="status"
         >
-          {RIGHTS_TABS.map((entry) => {
-            const active = tab === entry.id;
-            let toneClass = "text-gray hover:text-darkest hover:bg-ehs-surface/60";
-            if (active) {
-              toneClass = "bg-ehs-surface text-darkest shadow-(--ehs-shadow-card)";
-            }
-
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(entry.id)}
-                className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text8 font-semibold transition-colors ${FOCUS_RING} ${toneClass}`}
-              >
-                <Icon icon={entry.icon} width={15} height={15} aria-hidden />
-                {entry.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <p className="text-ehs-muted-text text8">
-          {RIGHTS_TABS.find((entry) => entry.id === tab)?.hint}
+          This role always holds every right, within the modules this company is
+          licensed for. Change the company&apos;s modules to change what it can reach.
         </p>
+      ) : null}
 
-        {tab === "pages" ? null : (
-          <>
-            <SearchInput
-              placeholder="Filter permissions…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label="Filter permissions"
-            />
-
-            <label className="text-darkest focus-within:ring-ehs-normal-blue/40 inline-flex cursor-pointer items-center gap-2 self-start rounded-lg px-1 py-1 text8 font-medium focus-within:ring-2">
-              <input
-                type="checkbox"
-                checked={selectedOnly}
-                onChange={(event) => setSelectedOnly(event.target.checked)}
-                className="border-ehs-border-ink/20 accent-blue-normal size-4 cursor-pointer rounded border outline-none"
-              />
-              Show granted only
-            </label>
-          </>
-        )}
-
-        {/* The one line that answers "how much have I given this role?" — it is
-            polite-live so a keyboard user hears the count move as they tick. */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg bg-ehs-border-ink/4 px-3 py-2 text8 text-gray"
-          aria-live="polite"
-        >
-          <p className="min-w-0">
-            <span className="font-semibold text-darkest tabular-nums">
-              {selectedIds.length} of {totalSelectableCount}
-            </span>{" "}
-            permissions granted
-            <span className="text-ehs-muted-text">
-              {" · "}
-              {visiblePermissionCount} shown
-            </span>
-          </p>
-
-          {tab !== "pages" && !browseMode && visiblePermissionCount > 0 ? (
-            <div className="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={selectAllVisible}
-                className={`rounded text8 font-semibold text-blue-normal ${FOCUS_RING}`}
-              >
-                Select all shown
-              </button>
-              <button
-                type="button"
-                onClick={clearAllVisible}
-                className={`rounded text8 font-semibold text-gray ${FOCUS_RING}`}
-              >
-                Clear all shown
-              </button>
-            </div>
-          ) : null}
-        </div>
+      <div className="flex flex-wrap items-center gap-2" role="tablist">
+        {RIGHTS_TABS.map((entry) => {
+          const active = entry.id === tab;
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              title={entry.hint}
+              onClick={() => setTab(entry.id)}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text8 font-medium transition-colors ${
+                active
+                  ? "border-blue-normal/30 bg-blue-normal/10 text-blue-normal"
+                  : "border-ehs-border-ink/12 bg-ehs-surface text-gray hover:text-darkest"
+              } ${FOCUS_RING}`}
+            >
+              <Icon icon={entry.icon} width={14} height={14} aria-hidden />
+              {entry.label}
+            </button>
+          );
+        })}
       </div>
 
-      {groups.length === 0 ? (
-        <FeatureEmptyState
-          surface={false}
-          icon="mdi:key-outline"
-          title="No permissions returned by the API"
-          description="Nothing can be granted until the permissions catalog answers."
-        />
-      ) : null}
-
-      {groups.length > 0 && tab === "pages" ? (
+      {tab === "sidebar" ? (
         <RoleNavPreview
-          pageOptions={pageOptions}
+          modules={catalog.modules}
           selectedIds={selectedIds}
+          disabled={disabled}
           onToggle={togglePermission}
           onSetMany={setMany}
         />
-      ) : null}
-
-      {groups.length > 0 && tab !== "pages" && filteredGroups.length === 0 ? (
-        <FeatureEmptyState
-          icon="mdi:filter-remove-outline"
-          title="No permissions match your filters"
-          description="Nothing in the catalog matches this search, kind and granted-only combination."
-          action={
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="mdi:filter-off-outline"
-              onClick={clearFilters}
-            >
-              Clear filters
-            </Button>
-          }
-        />
-      ) : null}
-
-      {tab !== "pages" && moduleGroups.length > 0 ? (
-        <div className="min-w-0 max-h-[min(64vh,620px)] overflow-y-auto pr-0.5">
-          <RolePermissionMatrix
-            groups={moduleGroups}
-            selectedIds={selectedIds}
-            onToggle={togglePermission}
-            onSetMany={setMany}
+      ) : (
+        <div className="flex min-w-0 flex-col gap-5">
+          <SearchInput
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search modules and actions"
           />
-        </div>
-      ) : null}
 
-      {tab !== "pages" && filtersActive && filteredGroups.length > 0 ? (
-        <p className="text8 text-ehs-muted-text">
-          Filters only change what is listed here — permissions you granted
-          under another filter stay granted.
-        </p>
-      ) : null}
+          {nothingMatches ? (
+            <p className="text-ehs-muted-text text8" role="status">
+              Nothing matches &ldquo;{query}&rdquo;.
+            </p>
+          ) : (
+            <>
+              <ModuleSection
+                title="Modules"
+                hint="What this role may do in each EHS module the company is licensed for."
+                modules={filtered.modules}
+                selectedIds={selectedIds}
+                disabled={disabled}
+                onToggle={togglePermission}
+                onSetMany={setMany}
+              />
+              <ModuleSection
+                title="Shared"
+                hint="Registers and services every module uses. Always available, never licensed separately."
+                modules={filtered.platform}
+                selectedIds={selectedIds}
+                disabled={disabled}
+                onToggle={togglePermission}
+                onSetMany={setMany}
+              />
+              <ModuleSection
+                title="Admin portal"
+                hint="Managing this company's own users, roles and sites."
+                modules={filtered.adminPortal}
+                selectedIds={selectedIds}
+                disabled={disabled}
+                onToggle={togglePermission}
+                onSetMany={setMany}
+              />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
+/** Every permission id in the catalogue — used by "grant everything" affordances. */
+export function getAllSelectableIds(catalog: PermissionCatalog): number[] {
+  return getAllCatalogPermissions(catalog).map((permission) => permission.id);
+}
+
+export { getModulePermissions };

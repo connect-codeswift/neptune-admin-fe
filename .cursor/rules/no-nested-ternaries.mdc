@@ -1,0 +1,87 @@
+---
+description: Never nest ternaries (Sonar typescript:S3358)
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+<!-- Mirror of .claude/skills/no-nested-ternaries/SKILL.md — edit both, keep the bodies identical. -->
+
+# No nested ternaries (Sonar S3358)
+
+A conditional expression must not contain another conditional expression in either branch —
+one level only. Sonar reports the inner one as **typescript:S3358** _"Extract this nested
+ternary operation into an independent statement."_
+
+```tsx
+// ✗ flagged
+const niceNormalized =
+  normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+
+// ✗ flagged, inside JSX just the same
+<span>{isSaving ? "Saving…" : isEditing ? "Save" : "Edit"}</span>;
+```
+
+## Fix it with the first of these that fits
+
+**1. A lookup `Record` keyed by the discriminant** — the established idiom in this repo
+(`ui/Button.tsx`, `ui/IconButton.tsx`, `incidents/list/IncidentBadge.tsx`). Reach for this
+whenever the branches map a finite union to a value, which is most class-name and label pickers.
+
+```tsx
+const labelForState: Record<SaveState, string> = {
+  saving: "Saving…",
+  editing: "Save",
+  idle: "Edit",
+};
+…
+<span>{labelForState[state]}</span>;
+```
+
+**2. Named `const`s above the return** — one ternary each, no nesting. This is what "extract
+into an independent statement" literally asks for, and it names the intermediate value.
+
+```tsx
+const paddingClass = isCapa ? "" : "px-4 py-2.5";
+const headerPaddingClass = isCompliance ? "px-[16px] py-0" : paddingClass;
+```
+
+**3. A module-level `resolveX` / `xFor` helper with early returns** when the branches test
+ranges or several unrelated conditions rather than one union.
+
+```tsx
+function niceStepMultiplier(normalized: number): number {
+  if (normalized <= 1) return 1;
+  if (normalized <= 2) return 2;
+  if (normalized <= 5) return 5;
+  return 10;
+}
+```
+
+**4. In JSX, branch with an early return or a small sub-component** rather than stacking
+ternaries inside `{…}`. The `*Content.tsx` boot gate is the pattern to copy: sequential early
+returns for spinner → sign-in → error → not found, then the real view.
+
+## Not a violation
+
+- A single, unnested ternary — including in a `className` or a JSX attribute.
+- `??` and `?.` chains. They are not conditional expressions; `a ?? (b ? c : d)` holds only
+  one ternary.
+- A ternary in one branch of a **different** expression kind, e.g. inside a template literal
+  (`` `${n} item${n === 1 ? "" : "s"}` ``) that is itself a ternary branch. Sonar may not flag
+  it, but it reads as nested — if it needs a second glance, pull the inner piece into its own
+  `const` (`const itemNoun = n === 1 ? "item" : "items";`).
+
+## Do not
+
+- Suppress it with `// NOSONAR` or an eslint-disable comment.
+- Swap the nesting for a `&&` / `||` chain that hides the same branching.
+- Wrap the extracted value in `useMemo` — React Compiler is on (`reactCompiler: true`).
+- Sweep the repo for existing violations. Several predate this rule
+  (`IncidentTrendsCard.tsx`, `ui/Table.tsx`, `incidents/detail/shared/IncidentDetailHeader.tsx`);
+  fix one when you are already editing that expression, not as a drive-by.
+
+## Linting
+
+`no-nested-ternary` is **not** in `eslint.config.mjs`, so `npm run lint` will not catch this.
+**SonarLint** (`typescript:S3358`) is the source of truth — run **SonarLint: Analyze current
+file** on the files you touched before committing.
