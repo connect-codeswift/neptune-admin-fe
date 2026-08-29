@@ -43,3 +43,10 @@ next-env.d.ts
 
 # next.js generated route/cache types (regenerated on dev/build)
 /types/
+
+# Everyone keeps their own agent instruction files locally — not shared via git.
+/AGENTS.md
+/CLAUDE.md
+/.docs/
+/.cursor/
+/.claude/
