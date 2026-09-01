@@ -129,7 +129,14 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
   }, [openPicker, orgSite]);
 
   useEffect(() => {
-    void ensureOrgContext();
+    // ensureOrgContext is a real side effect — it reads the token store, may
+    // fetch, and mints an org token. Several of its paths (already-valid
+    // token, non-super-admin) reach a `setChecking(false)` before their first
+    // await, which would run synchronously inside this effect and cascade a
+    // second render. Starting it on a microtask keeps every state update it
+    // makes asynchronous, which is how an effect is meant to talk back to
+    // React.
+    queueMicrotask(() => void ensureOrgContext());
   }, [ensureOrgContext]);
 
   useEffect(() => {
@@ -180,7 +187,14 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
   return (
     <>
       {children}
+      {/*
+        The picker keeps its own org/site selection in state, seeded from these
+        props. Remounting on every (re)open is what resets that selection —
+        the modal used to do it by writing state from an effect, which cost an
+        extra render pass on each open.
+      */}
       <CompanySitePickerModal
+        key={`${String(pickerOpen)}-${String(initialOrganizationId)}-${String(initialSiteId)}`}
         open={pickerOpen}
         required
         initialOrganizationId={initialOrganizationId}

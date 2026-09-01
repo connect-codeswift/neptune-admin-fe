@@ -173,9 +173,19 @@ export function ClientSitesTab({
     setSaveAttempted(false);
   };
 
-  useEffect(() => {
-    if (initialEditSiteId == null || isLoading) return;
-
+  // Opening the editor for a site the parent nominated is a one-shot command,
+  // not a subscription. React's own answer for "adjust state when a prop
+  // changed" is to do it during render, guarded by the value that triggered it
+  // — an effect would repaint the tab once before the editor appeared.
+  const [consumedEditSiteId, setConsumedEditSiteId] = useState<number | null>(
+    null,
+  );
+  if (
+    initialEditSiteId != null &&
+    !isLoading &&
+    consumedEditSiteId !== initialEditSiteId
+  ) {
+    setConsumedEditSiteId(initialEditSiteId);
     const site = sites.find(
       (row) => row.id === initialEditSiteId && !row.isDrop,
     );
@@ -183,8 +193,14 @@ export function ClientSitesTab({
       setEditingSite(site);
       setForm(toClientSiteFormState(site));
     }
+  }
+
+  // Telling the parent it can drop the request is the one part that must not
+  // happen during render — it sets state in another component.
+  useEffect(() => {
+    if (consumedEditSiteId == null) return;
     onInitialEditConsumed?.();
-  }, [initialEditSiteId, isLoading, sites, onInitialEditConsumed]);
+  }, [consumedEditSiteId, onInitialEditConsumed]);
 
   const handleSave = async () => {
     setSaveAttempted(true);
