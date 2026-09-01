@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button, type ButtonVariant } from "./Button";
 import { IconButton } from "./IconButton";
+import { useHydrated } from "@/lib/use-hydrated";
 
 export type ModalSize = "md" | "lg" | "xl";
 
@@ -57,9 +58,9 @@ export function Modal({
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  // The <dialog> element only exists in the browser, so every DOM call below
+  // waits for hydration rather than running against a server render.
+  const mounted = useHydrated();
 
   const showFooter =
     !hideFooter && Boolean(secondaryLabel || primaryLabel);

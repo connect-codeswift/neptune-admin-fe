@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { SelectInput } from "@/components/inputs";
 import { Button, Modal } from "@/components/ui";
@@ -56,22 +56,17 @@ export function CompanySitePickerModal({
   const { data: sites = [], isLoading: sitesLoading } =
     useSuperAdminCompanySites(organizationId);
 
-  useEffect(() => {
-    if (!open) return;
-    setOrganizationId(initialOrganizationId);
-    setSiteId(initialSiteId);
-  }, [open, initialOrganizationId, initialSiteId]);
-
-  useEffect(() => {
-    if (!organizationId || sites.length === 0) return;
-    if (siteId && sites.some((site) => site.id === siteId)) return;
-    setSiteId(sites[0]?.id);
-  }, [organizationId, sites, siteId]);
+  // A site the loaded list does not contain (stale, or none picked yet) falls
+  // back to the first one. Derived rather than written back into state, which
+  // would cost an extra render pass on every list change.
+  const hasChosenSite =
+    siteId !== undefined && sites.some((site) => site.id === siteId);
+  const resolvedSiteId = hasChosenSite ? siteId : sites[0]?.id;
 
   const selectedCompany = companies.find((company) => company.id === organizationId);
 
   const handleConfirm = async () => {
-    if (!organizationId || !siteId || !selectedCompany) {
+    if (!organizationId || !resolvedSiteId || !selectedCompany) {
       toast.error("Select a company and site.");
       return;
     }
@@ -81,12 +76,12 @@ export function CompanySitePickerModal({
       await enterOrganization({
         organizationId,
         organizationName: selectedCompany.name,
-        siteId,
+        siteId: resolvedSiteId,
       });
       // enterOrganization mints a fresh org token; anything cached under the
       // previous org/site is now the wrong tenant's data.
       queryClient.clear();
-      const path = buildOrgDashboardPath(organizationId, siteId);
+      const path = buildOrgDashboardPath(organizationId, resolvedSiteId);
       onSuccess?.(path);
     } catch (error) {
       toast.error(
@@ -143,7 +138,7 @@ export function CompanySitePickerModal({
             value: String(site.id),
             label: site.siteName,
           }))}
-          value={siteId ? String(siteId) : ""}
+          value={resolvedSiteId ? String(resolvedSiteId) : ""}
           onChange={(value) => setSiteId(Number(value))}
           disabled={!organizationId || sitesLoading || submitting}
         />
@@ -160,9 +155,9 @@ export function CompanySitePickerModal({
             onClick={() => void handleConfirm()}
             loading={submitting}
             loadingText="Selecting…"
-            disabled={!organizationId || !siteId}
+            disabled={!organizationId || !resolvedSiteId}
             title={
-              organizationId && siteId
+              organizationId && resolvedSiteId
                 ? undefined
                 : "Pick a company and one of its sites first"
             }

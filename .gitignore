@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,3 +43,23 @@ next-env.d.ts
 
 # next.js generated route/cache types (regenerated on dev/build)
 /types/
+
+# Everyone keeps their own agent instruction files locally — not shared via git.
+/AGENTS.md
+/CLAUDE.md
+/.docs/
+/.cursor/
+/.claude/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Other agents' local config — same rule as AGENTS.md/CLAUDE.md above, kept per-developer.
+/GEMINI.md
+/.gemini/
+/.mcp.json
+/opencode.json
+/.ignore
+
+# eslint --cache writes this; it is per-machine state, never shared.
+.eslintcache
