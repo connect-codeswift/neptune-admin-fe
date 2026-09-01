@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Per-developer agent tooling (gitignored). CommonJS hook scripts run by
+    // Claude Code / Cursor, not app source — linting them only reports
+    // no-require-imports against files that must use require().
+    ".claude/**",
+    ".cursor/**",
   ]),
 ]);
 
