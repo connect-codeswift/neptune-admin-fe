@@ -120,6 +120,14 @@ export function ContextMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Closing drops the measured position too: coords are re-measured on every
+  // open, and keeping the old ones would paint the menu at the previous anchor
+  // if that measurement is not ready in time.
+  const closeMenu = () => {
+    setOpen(false);
+    setCoords(null);
+  };
+
   useLayoutEffect(() => {
     if (!open || !rootRef.current || !menuRef.current) return;
 
@@ -151,19 +159,16 @@ export function ContextMenu({
   }, [open, align, items]);
 
   useEffect(() => {
-    if (!open) {
-      setCoords(null);
-      return;
-    }
+    if (!open) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
       if (rootRef.current?.contains(target)) return;
       if (menuRef.current?.contains(target)) return;
-      setOpen(false);
+      closeMenu();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closeMenu();
     };
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -262,7 +267,7 @@ export function ContextMenu({
               onClick={() => {
                 if (item.disabled) return;
                 item.onSelect?.();
-                setOpen(false);
+                closeMenu();
               }}
               className={`text4 flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 item.danger

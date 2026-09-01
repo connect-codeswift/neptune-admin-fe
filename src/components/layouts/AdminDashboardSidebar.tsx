@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   getAdminSidebarLogoHref,
   getOrgAdminNavSections,
@@ -10,6 +9,7 @@ import {
 import { useSignedInUser } from "@/lib/signed-in-user";
 import { getTenantContext } from "@/lib/tenant-context";
 import { SidebarNavShell, type SidebarNavShellUser } from "./SidebarNavShell";
+import { useHydrated } from "@/lib/use-hydrated";
 
 export type AdminDashboardSidebarUser = SidebarNavShellUser;
 
@@ -34,12 +34,13 @@ export function AdminDashboardSidebar({
   const resolvedUser = user ?? signedInUser;
 
   // getTenantContext reads localStorage, which does not exist during SSR, so
-  // reading it in render made the server emit "Admin" and the client the real
-  // name — a hydration mismatch. Resolve after mount instead.
-  const [organizationName, setOrganizationName] = useState<string>();
-  useEffect(() => {
-    setOrganizationName(getTenantContext()?.organizationName);
-  }, [pathname]);
+  // reading it unguarded made the server emit "Admin" and the client the real
+  // name — a hydration mismatch. useHydrated keeps the server on "Admin" and
+  // lets the client read the real value during render, no effect needed.
+  const isHydrated = useHydrated();
+  const organizationName = isHydrated
+    ? getTenantContext()?.organizationName
+    : undefined;
 
   const navSections =
     sections ?? getOrgAdminNavSections(pathname, organizationName ?? "Admin");

@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { getAuthEmail, getAuthRole } from "@/lib/auth-tokens";
+import { useHydrated } from "@/lib/use-hydrated";
+
+const ROLE_LABELS: Readonly<Record<string, string>> = {
+  "super-admin": "Neptune Admin",
+  admin: "Organization Admin",
+};
 
 export type SignedInUser = {
   name: string;
@@ -16,29 +21,18 @@ export type SignedInUser = {
  * carries only `id` and `purpose`, so the email captured at login is the only
  * identity available.
  *
- * Resolved after mount because it reads localStorage, which does not exist
- * during SSR — reading it in render would make the server and client markup
- * disagree. The role label stays blank until it resolves rather than guessing,
- * so a SuperAdmin is never briefly labelled an Organization Admin.
+ * Resolved only once hydrated because it reads localStorage, which does not
+ * exist during SSR — reading it on the server would make the server and client
+ * markup disagree. The role label stays blank for that first render rather than
+ * guessing, so a SuperAdmin is never briefly labelled an Organization Admin.
  */
 export function useSignedInUser(): SignedInUser {
-  const [user, setUser] = useState<SignedInUser>({
-    name: "Signed in",
-    role: "",
-  });
+  const isHydrated = useHydrated();
 
-  useEffect(() => {
-    const role = getAuthRole();
-    setUser({
-      name: getAuthEmail() ?? "Signed in",
-      role:
-        role === "super-admin"
-          ? "Neptune Admin"
-          : role === "admin"
-            ? "Organization Admin"
-            : "",
-    });
-  }, []);
+  if (!isHydrated) return { name: "Signed in", role: "" };
 
-  return user;
+  return {
+    name: getAuthEmail() ?? "Signed in",
+    role: ROLE_LABELS[getAuthRole() ?? ""] ?? "",
+  };
 }
