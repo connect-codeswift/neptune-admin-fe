@@ -13,13 +13,12 @@ import {
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
-  ContextMenu,
   ModuleFilterBar,
   ModuleSearchBar,
   Table,
+  TableIconAction,
   TableStatusBadge,
   TableTextCell,
-  type ContextMenuItem,
   type TableColumn,
   type TableStatus,
 } from "@/components/ui";
@@ -85,34 +84,40 @@ function ClientRowActions({
   onOpenOverview,
   onOpenDashboard,
 }: Readonly<{ client: ClientAccount } & ClientRowActionHandlers>) {
-  const items: ContextMenuItem[] = [
-    {
-      id: "open-overview",
-      label: "Open Overview",
-      icon: "lucide:layout-dashboard",
-      onSelect: () => onOpenOverview(client),
-    },
-    {
-      id: "open-dashboard",
-      label: "Open Dashboard",
-      icon: "lucide:monitor",
-      onSelect: () => onOpenDashboard(client),
-    },
-    {
-      id: "start-trial",
-      label: "Start Trial",
-      icon: "lucide:play",
-      onSelect: () => onStartTrial(client),
-    },
-    {
-      id: "extend-trial",
-      label: "Extend Trial",
-      icon: "lucide:calendar-plus",
-      onSelect: () => onExtendTrial(client),
-    },
-  ];
+  // The backend exposes no "ever had a trial" flag — only accessExpiresAt, which
+  // is null for permanent access (every paying customer) and set for both a
+  // running and an already-lapsed trial. So "has a window at all" is the closest
+  // proxy for "on a trial": an expired trial still shows Extend, and a paying
+  // customer with no window shows Start. See CompanyAccessWindow.md.
+  const hasWindow = Boolean(client.accessExpiresAt);
 
-  return <ContextMenu items={items} label={`Actions for ${client.name}`} />;
+  return (
+    <div className="flex items-center justify-end gap-1.5">
+      <TableIconAction
+        label={`Open overview for ${client.name}`}
+        icon="lucide:layout-dashboard"
+        onClick={() => onOpenOverview(client)}
+      />
+      <TableIconAction
+        label={`Open dashboard for ${client.name}`}
+        icon="lucide:monitor"
+        onClick={() => onOpenDashboard(client)}
+      />
+      {hasWindow ? (
+        <TableIconAction
+          label={`Extend trial for ${client.name}`}
+          icon="lucide:calendar-plus"
+          onClick={() => onExtendTrial(client)}
+        />
+      ) : (
+        <TableIconAction
+          label={`Start trial for ${client.name}`}
+          icon="lucide:play"
+          onClick={() => onStartTrial(client)}
+        />
+      )}
+    </div>
+  );
 }
 
 function buildColumns(
