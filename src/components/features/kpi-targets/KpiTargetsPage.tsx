@@ -14,7 +14,7 @@ import type { KpiTargetModule } from "@/dtos/req/kpi-targets.req";
 import type { KpiTargetResponse } from "@/dtos/res/kpi-targets.res";
 import {
   useDropKpiTarget,
-  useKpiTargets,
+  useKpiTargetsBySite,
   useSaveKpiTarget,
 } from "@/hooks/useKpiTargets";
 import { useOrgDashboard } from "@/hooks/useOrgDashboard";
@@ -41,14 +41,16 @@ function targetKey(module: KpiTargetModule, metric: string) {
   return `${module.toLowerCase()}:${metric.toLowerCase()}`;
 }
 
-export function KpiTargetsPage() {
+type KpiTargetsPageProps = Readonly<{ siteId: number }>;
+
+export function KpiTargetsPage({ siteId }: KpiTargetsPageProps) {
   const pathname = usePathname();
   const orgSite = parseOrgSitePath(pathname ?? "");
   const adminHref = orgSite
     ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/dashboard`
     : "#";
 
-  const targetsQuery = useKpiTargets();
+  const targetsQuery = useKpiTargetsBySite(siteId);
   const { summary } = useOrgDashboard();
   const saveMutation = useSaveKpiTarget();
   const dropMutation = useDropKpiTarget();
@@ -57,10 +59,25 @@ export function KpiTargetsPage() {
   const [pendingMetric, setPendingMetric] = useState<string | null>(null);
   const [clearingId, setClearingId] = useState<number | null>(null);
 
+  // Two different reasons this page can be read-only, and the reader deserves to know
+  // which one applies — hence a reason string rather than a bare boolean.
+  //
   // Staff carry a superadmin org token whose `id` claim is not `NameIdentifier`, so the
-  // backend cannot resolve an author on write. GET works; PUT/DELETE 400. Read-only
-  // until that backend gap closes — see FEGuides/KpiTargets.md "Known gaps".
-  const readOnly = isSuperAdminRole();
+  // backend cannot resolve an author on write. GET works; PUT/DELETE 400. See
+  // FEGuides/KpiTargets.md "Known gaps".
+  //
+  // The other: KPI target writes take the site from the caller's token, never from a
+  // parameter, so saving while viewing another site would write into the wrong one.
+  // Reads accept an explicit siteId; writes deliberately do not.
+  let readOnlyReason: string | null = null;
+  if (isSuperAdminRole()) {
+    readOnlyReason =
+      "You are signed in as CodeSwift staff, so this page is read-only. Saving needs an organization admin account until the staff-token author gap is fixed on the backend.";
+  } else if (orgSite === null || String(siteId) !== orgSite.site) {
+    readOnlyReason =
+      "You are viewing another site's targets, so this page is read-only. Targets save to the site you are currently switched to — switch to this site to edit them.";
+  }
+  const readOnly = readOnlyReason !== null;
 
   const activatedModules = summary?.activatedModules?.modules ?? null;
 
@@ -249,11 +266,7 @@ export function KpiTargetsPage() {
             className="mt-0.5 shrink-0 text-ehs-warning-ink"
             aria-hidden="true"
           />
-          <p className="text8 text-ehs-warning-ink">
-            You are signed in as CodeSwift staff, so this page is read-only.
-            Saving needs an organization admin account until the staff-token
-            author gap is fixed on the backend.
-          </p>
+          <p className="text8 text-ehs-warning-ink">{readOnlyReason}</p>
         </div>
       ) : null}
 

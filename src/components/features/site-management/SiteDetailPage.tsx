@@ -16,6 +16,7 @@ import {
 import { buildOrgSitePath } from "@/lib/org-sites";
 import { buildOrgSiteBasePath, parseOrgSitePath } from "@/lib/sidebar-items";
 import { SiteDepartmentsTab } from "./SiteDepartmentsTab";
+import { SiteDocCategoriesTab } from "./SiteDocCategoriesTab";
 import { SiteKpiTargetsTab } from "./SiteKpiTargetsTab";
 import { SiteLocationsTab } from "./SiteLocationsTab";
 import { SiteOverviewTab } from "./SiteOverviewTab";
@@ -31,6 +32,7 @@ const TABS = [
   { id: "users", label: "Users" },
   { id: "locations", label: "Locations" },
   { id: "departments", label: "Departments" },
+  { id: "doc-categories", label: "Documents" },
   { id: "kpi-targets", label: "KPI Targets" },
   { id: "ppe", label: "PPE" },
 ] as const;
@@ -145,6 +147,8 @@ export function SiteDetailPage({ siteId }: SiteDetailPageProps) {
     tabContent = <SiteLocationsTab siteId={site.id} />;
   } else if (activeTab.id === "departments") {
     tabContent = <SiteDepartmentsTab siteId={site.id} />;
+  } else if (activeTab.id === "doc-categories") {
+    tabContent = <SiteDocCategoriesTab siteId={site.id} />;
   } else if (activeTab.id === "kpi-targets") {
     tabContent = <SiteKpiTargetsTab siteId={site.id} />;
   } else if (activeTab.id === "ppe") {

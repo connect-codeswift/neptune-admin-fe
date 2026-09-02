@@ -10,7 +10,7 @@ import {
 import { Button, ConfirmDialog } from "@/components/ui";
 import {
   useDeleteDocCategory,
-  useDocCategories,
+  useDocCategoriesBySite,
   useUpdateDocCategory,
   mapDocCategory,
   type DocCategoryViewModel,
@@ -24,7 +24,14 @@ import {
 const CARD_GRID_CLASS =
   "stagger-cards grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3";
 
+/** Same reason `DocumentCategoriesPage` gates its header — see there. */
+const OTHER_SITE_WRITE_NOTE =
+  "Categories are managed on the site you are currently switched to — this view is showing another site.";
+
 type DocumentCategoryGridProps = Readonly<{
+  siteId: number;
+  /** Whether `siteId` is the caller's own token site — gates every write control below. */
+  isOwnSite: boolean;
   /**
    * Opens the create form. The empty state is the one place a first-time user
    * lands, so it needs the same primary action the page header carries.
@@ -32,13 +39,17 @@ type DocumentCategoryGridProps = Readonly<{
   onCreate?: () => void;
 }>;
 
-export function DocumentCategoryGrid({ onCreate }: DocumentCategoryGridProps) {
+export function DocumentCategoryGrid({
+  siteId,
+  isOwnSite,
+  onCreate,
+}: DocumentCategoryGridProps) {
   const sectionHeadingId = useId();
   // `isPending` (not `isLoading`) so the query stays in its loading state while
-  // it is still gated on the tenant scope — a disabled query reports
+  // it is still gated on a valid siteId — a disabled query reports
   // `isLoading === false` with no data, which would flash the empty state.
   const { data: categories = [], isPending, isError, error, refetch } =
-    useDocCategories();
+    useDocCategoriesBySite(siteId);
   const updateMutation = useUpdateDocCategory();
   const deleteMutation = useDeleteDocCategory();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -126,28 +137,47 @@ export function DocumentCategoryGrid({ onCreate }: DocumentCategoryGridProps) {
             <Button size="sm" leftIcon="lucide:folder-plus" onClick={onCreate}>
               Add your first category
             </Button>
-          ) : null
+          ) : (
+            <p className="max-w-md text8 text-ehs-muted-text">
+              {OTHER_SITE_WRITE_NOTE}
+            </p>
+          )
         }
       />
     );
   } else {
     body = (
       <div className={CARD_GRID_CLASS}>
-        {viewModels.map((category) => (
-          <DocumentCategoryCard
-            key={category.id}
-            category={category}
-            isEditing={editingId === category.id}
-            draft={draft}
-            onDraftChange={setDraft}
-            onEdit={() => startEdit(category)}
-            onCancel={cancelEdit}
-            onSave={() => void saveEdit(category.id)}
-            onDelete={
-              category.deletable ? () => setDeleteTarget(category) : undefined
-            }
-          />
-        ))}
+        {viewModels.map((category) => {
+          // Editing and deleting write to the token's site; on another
+          // site's view both controls stay disabled with the same reason,
+          // deleting keeps its own "still has documents" reason when it
+          // applies on the caller's own site.
+          let deleteDisabledReason: string | undefined;
+          if (!isOwnSite) {
+            deleteDisabledReason = OTHER_SITE_WRITE_NOTE;
+          } else if (!category.deletable) {
+            deleteDisabledReason = `${category.name} still has documents filed under it, so it cannot be deleted.`;
+          }
+
+          return (
+            <DocumentCategoryCard
+              key={category.id}
+              category={category}
+              isEditing={editingId === category.id}
+              draft={draft}
+              onDraftChange={setDraft}
+              onEdit={isOwnSite ? () => startEdit(category) : undefined}
+              editDisabledReason={isOwnSite ? undefined : OTHER_SITE_WRITE_NOTE}
+              onCancel={cancelEdit}
+              onSave={() => void saveEdit(category.id)}
+              onDelete={
+                deleteDisabledReason ? undefined : () => setDeleteTarget(category)
+              }
+              deleteDisabledReason={deleteDisabledReason}
+            />
+          );
+        })}
       </div>
     );
   }

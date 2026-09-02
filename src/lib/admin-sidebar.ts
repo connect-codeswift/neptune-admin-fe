@@ -50,16 +50,10 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     href: "/roles-and-rights",
     icon: "lucide:shield-check",
   },
-  {
-    label: "KPI Targets",
-    href: "/kpi-targets",
-    icon: "lucide:target",
-  },
-  {
-    label: "Document Categories",
-    href: "/doc-categories",
-    icon: "lucide:layers",
-  },
+  // KPI Targets, Document Categories and PPE Catalog are all per-site registers,
+  // so they live on the site's own details page rather than in a nav that has no
+  // site in it. Reaching them here meant editing whichever site the token
+  // happened to hold.
   {
     label: "Settings",
     href: "/settings/profile",
