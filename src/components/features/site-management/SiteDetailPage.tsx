@@ -15,7 +15,12 @@ import {
 } from "@/hooks/useSuperAdminSites";
 import { buildOrgSitePath } from "@/lib/org-sites";
 import { buildOrgSiteBasePath, parseOrgSitePath } from "@/lib/sidebar-items";
+import { SiteDepartmentsTab } from "./SiteDepartmentsTab";
+import { SiteKpiTargetsTab } from "./SiteKpiTargetsTab";
+import { SiteLocationsTab } from "./SiteLocationsTab";
 import { SiteOverviewTab } from "./SiteOverviewTab";
+import { SitePpeTab } from "./SitePpeTab";
+import { SiteUsersTab } from "./SiteUsersTab";
 
 type SiteDetailPageProps = Readonly<{
   siteId: string;
@@ -24,27 +29,11 @@ type SiteDetailPageProps = Readonly<{
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "users", label: "Users" },
+  { id: "locations", label: "Locations" },
+  { id: "departments", label: "Departments" },
   { id: "kpi-targets", label: "KPI Targets" },
   { id: "ppe", label: "PPE" },
 ] as const;
-
-/**
- * The three tabs beyond Overview have no id-scoped endpoint to read: the
- * backend derives "the site" from the caller's token, not from a URL
- * parameter (see FEGuides/Locations.md — "the site is never a parameter").
- * Wiring one of these to an existing endpoint would silently render whatever
- * site the token currently selects, not the id in this URL, so they stay an
- * honest empty state instead and issue no request.
- */
-function UnwiredTabNotice({ label }: Readonly<{ label: string }>) {
-  return (
-    <FeatureEmptyState
-      icon="mdi:link-off"
-      title={`${label} is not wired up yet`}
-      description="This data is scoped to whichever site is currently selected in the app, not to the site in this page's URL. Showing it here would risk mixing up two different sites, so this view stays disabled until the backend can take a site id directly."
-    />
-  );
-}
 
 /**
  * Read-only-shell detail page for one site, following the same loading /
@@ -146,9 +135,20 @@ export function SiteDetailPage({ siteId }: SiteDetailPageProps) {
     );
   }
 
+  // Every tab below Overview owns its own query, keyed on this site's id rather
+  // than the app's selected site — that is the whole point of the page, and why
+  // each hook needed a key branch of its own.
   let tabContent = <SiteOverviewTab site={site} updateSite={updateSite} />;
-  if (activeTab.id !== "overview") {
-    tabContent = <UnwiredTabNotice label={activeTab.label} />;
+  if (activeTab.id === "users") {
+    tabContent = <SiteUsersTab siteId={site.id} />;
+  } else if (activeTab.id === "locations") {
+    tabContent = <SiteLocationsTab siteId={site.id} />;
+  } else if (activeTab.id === "departments") {
+    tabContent = <SiteDepartmentsTab siteId={site.id} />;
+  } else if (activeTab.id === "kpi-targets") {
+    tabContent = <SiteKpiTargetsTab siteId={site.id} />;
+  } else if (activeTab.id === "ppe") {
+    tabContent = <SitePpeTab siteId={site.id} />;
   }
 
   return (

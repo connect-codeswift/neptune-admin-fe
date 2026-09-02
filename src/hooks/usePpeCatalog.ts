@@ -41,6 +41,33 @@ export function usePpeCatalog() {
   });
 }
 
+/**
+ * Prefix, distinct from `PPE_CATALOG_QUERY_KEY`. That key is scoped to the
+ * caller's own tenant site; reusing it for an explicit `siteId` fetch would
+ * overwrite the logged-in user's own-site catalog cache with another site's
+ * stock. `by-site` fetches key on the numeric id directly.
+ */
+export const PPE_CATALOG_BY_SITE_KEY = [...PPE_CATALOG_QUERY_KEY, "by-site"] as const;
+
+export function ppeCatalogBySiteQueryKey(siteId: number) {
+  return [...PPE_CATALOG_BY_SITE_KEY, siteId] as const;
+}
+
+async function fetchPpeCatalogItemsBySite(siteId: number): Promise<PpeResponse[]> {
+  const response = await getPpeList({ siteId, pageNumber: 1, pageSize: 100 });
+  assertApiSuccess(response, "Failed to load PPE catalog.");
+  return unwrapList<PpeResponse>(response);
+}
+
+/** Catalog rows for an arbitrary site, honoured only when it is a live site the caller is a member of. */
+export function usePpeCatalogBySite(siteId: number) {
+  return useQuery({
+    queryKey: ppeCatalogBySiteQueryKey(siteId),
+    queryFn: () => fetchPpeCatalogItemsBySite(siteId),
+    enabled: Number.isFinite(siteId) && siteId > 0,
+  });
+}
+
 export function useCreatePpeItem() {
   const queryClient = useQueryClient();
 
