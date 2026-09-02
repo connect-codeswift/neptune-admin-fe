@@ -10,12 +10,12 @@ import {
   FeatureLoadingCard,
   FeatureLoadingGrid,
 } from "@/components/features/shared";
-import { SearchInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
   ContextMenu,
-  GLASS_SURFACE,
+  ModuleFilterBar,
+  ModuleSearchBar,
   Table,
   TableStatusBadge,
   TableTextCell,
@@ -419,16 +419,15 @@ export function ClientAccountsPage() {
         </div>
       ) : null}
 
-      {/* The skeleton has to be the shape of the page it stands in for, so it
-          is the same split: list on the left, filter rail on the right. */}
+      {/* The skeleton has to be the shape of the page it stands in for: the
+          filter bar and search bar stacked above a full-width table. It used to
+          mirror a two-column split with a filter rail on the right, which is no
+          longer the shape that arrives — a skeleton promising a layout the page
+          never renders is worse than no skeleton at all. */}
       {isLoading ? (
-        <div className="grid grid-cols-1 items-start gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4">
+          <FeatureLoadingCard rows={1} label="Loading filters…" />
           <FeatureLoadingCard rows={8} label="Loading client accounts…" />
-          <FeatureLoadingCard
-            rows={4}
-            label="Loading filters…"
-            className="order-first xl:order-last"
-          />
         </div>
       ) : null}
 
@@ -462,88 +461,43 @@ export function ClientAccountsPage() {
         />
       ) : null}
 
-      {/* The workspace: the table is the page, so it takes the wide column and
-          keeps its own columns close together, and the controls that act on it
-          sit in a rail beside it rather than as another full-width band above
-          it. The rail is `order-first` while the split is stacked, so on a
-          narrow window you still meet the filters before the list. */}
+      {/* Filtering happens in the browser over the already-fetched list, so
+          the query is untouched and the stat row stays platform-wide. The
+          filter bar and search bar sit above the now full-width table. */}
       {hasData && clientAccounts.length > 0 ? (
-        <div className="grid grid-cols-1 items-start gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4">
+          <ModuleFilterBar
+            segments={[
+              {
+                label: "Status",
+                value: statusFilter,
+                onChange: (value) => setStatusFilter(value as StatusFilter),
+                options: STATUS_FILTERS.map((filter) => ({
+                  value: filter.id,
+                  label: filter.label,
+                  count: statusCounts[filter.id],
+                })),
+              },
+            ]}
+            action={{
+              label: "Clear filters",
+              onClick: clearFilters,
+              icon: "lucide:filter-x",
+              disabled: !filtersApplied,
+              title: filtersApplied
+                ? undefined
+                : "No filters are applied right now",
+            }}
+          />
+
+          <ModuleSearchBar
+            value={search}
+            onChange={(value) => setSearch(value)}
+            placeholder="Company name, ID, or module"
+            aria-label="Search client accounts"
+          />
+
           {listContent}
-
-          {/* Filtering happens in the browser over the already-fetched list, so
-              the query is untouched and the stat row stays platform-wide. */}
-          <div
-            role="search"
-            aria-label="Filter client accounts"
-            className={`${GLASS_SURFACE} animate-card-rise order-first flex flex-col gap-4 p-5 xl:order-last`}
-          >
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <h2 className="text3 text-ehs-darker">Find a client</h2>
-              <p className="text8 text-ehs-muted-text">
-                Narrows the table beside it. The totals above stay platform-wide.
-              </p>
-            </div>
-
-            <SearchInput
-              label="Search"
-              placeholder="Company name, ID, or module"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              containerClassName="w-full"
-            />
-
-            <div className="flex flex-col gap-2">
-              <p className="text6 text-ehs-muted-text" id="client-status-filter">
-                Status
-              </p>
-              <div
-                role="group"
-                aria-labelledby="client-status-filter"
-                className="flex flex-col gap-2"
-              >
-                {STATUS_FILTERS.map((filter) => {
-                  const isActive = filter.id === statusFilter;
-                  let toneClass =
-                    "border-ehs-border-ink/12 text-ehs-gray hover:border-ehs-border-ink/25 hover:text-ehs-darker";
-                  if (isActive) {
-                    toneClass =
-                      "border-ehs-normal-blue bg-ehs-normal-blue/12 text-ehs-dark-blue";
-                  }
-
-                  return (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      aria-pressed={isActive}
-                      onClick={() => setStatusFilter(filter.id)}
-                      className={`text4 focus-visible:ring-ehs-normal-blue/30 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 outline-none transition-colors focus-visible:ring-2 ${toneClass}`}
-                    >
-                      <span className="truncate">{filter.label}</span>
-                      <span className="shrink-0 tabular-nums">
-                        {statusCounts[filter.id]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="border-ehs-hairline/70 mt-auto border-t pt-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                leftIcon="lucide:filter-x"
-                onClick={clearFilters}
-                disabled={!filtersApplied}
-                title={
-                  filtersApplied ? undefined : "No filters are applied right now"
-                }
-              >
-                Clear filters
-              </Button>
-            </div>
-          </div>
         </div>
       ) : null}
 
