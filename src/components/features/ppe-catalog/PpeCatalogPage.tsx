@@ -33,6 +33,8 @@ import { PpeCategoryFilter } from "./PpeCategoryFilter";
 const CARD_GRID_CLASS =
   "stagger-cards grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3";
 
+// Decorative placeholder widths — duplicates are fine and intentional, so the
+// key carries the index too. Keying on the width alone collided on "w-44".
 const FILTER_SKELETON_WIDTHS = ["w-16", "w-44", "w-40", "w-48", "w-36", "w-44"];
 
 /**
@@ -222,8 +224,11 @@ export function PpeCatalogPage({ siteId }: PpeCatalogPageProps) {
             aria-busy="true"
             aria-label="Loading PPE categories…"
           >
-            {FILTER_SKELETON_WIDTHS.map((width) => (
-              <Skeleton key={width} className={`h-10 rounded-full ${width}`} />
+            {FILTER_SKELETON_WIDTHS.map((width, index) => (
+              <Skeleton
+                key={`${width}-${index}`}
+                className={`h-10 rounded-full ${width}`}
+              />
             ))}
           </div>
         ) : null}
