@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import {
+  Button,
   Table,
   TableTextCell,
   type TableColumn,
@@ -12,6 +14,7 @@ import {
 } from "@/components/features/shared";
 import type { KpiTargetResponse } from "@/dtos/res/kpi-targets.res";
 import { useKpiTargetsBySite } from "@/hooks/useKpiTargets";
+import { buildOrgSiteBasePath, parseOrgSitePath } from "@/lib/sidebar-items";
 
 type SiteKpiTargetsTabProps = Readonly<{
   siteId: number;
@@ -60,8 +63,24 @@ export function SiteKpiTargetsTab({ siteId }: SiteKpiTargetsTabProps) {
 
   const hasData = !isLoading && !isError;
 
+  const orgSite = parseOrgSitePath(usePathname());
+  const targetsHref = orgSite
+    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/site-management/${siteId}/kpi-targets`
+    : undefined;
+
   return (
     <>
+      <div className="flex justify-end">
+        <Button
+          href={targetsHref}
+          variant="secondary"
+          size="sm"
+          rightIcon="lucide:arrow-up-right"
+        >
+          Open KPI targets
+        </Button>
+      </div>
+
       {isLoading ? <FeatureLoadingCard label="Loading KPI targets…" /> : null}
 
       {isError ? (

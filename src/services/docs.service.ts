@@ -128,10 +128,15 @@ export async function deleteCategory(id: string | number) {
   return data;
 }
 
-/** GET /v1/document-categories */
-export async function getAllCategories() {
+/**
+ * GET /v1/document-categories — omit `siteId` for the token's site, unchanged.
+ * An explicit `siteId` is honoured only for a live site the caller is a
+ * member of — anything else 404s with "Site not found for this company."
+ */
+export async function getAllCategories(params?: { siteId?: number }) {
   const { data } = await axiosInstance.get<ApiResponse>(
     "/v1/document-categories",
+    params && Object.keys(params).length > 0 ? { params } : undefined,
   );
   return data;
 }
