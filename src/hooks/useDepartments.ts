@@ -1,9 +1,18 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  AddDepartmentPayload,
+  UpdateDepartmentPayload,
+} from "@/dtos/req/departments.req";
 import type { DepartmentResponse } from "@/dtos/res/departments.res";
 import { assertApiSuccess, unwrapList } from "@/lib/api-response";
-import { getAllDepartments } from "@/services/docs.service";
+import {
+  createDepartment,
+  deleteDepartment,
+  getAllDepartments,
+  updateDepartment,
+} from "@/services/docs.service";
 
 /**
  * Departments are per-site — the same URL returns a different list per `siteId`. Keyed on
@@ -28,5 +37,57 @@ export function useDepartmentsBySite(siteId: number) {
     queryKey: departmentsBySiteQueryKey(siteId),
     queryFn: () => fetchDepartmentsBySite(siteId),
     enabled: Number.isFinite(siteId) && siteId > 0,
+  });
+}
+
+/**
+ * Writes take the site from the caller's token only — there is no `siteId` to pass, and none
+ * of these mutations accept one. Callers are responsible for only exposing them when the
+ * page being viewed is the caller's own site (see `SiteDepartmentsTab`).
+ */
+export function useCreateDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: AddDepartmentPayload) => {
+      const response = await createDepartment(payload);
+      assertApiSuccess(response, "Failed to create department.");
+      return response;
+    },
+    onSuccess: () => {
+      // DEPARTMENTS_BY_SITE_KEY is the root: invalidation is prefix-based, so this
+      // refreshes every site's cached list, not just the token's own.
+      queryClient.invalidateQueries({ queryKey: DEPARTMENTS_BY_SITE_KEY });
+    },
+  });
+}
+
+export function useUpdateDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { id: number; payload: UpdateDepartmentPayload }) => {
+      const response = await updateDepartment(input.id, input.payload);
+      assertApiSuccess(response, "Failed to rename department.");
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: DEPARTMENTS_BY_SITE_KEY });
+    },
+  });
+}
+
+export function useDeleteDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await deleteDepartment(id);
+      assertApiSuccess(response, "Failed to drop department.");
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: DEPARTMENTS_BY_SITE_KEY });
+    },
   });
 }

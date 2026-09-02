@@ -242,6 +242,14 @@ export type TableIconActionProps = {
   onClick?: () => void;
   variant?: "primary" | "neutral";
   href?: string;
+  /**
+   * Renders the action visibly inert. Omitting `onClick` alone is not enough:
+   * that leaves a control that still looks pressable and silently does nothing,
+   * which reads as a bug. Pair this with `title` to say why it is unavailable.
+   */
+  disabled?: boolean;
+  /** Overrides the hover tooltip, which defaults to `label`. */
+  title?: string;
 };
 
 export function TableIconAction({
@@ -250,6 +258,8 @@ export function TableIconAction({
   onClick,
   variant = "neutral",
   href,
+  disabled = false,
+  title,
 }: Readonly<TableIconActionProps>) {
   let toneClass =
     "bg-ehs-border-ink/6 text-ehs-muted-text hover:bg-ehs-border-ink/12 hover:text-ehs-darker";
@@ -257,14 +267,23 @@ export function TableIconAction({
     toneClass =
       "bg-ehs-normal-blue/12 text-ehs-normal-blue hover:bg-ehs-normal-blue/18";
   }
+  if (disabled) {
+    toneClass = "bg-ehs-border-ink/6 text-ehs-muted-text";
+  }
 
-  const className = `focus-visible:ring-ehs-normal-blue/20 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors focus-visible:ring-2 ${toneClass}`;
+  const interactionClass = disabled
+    ? "cursor-not-allowed opacity-50"
+    : "cursor-pointer";
+
+  const className = `focus-visible:ring-ehs-normal-blue/20 inline-flex size-7 shrink-0 items-center justify-center rounded-lg outline-none transition-colors focus-visible:ring-2 ${interactionClass} ${toneClass}`;
 
   const content = <Icon icon={icon} width={13} height={13} aria-hidden />;
 
-  if (href) {
+  // A disabled link is not a thing in HTML, so a disabled action always renders
+  // as a button — an <a> without href stays focusable and still reads as a link.
+  if (href && !disabled) {
     return (
-      <a href={href} aria-label={label} title={label} className={className}>
+      <a href={href} aria-label={label} title={title ?? label} className={className}>
         {content}
       </a>
     );
@@ -274,7 +293,8 @@ export function TableIconAction({
     <button
       type="button"
       aria-label={label}
-      title={label}
+      title={title ?? label}
+      disabled={disabled}
       onClick={(event) => {
         event.stopPropagation();
         onClick?.();
