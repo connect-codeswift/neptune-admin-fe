@@ -10,3 +10,6 @@ export type LocationResponse = {
   id: number;
   name: string;
 };
+
+/** `dataModel` of `POST /v1/locations` and `PUT /v1/locations/{id}` — same shape as a read. */
+export type LocationMutationResponse = LocationResponse;
