@@ -1,13 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useId, useState } from "react";
-import { toast } from "sonner";
-import { SelectInput, TextInput } from "@/components/inputs";
+import { usePathname, useRouter } from "next/navigation";
+import { useId } from "react";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
-  Modal,
   Table,
   TableIconAction,
   TableStatusBadge,
@@ -15,42 +12,15 @@ import {
   type TableColumn,
 } from "@/components/ui";
 import type { SuperAdminSiteRow } from "@/dtos/res/sites.res";
-import {
-  useSuperAdminSiteMutations,
-  useSuperAdminSites,
-} from "@/hooks/useSuperAdminSites";
+import { useSuperAdminSites } from "@/hooks/useSuperAdminSites";
 import { buildOrgSitePath } from "@/lib/org-sites";
-import { parseOrgSitePath } from "@/lib/sidebar-items";
-import { patchCachedSiteInTenantContext } from "@/lib/tenant-context";
-import { getIanaTimezoneSelectOptions } from "@/lib/iana-timezones";
-import {
-  getSiteIndustryTypeSelectOptions,
-  getSiteSizeSelectOptions,
-} from "@/lib/site-form-options";
+import { buildOrgSiteBasePath, parseOrgSitePath } from "@/lib/sidebar-items";
 import { GLASS_SURFACE } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { FeatureErrorCard } from "@/components/features/shared";
 
-type SiteFormState = {
-  siteName: string;
-  location: string;
-  industryType: string;
-  siteSize: string;
-  timeZoneId: string;
-};
-
 const SKELETON_ROW_KEYS = ["r1", "r2", "r3", "r4", "r5"];
 const SKELETON_CELL_KEYS = ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"];
-
-function toFormState(site: SuperAdminSiteRow): SiteFormState {
-  return {
-    siteName: site.siteName,
-    location: site.location,
-    industryType: site.industryType ?? "",
-    siteSize: site.siteSize ?? "",
-    timeZoneId: site.timeZoneId ?? "",
-  };
-}
 
 /**
  * A grid the shape of the table it replaces — eight columns, five rows, a
@@ -88,7 +58,7 @@ function SiteTableSkeleton() {
 }
 
 function buildColumns(
-  onEdit: (site: SuperAdminSiteRow) => void,
+  onView: (site: SuperAdminSiteRow) => void,
 ): TableColumn<SuperAdminSiteRow>[] {
   return [
     {
@@ -140,9 +110,9 @@ function buildColumns(
       className: "w-16",
       cell: (row) => (
         <TableIconAction
-          label={`Edit ${row.siteName}`}
+          label={`View ${row.siteName} details`}
           icon="lucide:pencil"
-          onClick={() => onEdit(row)}
+          onClick={() => onView(row)}
         />
       ),
     },
@@ -151,6 +121,7 @@ function buildColumns(
 
 export function SiteManagementPage() {
   const pathname = usePathname();
+  const router = useRouter();
   const orgSite = parseOrgSitePath(pathname);
   const sectionHeadingId = useId();
   const {
@@ -161,12 +132,6 @@ export function SiteManagementPage() {
     error,
     refetch,
   } = useSuperAdminSites(false);
-  const { updateSite } = useSuperAdminSiteMutations();
-
-  const [editingSite, setEditingSite] = useState<SuperAdminSiteRow | null>(null);
-  const [form, setForm] = useState<SiteFormState | null>(null);
-  /** Field errors stay quiet until the field is left or a save is attempted. */
-  const [showErrors, setShowErrors] = useState(false);
 
   const adminHref = orgSite
     ? buildOrgSitePath(orgSite.company, orgSite.site)
@@ -177,83 +142,11 @@ export function SiteManagementPage() {
   const activeSites = sites.filter((site) => !site.isDrop);
 
   const columns = buildColumns((site) => {
-    setEditingSite(site);
-    setForm(toFormState(site));
-    setShowErrors(false);
+    if (!orgSite) return;
+    router.push(
+      `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/site-management/${site.id}`,
+    );
   });
-
-  const timezoneOptions = getIanaTimezoneSelectOptions(form?.timeZoneId);
-  const industryTypeOptions = getSiteIndustryTypeSelectOptions(
-    form?.industryType,
-  );
-  const siteSizeOptions = getSiteSizeSelectOptions(form?.siteSize);
-
-  const closeModal = () => {
-    setEditingSite(null);
-    setForm(null);
-    setShowErrors(false);
-  };
-
-  const trimmedName = form?.siteName.trim() ?? "";
-  const trimmedLocation = form?.location.trim() ?? "";
-
-  let siteNameError: string | undefined;
-  if (showErrors && trimmedName === "") {
-    siteNameError = "A site needs a name.";
-  }
-
-  let locationError: string | undefined;
-  if (showErrors && trimmedLocation === "") {
-    locationError = "A site needs a location.";
-  }
-
-  // Nothing to save until something actually changed — the primary action was
-  // previously live the moment the dialog opened.
-  const baseline = editingSite ? toFormState(editingSite) : null;
-  const isDirty = Boolean(
-    form &&
-      baseline &&
-      (form.siteName !== baseline.siteName ||
-        form.location !== baseline.location ||
-        form.industryType !== baseline.industryType ||
-        form.siteSize !== baseline.siteSize ||
-        form.timeZoneId !== baseline.timeZoneId),
-  );
-  const canSave =
-    isDirty && trimmedName !== "" && trimmedLocation !== "";
-
-  const handleSave = async () => {
-    if (!editingSite || !form) return;
-
-    if (!trimmedName || !trimmedLocation) {
-      setShowErrors(true);
-      return;
-    }
-
-    const payload = {
-      siteName: trimmedName,
-      location: trimmedLocation,
-      industryType: form.industryType.trim() || undefined,
-      siteSize: form.siteSize.trim() || undefined,
-      timeZoneId: form.timeZoneId.trim() || undefined,
-    };
-
-    try {
-      await updateSite.mutateAsync({ siteId: editingSite.id, payload });
-      patchCachedSiteInTenantContext(editingSite.id, {
-        name: payload.siteName,
-        location: payload.location,
-        industryType: payload.industryType ?? "",
-        siteSize: payload.siteSize ?? "",
-      });
-      toast.success("Site updated.");
-      closeModal();
-    } catch (saveError) {
-      toast.error(
-        saveError instanceof Error ? saveError.message : "Failed to update site.",
-      );
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6 pb-4">
@@ -328,109 +221,6 @@ export function SiteManagementPage() {
           ) : null}
         </div>
       </section>
-
-      <Modal
-        open={editingSite !== null && form !== null}
-        title={editingSite ? `Edit ${editingSite.siteName}` : "Edit site"}
-        onClose={closeModal}
-        // The footer is rendered here rather than through Modal's own
-        // `primaryLabel` / `disabled` pair: that `disabled` dims *both* buttons,
-        // and Cancel has to stay live even when there is nothing to save.
-        hideFooter
-        loading={updateSite.isPending}
-        closeOnBackdrop={!updateSite.isPending}
-        size="lg"
-      >
-        {form ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <TextInput
-              label="Site name"
-              required
-              value={form.siteName}
-              error={siteNameError}
-              onBlur={() => setShowErrors(true)}
-              onChange={(event) =>
-                setForm((current) =>
-                  current
-                    ? { ...current, siteName: event.target.value }
-                    : current,
-                )
-              }
-            />
-            <TextInput
-              label="Location"
-              required
-              placeholder="City, Country"
-              value={form.location}
-              error={locationError}
-              onBlur={() => setShowErrors(true)}
-              onChange={(event) =>
-                setForm((current) =>
-                  current
-                    ? { ...current, location: event.target.value }
-                    : current,
-                )
-              }
-            />
-            <SelectInput
-              label="Industry type"
-              placeholder="Select industry type"
-              options={industryTypeOptions}
-              value={form.industryType}
-              onChange={(value) =>
-                setForm((current) =>
-                  current ? { ...current, industryType: value } : current,
-                )
-              }
-            />
-            <SelectInput
-              label="Site size"
-              placeholder="Select site size"
-              options={siteSizeOptions}
-              value={form.siteSize}
-              onChange={(value) =>
-                setForm((current) =>
-                  current ? { ...current, siteSize: value } : current,
-                )
-              }
-            />
-            <SelectInput
-              label="Timezone (IANA)"
-              placeholder="Select timezone"
-              helperText="Drives due dates and shift boundaries for everything logged at this site."
-              options={timezoneOptions}
-              value={form.timeZoneId}
-              onChange={(value) =>
-                setForm((current) =>
-                  current ? { ...current, timeZoneId: value } : current,
-                )
-              }
-              containerClassName="sm:col-span-2"
-            />
-
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-ehs-border-ink/8 pt-4 sm:col-span-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={updateSite.isPending}
-                onClick={closeModal}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                leftIcon="lucide:save"
-                loading={updateSite.isPending}
-                loadingText="Saving…"
-                disabled={!canSave}
-                onClick={() => void handleSave()}
-              >
-                Save changes
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </Modal>
     </div>
   );
 }
