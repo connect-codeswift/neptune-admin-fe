@@ -2,7 +2,9 @@
  * Response shapes for `api/KpiTarget`.
  *
  * Contract: `FEGuides/KpiTargets.md` in `connect-codeswift/Neptune-Ehss-BE`.
- * One row per (SiteId, Module, Metric); SiteId comes from the org token, never a parameter.
+ * One row per (SiteId, Module, Metric). SiteId defaults to the org token's site
+ * but `GET /v1/kpi-targets` also accepts an explicit `siteId` query parameter
+ * for a live site the caller is a member of.
  */
 
 /** One saved target. `id` is required to clear it — keep it on the row. */

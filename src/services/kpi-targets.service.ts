@@ -17,11 +17,20 @@ import type { ApiResponse } from "@/types/api.types";
  * would fail before it reached a site.
  */
 
-/** GET /v1/kpi-targets — omit `module` to get every module for the site on the token. */
-export async function getKpiTargets(module?: KpiTargetModule) {
+/**
+ * GET /v1/kpi-targets — omit `module` to get every module for the site on the
+ * token. Omit `siteId` for the same: the token's site, unchanged. An explicit
+ * `siteId` is honoured only for a live site the caller is a member of —
+ * anything else 404s with "Site not found for this company."
+ */
+export async function getKpiTargets(module?: KpiTargetModule, siteId?: number) {
+  const params: { module?: KpiTargetModule; siteId?: number } = {};
+  if (module) params.module = module;
+  if (siteId != null) params.siteId = siteId;
+
   const { data } = await axiosInstance.get<ApiResponse<KpiTargetResponse[]>>(
     "/v1/kpi-targets",
-    module ? { params: { module } } : undefined,
+    Object.keys(params).length > 0 ? { params } : undefined,
   );
   return data;
 }

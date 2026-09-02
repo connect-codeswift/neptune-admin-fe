@@ -2,6 +2,7 @@ import type {
   AddDocCategoryPayload,
   UpdateDocCategoryPayload,
 } from "@/dtos/res/doc-categories.res";
+import type { DepartmentResponse } from "@/dtos/res/departments.res";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiPayload, ApiResponse } from "@/types/api.types";
 
@@ -82,9 +83,19 @@ export async function addDepartment(payload: ApiPayload) {
   return data;
 }
 
-/** GET /v1/departments */
-export async function getAllDepartments() {
-  const { data } = await axiosInstance.get<ApiResponse>("/v1/departments");
+/**
+ * GET /v1/departments — not paginated, name-ordered. Omit `siteId` for the token's site,
+ * unchanged. An explicit `siteId` is honoured only for a live site the caller is a member
+ * of — anything else 404s with "Site not found for this company."
+ */
+export async function getAllDepartments(params?: {
+  siteId?: number;
+  search?: string;
+}) {
+  const { data } = await axiosInstance.get<ApiResponse<DepartmentResponse[]>>(
+    "/v1/departments",
+    params && Object.keys(params).length > 0 ? { params } : undefined,
+  );
   return data;
 }
 
