@@ -61,11 +61,6 @@ export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
     icon: "lucide:layers",
   },
   {
-    label: "PPE Catalog",
-    href: "/ppe-catalog",
-    icon: "lucide:hard-hat",
-  },
-  {
     label: "Settings",
     href: "/settings/profile",
     icon: "mdi:cog-outline",

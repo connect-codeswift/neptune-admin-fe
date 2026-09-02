@@ -1,10 +1,12 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { FeatureEmptyState, FeatureErrorCard, FeatureLoadingCard } from "@/components/features/shared";
-import { Table, TableTextCell, type TableColumn } from "@/components/ui";
+import { Button, Table, TableTextCell, type TableColumn } from "@/components/ui";
 import { GLASS_SURFACE } from "@/components/ui/GlassCard";
 import type { PpeResponse } from "@/dtos/res/ppe.res";
 import { usePpeCatalogBySite } from "@/hooks/usePpeCatalog";
+import { buildOrgSiteBasePath, parseOrgSitePath } from "@/lib/sidebar-items";
 
 type SitePpeTabProps = Readonly<{
   siteId: number;
@@ -62,12 +64,24 @@ const columns = buildColumns();
  * numeric id so it never collides with the logged-in user's own-site cache.
  */
 export function SitePpeTab({ siteId }: SitePpeTabProps) {
+  const pathname = usePathname();
+  const orgSite = parseOrgSitePath(pathname);
+  const catalogHref = orgSite
+    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/site-management/${siteId}/ppe-catalog`
+    : undefined;
+
   const { data, isLoading, isError, error, refetch } = usePpeCatalogBySite(siteId);
   const items = data ?? [];
   const hasData = !isLoading && !isError;
 
   return (
     <div className={`${GLASS_SURFACE} flex flex-col gap-4 p-5`}>
+      <div className="flex justify-end">
+        <Button href={catalogHref} variant="secondary" size="sm" rightIcon="lucide:arrow-up-right">
+          Open PPE catalog
+        </Button>
+      </div>
+
       {isLoading ? <FeatureLoadingCard label="Loading PPE catalog…" /> : null}
 
       {isError ? (
