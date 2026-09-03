@@ -13,6 +13,7 @@ import {
 import {
   createSuperAdminSite,
   deleteSuperAdminSite,
+  getSuperAdminSite,
   getSuperAdminSites,
   updateSuperAdminSite,
 } from "@/services/sites.service";
@@ -33,6 +34,32 @@ export function useSuperAdminSites(includeDeleted = false) {
   return useQuery({
     queryKey: [...SUPER_ADMIN_SITES_KEY, includeDeleted],
     queryFn: () => fetchSites(includeDeleted),
+  });
+}
+
+/**
+ * One site by id, rather than finding it in the list.
+ *
+ * Site Settings edits the site named by `[site]` in the URL, and a list read
+ * cannot answer whether an id is missing because it was deleted or because the
+ * list is scoped differently — it just comes back without the row, which the
+ * page could only render as a bare "Site not found". `GET /sites/{siteId}`
+ * answers directly: a real 404 surfaces as an error with its status instead of
+ * being flattened into an empty state.
+ */
+export function useSuperAdminSite(siteId: number | null) {
+  return useQuery({
+    queryKey: [...SUPER_ADMIN_SITES_KEY, "detail", siteId],
+    queryFn: async (): Promise<SuperAdminSiteRow> => {
+      const response = await getSuperAdminSite(siteId as number);
+      assertApiSuccess(response, "Failed to load site.");
+      const model = unwrapDataModel<SuperAdminSiteRow>(response);
+      // A success envelope carrying no dataModel is a broken response, not an
+      // absent site — a missing site is a 404, which assertApiSuccess throws on.
+      if (!model) throw new Error("Site details were missing from the response.");
+      return model;
+    },
+    enabled: siteId != null && Number.isFinite(siteId) && siteId > 0,
   });
 }
 

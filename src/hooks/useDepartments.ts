@@ -43,7 +43,7 @@ export function useDepartmentsBySite(siteId: number) {
 /**
  * Writes take the site from the caller's token only — there is no `siteId` to pass, and none
  * of these mutations accept one. Callers are responsible for only exposing them when the
- * page being viewed is the caller's own site (see `SiteDepartmentsTab`).
+ * page being viewed is the caller's own site (see `DepartmentsPage`).
  */
 export function useCreateDepartment() {
   const queryClient = useQueryClient();

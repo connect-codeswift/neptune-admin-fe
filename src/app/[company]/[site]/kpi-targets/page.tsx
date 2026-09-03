@@ -3,8 +3,8 @@ import { KpiTargetsPage } from "@/components/features/kpi-targets/KpiTargetsPage
 export default async function OrgSiteKpiTargetsRoute({
   params,
 }: Readonly<{
-  params: Promise<{ id: string }>;
+  params: Promise<{ site: string }>;
 }>) {
-  const { id } = await params;
-  return <KpiTargetsPage siteId={Number(id)} />;
+  const { site } = await params;
+  return <KpiTargetsPage siteId={Number(site)} />;
 }

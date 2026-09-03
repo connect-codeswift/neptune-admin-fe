@@ -189,8 +189,6 @@ export function DeploymentsPage() {
     <div className="flex flex-col gap-3.5 pb-4">
       {header}
 
-      {isSample ? <SampleDataNotice /> : null}
-
       <DeployStatusHero status={status} />
 
       {/*

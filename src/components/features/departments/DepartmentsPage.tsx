@@ -8,6 +8,7 @@ import {
   FeatureErrorCard,
   FeatureLoadingCard,
 } from "@/components/features/shared";
+import { PageHeader } from "@/components/layouts";
 import { TextInput } from "@/components/inputs";
 import {
   Button,
@@ -24,6 +25,7 @@ import {
   useDepartmentsBySite,
   useUpdateDepartment,
 } from "@/hooks/useDepartments";
+import { buildOrgSitePath } from "@/lib/org-sites";
 import { parseOrgSitePath } from "@/lib/sidebar-items";
 
 /**
@@ -32,14 +34,18 @@ import { parseOrgSitePath } from "@/lib/sidebar-items";
  * unchanged: they still take the site from the token only". Adding a department while
  * viewing another site would silently create it in the caller's own selected site instead,
  * so every write control here is gated on the `[site]` route segment matching the
- * `siteId` this tab is showing.
+ * `siteId` this page is showing.
  */
 const OTHER_SITE_WRITE_NOTE =
   "Departments are managed on the site you are currently switched to — this view is showing another site.";
 
-export function SiteDepartmentsTab({ siteId }: Readonly<{ siteId: number }>) {
-  const orgSite = parseOrgSitePath(usePathname());
+type DepartmentsPageProps = Readonly<{ siteId: number }>;
+
+export function DepartmentsPage({ siteId }: DepartmentsPageProps) {
+  const pathname = usePathname();
+  const orgSite = parseOrgSitePath(pathname);
   const isOwnSite = orgSite !== null && String(siteId) === orgSite.site;
+  const adminHref = orgSite ? buildOrgSitePath(orgSite.company, orgSite.site) : "/dashboard";
 
   const { data, isLoading, isError, error, refetch } = useDepartmentsBySite(siteId);
   const createMutation = useCreateDepartment();
@@ -193,46 +199,56 @@ export function SiteDepartmentsTab({ siteId }: Readonly<{ siteId: number }>) {
   ];
 
   return (
-    <>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        {isOwnSite ? (
-          isAdding ? (
-            <div className="flex flex-wrap items-end gap-2">
-              <TextInput
-                label="Department name"
-                value={newName}
-                onChange={(event) => setNewName(event.target.value)}
-                containerClassName="w-64"
-              />
-              <Button
-                size="sm"
-                loading={createMutation.isPending}
-                loadingText="Adding…"
-                disabled={!newName.trim()}
-                onClick={() => void handleAdd()}
-              >
-                Add
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setIsAdding(false);
-                  setNewName("");
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
+    <div className="flex flex-col gap-6 pb-4">
+      <PageHeader
+        title="Departments"
+        description="Departments recorded for this site, used across incident and inspection pickers."
+        breadcrumbs={[
+          { label: "Admin", href: adminHref },
+          { label: "Departments" },
+        ]}
+        actions={
+          isOwnSite ? (
             <Button size="sm" leftIcon="lucide:plus" onClick={() => setIsAdding(true)}>
               Add department
             </Button>
+          ) : (
+            <p className="max-w-xs text-right text8 text-ehs-muted-text">
+              {OTHER_SITE_WRITE_NOTE}
+            </p>
           )
-        ) : (
-          <p className="max-w-md text8 text-ehs-muted-text">{OTHER_SITE_WRITE_NOTE}</p>
-        )}
-      </div>
+        }
+      />
+
+      {isAdding && isOwnSite ? (
+        <div className="flex flex-wrap items-end justify-end gap-2">
+          <TextInput
+            label="Department name"
+            value={newName}
+            onChange={(event) => setNewName(event.target.value)}
+            containerClassName="w-64"
+          />
+          <Button
+            size="sm"
+            loading={createMutation.isPending}
+            loadingText="Adding…"
+            disabled={!newName.trim()}
+            onClick={() => void handleAdd()}
+          >
+            Add
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setIsAdding(false);
+              setNewName("");
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading ? <FeatureLoadingCard label="Loading departments…" /> : null}
 
@@ -279,6 +295,6 @@ export function SiteDepartmentsTab({ siteId }: Readonly<{ siteId: number }>) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
       />
-    </>
+    </div>
   );
 }
