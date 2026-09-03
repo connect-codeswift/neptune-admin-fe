@@ -9,6 +9,7 @@ import {
   FeatureErrorCard,
   FeatureLoadingCard,
 } from "@/components/features/shared";
+import { PageHeader } from "@/components/layouts";
 import {
   Button,
   ConfirmDialog,
@@ -24,6 +25,7 @@ import {
   useLocationsBySite,
   useUpdateLocation,
 } from "@/hooks/useLocations";
+import { buildOrgSitePath } from "@/lib/org-sites";
 import { parseOrgSitePath } from "@/lib/sidebar-items";
 
 /**
@@ -33,15 +35,18 @@ import { parseOrgSitePath } from "@/lib/sidebar-items";
  * from the token only." Adding or editing a location while viewing another
  * site would silently write into the wrong one, so the row actions and the
  * add control below are gated on the `[site]` route segment matching the
- * site this tab is showing — the same check `DocumentCategoriesPage` uses.
+ * site this page is showing — the same check `DocumentCategoriesPage` uses.
  */
 const OTHER_SITE_WRITE_NOTE =
   "Locations are managed on the site you are currently switched to — this view is showing another site.";
 
+type LocationsPageProps = Readonly<{ siteId: number }>;
 
-export function SiteLocationsTab({ siteId }: Readonly<{ siteId: number }>) {
-  const orgSite = parseOrgSitePath(usePathname());
+export function LocationsPage({ siteId }: LocationsPageProps) {
+  const pathname = usePathname();
+  const orgSite = parseOrgSitePath(pathname);
   const isOwnSite = orgSite !== null && String(siteId) === orgSite.site;
+  const adminHref = orgSite ? buildOrgSitePath(orgSite.company, orgSite.site) : "/dashboard";
 
   const { data, isLoading, isError, error, refetch } = useLocationsBySite(siteId);
   const rows = data ?? [];
@@ -205,46 +210,49 @@ export function SiteLocationsTab({ siteId }: Readonly<{ siteId: number }>) {
   ];
 
   return (
-    <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        {isOwnSite ? (
-          !isAdding ? (
-            <Button
-              size="sm"
-              leftIcon="lucide:map-pin-plus"
-              onClick={startAdd}
-              className="ml-auto"
-            >
+    <div className="flex flex-col gap-6 pb-4">
+      <PageHeader
+        title="Locations"
+        description="Locations recorded for this site, used across incident and inspection pickers."
+        breadcrumbs={[
+          { label: "Admin", href: adminHref },
+          { label: "Locations" },
+        ]}
+        actions={
+          isOwnSite ? (
+            <Button size="sm" leftIcon="lucide:map-pin-plus" onClick={startAdd}>
               Add location
             </Button>
           ) : (
-            <div className="ml-auto flex items-end gap-2">
-              <TextInput
-                label="Location name"
-                value={newName}
-                autoFocus
-                onChange={(event) => setNewName(event.target.value)}
-                containerClassName="w-56"
-              />
-              <Button variant="secondary" size="sm" onClick={cancelAdd}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                disabled={!newName.trim()}
-                loading={createMutation.isPending}
-                onClick={() => void submitAdd()}
-              >
-                Add
-              </Button>
-            </div>
+            <p className="max-w-xs text-right text8 text-ehs-muted-text">
+              {OTHER_SITE_WRITE_NOTE}
+            </p>
           )
-        ) : (
-          <p className="ml-auto max-w-xs text-right text8 text-ehs-muted-text">
-            {OTHER_SITE_WRITE_NOTE}
-          </p>
-        )}
-      </div>
+        }
+      />
+
+      {isAdding && isOwnSite ? (
+        <div className="flex flex-wrap items-end justify-end gap-2">
+          <TextInput
+            label="Location name"
+            value={newName}
+            autoFocus
+            onChange={(event) => setNewName(event.target.value)}
+            containerClassName="w-56"
+          />
+          <Button variant="secondary" size="sm" onClick={cancelAdd}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            disabled={!newName.trim()}
+            loading={createMutation.isPending}
+            onClick={() => void submitAdd()}
+          >
+            Add
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading ? <FeatureLoadingCard label="Loading locations…" /> : null}
 
@@ -291,6 +299,6 @@ export function SiteLocationsTab({ siteId }: Readonly<{ siteId: number }>) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
       />
-    </>
+    </div>
   );
 }

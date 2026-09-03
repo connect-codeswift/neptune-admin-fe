@@ -32,6 +32,12 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
   const [checking, setChecking] = useState(true);
 
   const orgSite = parseOrgSitePath(pathname);
+  // parseOrgSitePath returns a brand-new object every call, so anything that keys off
+  // `orgSite` itself (a useEffect/useCallback dependency, in particular) re-runs on every
+  // navigation even when the org/site did not change. These primitives are what the effect
+  // below actually depends on.
+  const company = orgSite?.company;
+  const site = orgSite?.site;
 
   const openPicker = useCallback(
     (organizationId?: number, siteId?: number) => {
@@ -42,102 +48,110 @@ export function TenantContextProvider({ children }: TenantContextProviderProps) 
     [],
   );
 
-  const ensureOrgContext = useCallback(async () => {
-    if (!orgSite) {
-      setChecking(false);
-      return;
-    }
+  useEffect(() => {
+    // This is a real side effect — it reads the token store, may fetch, and mints an org
+    // token. Several of its paths (already-valid token, non-super-admin) reach a
+    // `setChecking(false)` before their first await, which would run synchronously inside
+    // this effect and cascade a second render. Starting it on a microtask keeps every state
+    // update it makes asynchronous, which is how an effect is meant to talk back to React.
+    //
+    // The dependency array is `[company, site, openPicker]`, not `[orgSite]`: two renders at
+    // the same URL produce equal strings even though `orgSite` is a new object each time, so
+    // navigating within the same [company]/[site] no longer re-runs this check (and therefore
+    // never re-arms `checking`) — only a genuine org or site change does. Each branch below
+    // still checks the cached token/context *before* calling `setChecking(true)`, so a
+    // navigation that lands here with an already-valid context resolves to `checking=false`
+    // without ever blanking the shell.
+    async function ensureOrgContext() {
+      if (!company || !site) {
+        setChecking(false);
+        return;
+      }
 
-    const organizationId = Number(orgSite.company);
-    const siteId = Number(orgSite.site);
-    if (!Number.isFinite(organizationId) || !Number.isFinite(siteId)) {
-      setChecking(false);
-      return;
-    }
+      const organizationId = Number(company);
+      const siteId = Number(site);
+      if (!Number.isFinite(organizationId) || !Number.isFinite(siteId)) {
+        setChecking(false);
+        return;
+      }
 
-    // Ehs_Director tenant admins (stored role 'admin') never call select-company;
-    // hydrate their site list from Org/me so the header switcher can offer every
-    // site they are assigned to. Ehs_Lead is rejected by the admin portal login
-    // gate, so this path is never reached by a site authority.
-    if (isAdminRole()) {
+      // Ehs_Director tenant admins (stored role 'admin') never call select-company;
+      // hydrate their site list from Org/me so the header switcher can offer every
+      // site they are assigned to. Ehs_Lead is rejected by the admin portal login
+      // gate, so this path is never reached by a site authority.
+      if (isAdminRole()) {
+        const context = getTenantContext();
+        const contextReady =
+          context?.organizationId === organizationId &&
+          context.sites.length > 0 &&
+          Boolean(getOrgToken());
+
+        if (contextReady) {
+          setChecking(false);
+          return;
+        }
+
+        setChecking(true);
+        try {
+          await ensureTenantAdminContext();
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Could not load your organization sites.",
+          );
+        } finally {
+          setChecking(false);
+        }
+        return;
+      }
+
+      if (!isSuperAdminRole()) {
+        setChecking(false);
+        return;
+      }
+
+      const orgToken = getOrgToken();
       const context = getTenantContext();
-      const contextReady =
+      const contextMatches =
         context?.organizationId === organizationId &&
-        context.sites.length > 0 &&
-        Boolean(getOrgToken());
+        context?.siteId === siteId;
 
-      if (contextReady) {
+      if (orgToken && contextMatches) {
         setChecking(false);
         return;
       }
 
       setChecking(true);
       try {
-        await ensureTenantAdminContext();
+        const companies = await fetchCompanies();
+        const matchedCompany = companies.find(
+          (entry) => entry.id === organizationId,
+        );
+        if (!matchedCompany) {
+          openPicker(organizationId, siteId);
+          return;
+        }
+
+        await enterOrganization({
+          organizationId,
+          organizationName: matchedCompany.name,
+          siteId,
+        });
       } catch (error) {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Could not load your organization sites.",
+            : "Select a company and site to continue.",
         );
+        openPicker(organizationId, siteId);
       } finally {
         setChecking(false);
       }
-      return;
     }
 
-    if (!isSuperAdminRole()) {
-      setChecking(false);
-      return;
-    }
-
-    const orgToken = getOrgToken();
-    const context = getTenantContext();
-    const contextMatches =
-      context?.organizationId === organizationId &&
-      context?.siteId === siteId;
-
-    if (orgToken && contextMatches) {
-      setChecking(false);
-      return;
-    }
-
-    setChecking(true);
-    try {
-      const companies = await fetchCompanies();
-      const company = companies.find((entry) => entry.id === organizationId);
-      if (!company) {
-        openPicker(organizationId, siteId);
-        return;
-      }
-
-      await enterOrganization({
-        organizationId,
-        organizationName: company.name,
-        siteId,
-      });
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Select a company and site to continue.",
-      );
-      openPicker(organizationId, siteId);
-    } finally {
-      setChecking(false);
-    }
-  }, [openPicker, orgSite]);
-
-  useEffect(() => {
-    // ensureOrgContext is a real side effect — it reads the token store, may
-    // fetch, and mints an org token. Several of its paths (already-valid
-    // token, non-super-admin) reach a `setChecking(false)` before their first
-    // await, which would run synchronously inside this effect and cascade a
-    // second render. Starting it on a microtask keeps every state update it
-    // makes asynchronous, which is how an effect is meant to talk back to
-    // React.
     queueMicrotask(() => void ensureOrgContext());
-  }, [ensureOrgContext]);
+  }, [company, site, openPicker]);
 
   useEffect(() => {
     const handleReselect = () => {

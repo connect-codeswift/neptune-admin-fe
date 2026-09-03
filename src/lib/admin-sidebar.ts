@@ -27,38 +27,58 @@ const STATIC_ROOT_SEGMENTS = new Set([
   "dashboard",
 ]);
 
-/** Org/site admin nav — lives under /{company}/{site}/… */
+const ORG_ADMIN_DASHBOARD_ITEM: SidebarNavItem = {
+  label: "Dashboard",
+  href: "/dashboard",
+  icon: "lucide:layout-dashboard",
+  exact: true,
+};
+
+/**
+ * Org/site admin nav, grouped for the sidebar. The Dashboard-only group's label is
+ * left to the caller of `getOrgAdminNavSections` (it's the org name — see below), so
+ * only the remaining fixed groups live here.
+ */
+const ORG_ADMIN_NAV_GROUPS: SidebarNavSection[] = [
+  {
+    label: "Organization",
+    items: [
+      { label: "User Management", href: "/users", icon: "tabler:user" },
+      { label: "Roles & Rights", href: "/roles", icon: "lucide:shield-check" },
+    ],
+  },
+  {
+    label: "Site",
+    items: [
+      { label: "Site Settings", href: "/site-settings", icon: "lucide:map-pin" },
+      { label: "Locations", href: "/locations", icon: "lucide:map-pinned" },
+      { label: "Departments", href: "/departments", icon: "lucide:building-2" },
+    ],
+  },
+  {
+    label: "Registers",
+    items: [
+      { label: "KPI Targets", href: "/kpi-targets", icon: "lucide:target" },
+      // Shortened from "Document Categories" — the sidebar span truncates and was
+      // cutting it to "Document Categor…".
+      { label: "Doc Categories", href: "/doc-categories", icon: "lucide:layers" },
+      { label: "PPE Catalog", href: "/ppe-catalog", icon: "lucide:hard-hat" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [{ label: "Settings", href: "/settings/profile", icon: "mdi:cog-outline" }],
+  },
+];
+
+/**
+ * Flat list of every org/site admin nav item, derived from the groups above so it
+ * can't drift from them. Re-exported by sidebar-items.ts and layouts/index.ts —
+ * keep exporting this shape, do not remove it.
+ */
 export const ORG_ADMIN_NAV_ITEMS: SidebarNavItem[] = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: "lucide:layout-dashboard",
-    exact: true,
-  },
-  {
-    label: "User Management",
-    href: "/user-management",
-    icon: "tabler:user",
-  },
-  {
-    label: "Site Management",
-    href: "/site-management",
-    icon: "lucide:map-pin",
-  },
-  {
-    label: "Roles & Rights",
-    href: "/roles-and-rights",
-    icon: "lucide:shield-check",
-  },
-  // KPI Targets, Document Categories and PPE Catalog are all per-site registers,
-  // so they live on the site's own details page rather than in a nav that has no
-  // site in it. Reaching them here meant editing whichever site the token
-  // happened to hold.
-  {
-    label: "Settings",
-    href: "/settings/profile",
-    icon: "mdi:cog-outline",
-  },
+  ORG_ADMIN_DASHBOARD_ITEM,
+  ...ORG_ADMIN_NAV_GROUPS.flatMap((group) => group.items),
 ];
 
 export function prefixNavItems(
@@ -99,11 +119,15 @@ export function getOrgAdminNavSections(
   if (!orgSite) return [];
 
   const basePath = buildOrgSiteBasePath(orgSite.company, orgSite.site);
+  // The first group's label is the org name (or "Admin" as a fallback), not a fixed
+  // category — a SuperAdmin browsing a client's portal relies on that heading to know
+  // whose dashboard they're looking at, so it can't be hardcoded like the rest.
   return [
-    {
-      label: sectionLabel,
-      items: prefixNavItems(basePath, ORG_ADMIN_NAV_ITEMS),
-    },
+    { label: sectionLabel, items: prefixNavItems(basePath, [ORG_ADMIN_DASHBOARD_ITEM]) },
+    ...ORG_ADMIN_NAV_GROUPS.map((group) => ({
+      label: group.label,
+      items: prefixNavItems(basePath, group.items),
+    })),
   ];
 }
 

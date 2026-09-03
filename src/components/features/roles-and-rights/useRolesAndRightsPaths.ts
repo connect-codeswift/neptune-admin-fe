@@ -14,8 +14,8 @@ export function useRolesAndRightsPaths() {
     ? buildOrgSitePath(orgSite.company, orgSite.site)
     : "/dashboard";
   const basePath = orgSite
-    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/roles-and-rights`
-    : "/roles-and-rights";
+    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/roles`
+    : "/roles";
 
   return { adminHref, basePath };
 }

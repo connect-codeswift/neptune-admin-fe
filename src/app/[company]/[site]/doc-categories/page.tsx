@@ -3,8 +3,8 @@ import { DocumentCategoriesPage } from "@/components/features/doc-categories/Doc
 export default async function OrgSiteDocCategoriesRoute({
   params,
 }: Readonly<{
-  params: Promise<{ id: string }>;
+  params: Promise<{ site: string }>;
 }>) {
-  const { id } = await params;
-  return <DocumentCategoriesPage siteId={Number(id)} />;
+  const { site } = await params;
+  return <DocumentCategoriesPage siteId={Number(site)} />;
 }
