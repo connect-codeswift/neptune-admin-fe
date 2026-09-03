@@ -3,11 +3,15 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { SearchInput, SelectInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
+  ModuleFilterBar,
+  ModuleSearchBar,
+  TABLE_HEADER_ACTION_CLASS,
+  TABLE_HEADER_SECONDARY_ACTION_CLASS,
   Table,
+  TableHeaderBar,
   TableRoleBadge,
   TableRowActions,
   TableStatusBadge,
@@ -119,7 +123,13 @@ function ComingSoonAction({
 }: Readonly<{ icon: string; label: string; reason: string }>) {
   return (
     <span title={reason}>
-      <Button variant="secondary" size="sm" leftIcon={icon} disabled>
+      <Button
+        variant="secondary"
+        size="sm"
+        leftIcon={icon}
+        disabled
+        className={TABLE_HEADER_SECONDARY_ACTION_CLASS}
+      >
         {label}
         <span className="sr-only"> — {reason}</span>
       </Button>
@@ -302,34 +312,6 @@ export function UserManagementPage() {
           { label: "Admin", href: adminHref },
           { label: "User Management" },
         ]}
-        actions={
-          <>
-            {/*
-              Import and Export were wired to `toast.success("Import started.")`
-              and nothing else — the app announced that work had begun and then
-              did none of it. They are kept, visible and disabled, rather than
-              deleted: the capability is planned and the page header is where an
-              admin will look for it, so signposting it beats hiding it.
-            */}
-            <ComingSoonAction
-              icon="lucide:upload"
-              label="Import"
-              reason="Bulk user import is not available yet."
-            />
-            <ComingSoonAction
-              icon="lucide:download"
-              label="Export"
-              reason="Exporting the user list is not available yet."
-            />
-            <Button
-              size="sm"
-              leftIcon="lucide:plus"
-              onClick={handleAddUser}
-            >
-              Add User
-            </Button>
-          </>
-        }
       />
 
       {statsLoading ? (
@@ -347,46 +329,28 @@ export function UserManagementPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-          <SearchInput
-            label="Search"
-            placeholder="Search by name or email…"
-            value={search}
-            onChange={(event) => handleSearchChange(event.target.value)}
-          />
-          {/* A visible label rather than `label=""`: the control is a button
-              with a dropdown, so with no label it announced only its current
-              value and nothing about what it filters. */}
-          <SelectInput
-            label="Site"
-            options={siteOptions}
-            value={siteFilter}
-            onChange={handleSiteFilterChange}
-          />
-        </div>
+      {/* The module filter strip + search field the EHSS app uses on every
+          register, and ClientAccountsPage already uses here. The site filter
+          reads as pills from `xl` up and collapses to a select below it, so
+          the active site is visible without opening a dropdown. */}
+      <ModuleFilterBar
+        segments={[
+          {
+            label: "Site",
+            value: siteFilter,
+            onChange: handleSiteFilterChange,
+            options: siteOptions,
+          },
+        ]}
+      />
 
-        {filtersActive ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text8 text-gray">
-              Filtered by{search.trim() ? ` “${search.trim()}”` : ""}
-              {search.trim() && siteFilter ? " and" : ""}
-              {siteFilter
-                ? ` ${siteOptions.find((option) => option.value === siteFilter)?.label ?? "a site"}`
-                : ""}
-              .
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon="mdi:filter-off-outline"
-              onClick={handleClearFilters}
-            >
-              Clear filters
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      <ModuleSearchBar
+        value={search}
+        onChange={handleSearchChange}
+        placeholder="Search by name or email…"
+        aria-label="Search users by name or email"
+        resultLabel={`${String(totalRecords)} ${totalRecords === 1 ? "user" : "users"}`}
+      />
 
       {isLoading ? <UsersTableSkeleton /> : null}
 
@@ -437,6 +401,41 @@ export function UserManagementPage() {
         <>
           <Table
             className="min-w-0"
+            toolbar={
+              <TableHeaderBar
+                title="Users"
+                actions={
+                  <>
+                    {/*
+                      Import and Export were wired to
+                      `toast.success("Import started.")` and nothing else — the
+                      app announced that work had begun and then did none of it.
+                      They are kept, visible and disabled, rather than deleted:
+                      the capability is planned and this toolbar is where an
+                      admin will look for it, so signposting it beats hiding it.
+                    */}
+                    <ComingSoonAction
+                      icon="lucide:upload"
+                      label="Import"
+                      reason="Bulk user import is not available yet."
+                    />
+                    <ComingSoonAction
+                      icon="lucide:download"
+                      label="Export"
+                      reason="Exporting the user list is not available yet."
+                    />
+                    <Button
+                      size="sm"
+                      leftIcon="lucide:plus"
+                      onClick={handleAddUser}
+                      className={TABLE_HEADER_ACTION_CLASS}
+                    >
+                      Add User
+                    </Button>
+                  </>
+                }
+              />
+            }
             columns={columns}
             data={users}
             getRowId={(row) => row.id}

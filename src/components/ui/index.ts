@@ -58,6 +58,12 @@ export {
   type TableIconActionProps,
   type TableRowActionsProps,
 } from "./Table";
+export { TableHeaderBar, type TableHeaderBarProps } from "./TableHeaderBar";
+export {
+  TABLE_HEADER_ACTION_CLASS,
+  TABLE_HEADER_ACTION_ICON_CLASS,
+  TABLE_HEADER_SECONDARY_ACTION_CLASS,
+} from "./table-header-action";
 export {
   SetupTabBar,
   type SetupTabBarProps,
