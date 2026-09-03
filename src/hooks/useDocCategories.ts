@@ -40,8 +40,27 @@ export function docDashboardKpisQueryKey(scope: TenantScope) {
   return [...DOC_DASHBOARD_KPIS_KEY, ...scope.key] as const;
 }
 
+/**
+ * A distinct branch, not `docCategoriesQueryKey(scope)` with a siteId tacked
+ * on: the tenant-scoped key belongs to the logged-in user's own-site page.
+ * Fetching another site's categories under that same key would overwrite
+ * that cache entry and the user would silently see the wrong categories on
+ * their own Document Categories page.
+ */
+export const DOC_CATEGORIES_BY_SITE_KEY = [...DOC_CATEGORIES_KEY, "by-site"] as const;
+
+export function docCategoriesBySiteQueryKey(siteId: number) {
+  return [...DOC_CATEGORIES_BY_SITE_KEY, siteId] as const;
+}
+
 async function fetchCategories() {
   const response = await getAllCategories();
+  assertApiSuccess(response, "Failed to load document categories.");
+  return unwrapList<DocCategoryResponse>(response);
+}
+
+async function fetchCategoriesBySite(siteId: number) {
+  const response = await getAllCategories({ siteId });
   assertApiSuccess(response, "Failed to load document categories.");
   return unwrapList<DocCategoryResponse>(response);
 }
@@ -82,6 +101,15 @@ export function useDocCategories() {
   });
 }
 
+/** Document categories for an arbitrary site, e.g. the site details page's tab. */
+export function useDocCategoriesBySite(siteId: number) {
+  return useQuery({
+    queryKey: docCategoriesBySiteQueryKey(siteId),
+    queryFn: () => fetchCategoriesBySite(siteId),
+    enabled: Number.isFinite(siteId) && siteId > 0,
+  });
+}
+
 export function useDocCategoryStats() {
   const scope = useTenantScope();
 
@@ -112,6 +140,10 @@ export function useCreateDocCategory() {
       return response;
     },
     onSuccess: () => {
+      // DOC_CATEGORIES_KEY, not docCategoriesQueryKey(scope): invalidation is
+      // prefix-based, and the tenant-scoped key does not prefix-match the
+      // "by-site" branch. Using the root refreshes both, so a category added
+      // here is not stale on that site's details tab.
       queryClient.invalidateQueries({ queryKey: DOC_CATEGORIES_KEY });
       queryClient.invalidateQueries({ queryKey: DOC_CATEGORY_STATS_KEY });
       queryClient.invalidateQueries({ queryKey: DOC_DASHBOARD_KPIS_KEY });
@@ -132,6 +164,8 @@ export function useUpdateDocCategory() {
       return response;
     },
     onSuccess: () => {
+      // DOC_CATEGORIES_KEY, not docCategoriesQueryKey(scope): see the
+      // create-mutation comment above.
       queryClient.invalidateQueries({ queryKey: DOC_CATEGORIES_KEY });
       queryClient.invalidateQueries({ queryKey: DOC_CATEGORY_STATS_KEY });
     },
@@ -148,6 +182,8 @@ export function useDeleteDocCategory() {
       return response;
     },
     onSuccess: () => {
+      // DOC_CATEGORIES_KEY, not docCategoriesQueryKey(scope): see the
+      // create-mutation comment above.
       queryClient.invalidateQueries({ queryKey: DOC_CATEGORIES_KEY });
       queryClient.invalidateQueries({ queryKey: DOC_CATEGORY_STATS_KEY });
     },

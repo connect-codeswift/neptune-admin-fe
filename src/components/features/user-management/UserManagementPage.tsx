@@ -218,8 +218,8 @@ export function UserManagementPage() {
     ? buildOrgSitePath(orgSite.company, orgSite.site)
     : "/dashboard";
   const basePath = orgSite
-    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/user-management`
-    : "/user-management";
+    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/users`
+    : "/users";
 
   const siteOptions = useMemo(() => {
     const sites = orgSite ? getAllSitesOfThisOrg(orgSite.company) : [];

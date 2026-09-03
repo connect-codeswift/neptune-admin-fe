@@ -78,3 +78,14 @@ export {
 export { CardHeading, type CardHeadingProps } from "./CardHeading";
 export { Skeleton, type SkeletonProps } from "./Skeleton";
 export { Toggle, type ToggleProps } from "./Toggle";
+export {
+  ModuleFilterBar,
+  type ModuleFilterBarProps,
+  type ModuleFilterOption,
+  type ModuleFilterSegment,
+  type ModuleFilterAction,
+} from "./ModuleFilterBar";
+export {
+  ModuleSearchBar,
+  type ModuleSearchBarProps,
+} from "./ModuleSearchBar";

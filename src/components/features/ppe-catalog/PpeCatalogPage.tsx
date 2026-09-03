@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
   FeatureEmptyState,
@@ -10,27 +11,41 @@ import {
 import { PageHeader } from "@/components/layouts";
 import { Button } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { buildOrgSitePath } from "@/lib/org-sites";
+import { parseOrgSitePath } from "@/lib/sidebar-items";
 import {
   getPpeCategoryCounts,
   PPE_CATEGORIES,
   type PpeCategoryId,
 } from "@/lib/dummy-ppe-catalog";
+import { mapPpeResponsesToCatalogItems } from "@/lib/mappers/ppe.mapper";
 import {
   buildCreatePpePayloadFromDraft,
   useCreatePpeItem,
-  usePpeCatalog,
+  usePpeCatalogBySite,
 } from "@/hooks/usePpeCatalog";
 import { AddPpeItemModal, type AddPpeItemDraft } from "./AddPpeItemModal";
 import { PpeCatalogCard } from "./PpeCatalogCard";
 import { PpeCatalogStatsRow } from "./PpeCatalogStatsRow";
 import { PpeCategoryFilter } from "./PpeCategoryFilter";
-import { usePpeCatalogPaths } from "./usePpeCatalogPaths";
 
 /** The one grid recipe the catalog screens share: 3 → 2 → 1 across breakpoints. */
 const CARD_GRID_CLASS =
   "stagger-cards grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3";
 
+// Decorative placeholder widths — duplicates are fine and intentional, so the
+// key carries the index too. Keying on the width alone collided on "w-44".
 const FILTER_SKELETON_WIDTHS = ["w-16", "w-44", "w-40", "w-48", "w-36", "w-44"];
+
+/**
+ * PPE *writes* take the site from the caller's org token server-side, never
+ * from a URL parameter (FEGuides/Ppe.md §3) — creating while viewing another
+ * site would silently write into the wrong one. The `[site]` route segment is
+ * the caller's own selected site (see `HeaderSiteChanger.tsx`), so comparing
+ * it against the site this page is showing is how the write path is gated.
+ */
+const OTHER_SITE_ADD_NOTE =
+  "New items are added to the site you are currently switched to — this view is showing another site.";
 
 function categoryLabelFor(categoryId: PpeCategoryId | "all"): string {
   return (
@@ -39,19 +54,33 @@ function categoryLabelFor(categoryId: PpeCategoryId | "all"): string {
   );
 }
 
-export function PpeCatalogPage() {
-  const { adminHref } = usePpeCatalogPaths();
+type PpeCatalogPageProps = Readonly<{
+  siteId: number;
+}>;
+
+export function PpeCatalogPage({ siteId }: PpeCatalogPageProps) {
   const sectionHeadingId = useId();
-  // `isPending` (not `isLoading`): the query is disabled until the `[company]/[site]`
-  // scope resolves, and a disabled query reports `isLoading === false` with no data,
-  // which would flash the empty state before the first fetch starts.
+  const orgSite = parseOrgSitePath(usePathname());
+  const isOwnSite = orgSite !== null && String(siteId) === orgSite.site;
+  const adminHref = orgSite
+    ? buildOrgSitePath(orgSite.company, orgSite.site)
+    : "/dashboard";
+
+  // `isPending` (not `isLoading`): the query is disabled until `siteId` is a
+  // valid number, and a disabled query reports `isLoading === false` with no
+  // data, which would flash the empty state before the first fetch starts.
   const {
-    data: items = [],
+    data: ppeRecords = [],
     isPending,
     isError,
     error,
     refetch,
-  } = usePpeCatalog();
+  } = usePpeCatalogBySite(siteId);
+  // The catalog API returns raw `PpeResponse[]`; the cards, stats and filter
+  // below are written against the `DummyPpeItem` view model, so the shared
+  // mapper reconciles the two.
+  const items = mapPpeResponsesToCatalogItems(ppeRecords);
+
   const createPpeItem = useCreatePpeItem();
   const [activeCategory, setActiveCategory] = useState<PpeCategoryId | "all">(
     "all",
@@ -90,6 +119,7 @@ export function PpeCatalogPage() {
 
   // Two different dead ends, and they need two different ways out: an empty
   // catalog wants the add flow, an empty filter wants the filter cleared.
+  // The add flow itself is only offered on the caller's own site.
   let emptyState = null;
   if (ready && items.length === 0) {
     emptyState = (
@@ -98,13 +128,19 @@ export function PpeCatalogPage() {
         title="No PPE items yet"
         description="The catalog defines the equipment types this site issues, inspects and keeps in stock. Nothing has been added for this site."
         action={
-          <Button
-            size="sm"
-            leftIcon="lucide:plus"
-            onClick={() => setAddModalOpen(true)}
-          >
-            Add your first PPE item
-          </Button>
+          isOwnSite ? (
+            <Button
+              size="sm"
+              leftIcon="lucide:plus"
+              onClick={() => setAddModalOpen(true)}
+            >
+              Add your first PPE item
+            </Button>
+          ) : (
+            <p className="text-ehs-muted-text max-w-md text-xs">
+              {OTHER_SITE_ADD_NOTE}
+            </p>
+          )
         }
       />
     );
@@ -141,13 +177,19 @@ export function PpeCatalogPage() {
           // The Export button that used to sit here fired a "Export started."
           // toast and exported nothing, so it has gone rather than staying as a
           // control that lies about what it did.
-          <Button
-            size="sm"
-            leftIcon="lucide:plus"
-            onClick={() => setAddModalOpen(true)}
-          >
-            Add PPE Item
-          </Button>
+          isOwnSite ? (
+            <Button
+              size="sm"
+              leftIcon="lucide:plus"
+              onClick={() => setAddModalOpen(true)}
+            >
+              Add PPE Item
+            </Button>
+          ) : (
+            <p className="max-w-xs text-right text8 text-ehs-muted-text">
+              {OTHER_SITE_ADD_NOTE}
+            </p>
+          )
         }
       />
 
@@ -182,8 +224,11 @@ export function PpeCatalogPage() {
             aria-busy="true"
             aria-label="Loading PPE categories…"
           >
-            {FILTER_SKELETON_WIDTHS.map((width) => (
-              <Skeleton key={width} className={`h-10 rounded-full ${width}`} />
+            {FILTER_SKELETON_WIDTHS.map((width, index) => (
+              <Skeleton
+                key={`${width}-${index}`}
+                className={`h-10 rounded-full ${width}`}
+              />
             ))}
           </div>
         ) : null}
@@ -230,12 +275,14 @@ export function PpeCatalogPage() {
         ) : null}
       </section>
 
-      <AddPpeItemModal
-        open={addModalOpen}
-        loading={createPpeItem.isPending}
-        onClose={() => setAddModalOpen(false)}
-        onAdd={handleAddItem}
-      />
+      {isOwnSite ? (
+        <AddPpeItemModal
+          open={addModalOpen}
+          loading={createPpeItem.isPending}
+          onClose={() => setAddModalOpen(false)}
+          onAdd={handleAddItem}
+        />
+      ) : null}
     </div>
   );
 }

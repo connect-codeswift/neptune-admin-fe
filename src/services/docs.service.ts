@@ -2,6 +2,11 @@ import type {
   AddDocCategoryPayload,
   UpdateDocCategoryPayload,
 } from "@/dtos/res/doc-categories.res";
+import type {
+  AddDepartmentPayload,
+  UpdateDepartmentPayload,
+} from "@/dtos/req/departments.req";
+import type { DepartmentResponse } from "@/dtos/res/departments.res";
 import axiosInstance from "@/lib/axiosInstance";
 import type { ApiPayload, ApiResponse } from "@/types/api.types";
 
@@ -73,18 +78,60 @@ export async function getAllDocuments(payload?: ApiPayload) {
   return data;
 }
 
-/** POST /v1/departments — departments left DocumentController; they are org-level. */
-export async function addDepartment(payload: ApiPayload) {
-  const { data } = await axiosInstance.post<ApiResponse>(
+/**
+ * POST /v1/departments — departments left DocumentController; they are org-level.
+ *
+ * Writes take the site from the caller's token only — `siteId` is never sent and has no
+ * effect. Name is trimmed server-side; duplicates (case-insensitive, per site) are a 400.
+ */
+export async function createDepartment(payload: AddDepartmentPayload) {
+  const { data } = await axiosInstance.post<ApiResponse<DepartmentResponse>>(
     "/v1/departments",
     payload,
   );
   return data;
 }
 
-/** GET /v1/departments */
-export async function getAllDepartments() {
-  const { data } = await axiosInstance.get<ApiResponse>("/v1/departments");
+/**
+ * PUT /v1/departments/{id} — same body and uniqueness rule as create. Renaming is the
+ * intended way to fix a typo or merge a duplicate's meaning; every document referencing the
+ * id follows the new name.
+ */
+export async function updateDepartment(
+  id: string | number,
+  payload: UpdateDepartmentPayload,
+) {
+  const { data } = await axiosInstance.put<ApiResponse<DepartmentResponse>>(
+    `/v1/departments/${id}`,
+    payload,
+  );
+  return data;
+}
+
+/**
+ * DELETE /v1/departments/{id} — soft delete, always succeeds. Nothing is deleted; the
+ * department just leaves the pickers, and documents filed under it keep resolving its name.
+ */
+export async function deleteDepartment(id: string | number) {
+  const { data } = await axiosInstance.delete<ApiResponse>(
+    `/v1/departments/${id}`,
+  );
+  return data;
+}
+
+/**
+ * GET /v1/departments — not paginated, name-ordered. Omit `siteId` for the token's site,
+ * unchanged. An explicit `siteId` is honoured only for a live site the caller is a member
+ * of — anything else 404s with "Site not found for this company."
+ */
+export async function getAllDepartments(params?: {
+  siteId?: number;
+  search?: string;
+}) {
+  const { data } = await axiosInstance.get<ApiResponse<DepartmentResponse[]>>(
+    "/v1/departments",
+    params && Object.keys(params).length > 0 ? { params } : undefined,
+  );
   return data;
 }
 
@@ -117,10 +164,15 @@ export async function deleteCategory(id: string | number) {
   return data;
 }
 
-/** GET /v1/document-categories */
-export async function getAllCategories() {
+/**
+ * GET /v1/document-categories — omit `siteId` for the token's site, unchanged.
+ * An explicit `siteId` is honoured only for a live site the caller is a
+ * member of — anything else 404s with "Site not found for this company."
+ */
+export async function getAllCategories(params?: { siteId?: number }) {
   const { data } = await axiosInstance.get<ApiResponse>(
     "/v1/document-categories",
+    params && Object.keys(params).length > 0 ? { params } : undefined,
   );
   return data;
 }

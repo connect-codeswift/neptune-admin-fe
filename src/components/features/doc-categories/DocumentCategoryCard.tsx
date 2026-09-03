@@ -16,10 +16,16 @@ type DocumentCategoryCardProps = Readonly<{
   isEditing: boolean;
   draft: CategoryDraft;
   onDraftChange: (draft: CategoryDraft) => void;
-  onEdit: () => void;
+  /** Absent when editing is unavailable — see `editDisabledReason`. */
+  onEdit?: () => void;
+  /** Why `onEdit` is absent, shown on the disabled edit button. */
+  editDisabledReason?: string;
   onCancel: () => void;
   onSave: () => void;
+  /** Absent when deleting is unavailable — see `deleteDisabledReason`. */
   onDelete?: () => void;
+  /** Why `onDelete` is absent, shown on the disabled delete button. */
+  deleteDisabledReason?: string;
 }>;
 
 function MetaChip({ label }: Readonly<{ label: string }>) {
@@ -36,9 +42,11 @@ export function DocumentCategoryCard({
   draft,
   onDraftChange,
   onEdit,
+  editDisabledReason,
   onCancel,
   onSave,
   onDelete,
+  deleteDisabledReason,
 }: DocumentCategoryCardProps) {
   const trimmedName = draft.name.trim();
   const nameError =
@@ -91,16 +99,28 @@ export function DocumentCategoryCard({
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            <IconButton
-              icon="lucide:pencil"
-              label={`Edit ${category.name}`}
-              size="sm"
-              disabled={isEditing}
-              onClick={onEdit}
-            />
-            {/* The delete control used to vanish for a category that still has
-                documents, which left two cards with different action rows and
-                no explanation. It stays put and says why it is off. */}
+            {/* Edit and delete both vanish behind a disabled state rather than
+                fully hiding, so the reason (documents filed under it, or
+                viewing another site) stays discoverable rather than looking
+                like a missing feature. */}
+            {onEdit ? (
+              <IconButton
+                icon="lucide:pencil"
+                label={`Edit ${category.name}`}
+                size="sm"
+                disabled={isEditing}
+                onClick={onEdit}
+              />
+            ) : (
+              <span className="inline-flex" title={editDisabledReason}>
+                <IconButton
+                  icon="lucide:pencil"
+                  label={`Edit ${category.name} (unavailable)`}
+                  size="sm"
+                  disabled
+                />
+              </span>
+            )}
             {onDelete ? (
               <IconButton
                 icon="lucide:trash-2"
@@ -110,13 +130,10 @@ export function DocumentCategoryCard({
                 onClick={onDelete}
               />
             ) : (
-              <span
-                className="inline-flex"
-                title={`${category.name} still has documents filed under it, so it cannot be deleted.`}
-              >
+              <span className="inline-flex" title={deleteDisabledReason}>
                 <IconButton
                   icon="lucide:trash-2"
-                  label={`Delete ${category.name} (unavailable — documents are filed under it)`}
+                  label={`Delete ${category.name} (unavailable)`}
                   size="sm"
                   variant="soft"
                   disabled

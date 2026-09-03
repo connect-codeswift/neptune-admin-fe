@@ -14,8 +14,8 @@ export function useUserManagementPaths() {
     ? buildOrgSitePath(orgSite.company, orgSite.site)
     : "/dashboard";
   const basePath = orgSite
-    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/user-management`
-    : "/user-management";
+    ? `${buildOrgSiteBasePath(orgSite.company, orgSite.site)}/users`
+    : "/users";
 
   return { adminHref, basePath };
 }
