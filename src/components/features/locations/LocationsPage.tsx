@@ -13,11 +13,19 @@ import { PageHeader } from "@/components/layouts";
 import {
   Button,
   ConfirmDialog,
+  ModuleSearchBar,
   Table,
+  TABLE_HEADER_ACTION_CLASS,
+  TableHeaderBar,
   TableIconAction,
   TableTextCell,
+  ViewModeToggle,
   type TableColumn,
+  type ViewMode,
 } from "@/components/ui";
+import { GLASS_SURFACE } from "@/components/ui/GlassCard";
+import { CARD_GRID_CLASS } from "@/components/cards/card-grid";
+import { LocationCard } from "@/components/cards/LocationCard";
 import type { LocationResponse } from "@/dtos/res/locations.res";
 import {
   useCreateLocation,
@@ -61,6 +69,15 @@ export function LocationsPage({ siteId }: LocationsPageProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<LocationResponse | null>(null);
+  // Table is the default, same reasoning as UserManagementPage: it is the
+  // denser view. The choice is per-visit, not persisted.
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [search, setSearch] = useState("");
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredRows = normalizedSearch
+    ? rows.filter((row) => row.name.toLowerCase().includes(normalizedSearch))
+    : rows;
 
   const startAdd = () => {
     setIsAdding(true);
@@ -209,6 +226,36 @@ export function LocationsPage({ siteId }: LocationsPageProps) {
     },
   ];
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+  };
+
+  // Shared by both views, same as UserManagementPage: the toolbar is one
+  // strip whether it sits inside the table card or above the card grid.
+  const toolbarActions = (
+    <>
+      {isOwnSite ? (
+        <Button
+          size="sm"
+          leftIcon="lucide:map-pin-plus"
+          onClick={startAdd}
+          className={TABLE_HEADER_ACTION_CLASS}
+        >
+          Add location
+        </Button>
+      ) : (
+        <p className="max-w-56 text-right text8 text-ehs-muted-text">
+          {OTHER_SITE_WRITE_NOTE}
+        </p>
+      )}
+      <ViewModeToggle value={viewMode} onChange={setViewMode} itemLabel="locations" />
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
@@ -218,17 +265,14 @@ export function LocationsPage({ siteId }: LocationsPageProps) {
           { label: "Admin", href: adminHref },
           { label: "Locations" },
         ]}
-        actions={
-          isOwnSite ? (
-            <Button size="sm" leftIcon="lucide:map-pin-plus" onClick={startAdd}>
-              Add location
-            </Button>
-          ) : (
-            <p className="max-w-xs text-right text8 text-ehs-muted-text">
-              {OTHER_SITE_WRITE_NOTE}
-            </p>
-          )
-        }
+      />
+
+      <ModuleSearchBar
+        value={search}
+        onChange={handleSearchChange}
+        placeholder="Search locations…"
+        aria-label="Search locations"
+        resultLabel={`${String(filteredRows.length)} ${filteredRows.length === 1 ? "location" : "locations"}`}
       />
 
       {isAdding && isOwnSite ? (
@@ -281,8 +325,80 @@ export function LocationsPage({ siteId }: LocationsPageProps) {
         />
       ) : null}
 
-      {hasData && rows.length > 0 ? (
-        <Table columns={columns} data={rows} getRowId={(row) => String(row.id)} />
+      {hasData && rows.length > 0 && filteredRows.length === 0 ? (
+        <FeatureEmptyState
+          surface={false}
+          className="min-h-0 py-8"
+          icon="mdi:map-marker-question-outline"
+          title="No locations match this search"
+          description="Nobody at this site has a location matching the current search."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon="mdi:filter-off-outline"
+              onClick={clearSearch}
+            >
+              Clear search
+            </Button>
+          }
+        />
+      ) : null}
+
+      {hasData && filteredRows.length > 0 ? (
+        <>
+          {viewMode === "table" ? (
+            <Table
+              columns={columns}
+              data={filteredRows}
+              getRowId={(row) => String(row.id)}
+              toolbar={
+                <TableHeaderBar title="Locations" actions={toolbarActions} />
+              }
+            />
+          ) : (
+            <div className="flex min-w-0 flex-col gap-4">
+              <div className={[GLASS_SURFACE, "overflow-hidden"].join(" ")}>
+                <TableHeaderBar
+                  title="Locations"
+                  actions={toolbarActions}
+                  className="border-b-0"
+                />
+              </div>
+
+              <div className={CARD_GRID_CLASS}>
+                {filteredRows.map((row) => {
+                  let onStartEdit: (() => void) | undefined = () =>
+                    startEdit(row);
+                  let onDelete: (() => void) | undefined = () =>
+                    setDeleteTarget(row);
+                  if (!isOwnSite) {
+                    onStartEdit = undefined;
+                    onDelete = undefined;
+                  }
+
+                  return (
+                    <LocationCard
+                      key={row.id}
+                      location={row}
+                      isEditing={isOwnSite && editingId === row.id}
+                      draftName={editName}
+                      onDraftNameChange={setEditName}
+                      onStartEdit={onStartEdit}
+                      onCancelEdit={cancelEdit}
+                      onSaveEdit={() => void saveEdit(row)}
+                      onDelete={onDelete}
+                      disabledReason={
+                        isOwnSite ? undefined : OTHER_SITE_WRITE_NOTE
+                      }
+                      saving={updateMutation.isPending && editingId === row.id}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
       ) : null}
 
       <ConfirmDialog

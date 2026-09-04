@@ -13,11 +13,19 @@ import { TextInput } from "@/components/inputs";
 import {
   Button,
   ConfirmDialog,
+  ModuleSearchBar,
+  TABLE_HEADER_ACTION_CLASS,
   Table,
+  TableHeaderBar,
   TableIconAction,
   TableTextCell,
+  ViewModeToggle,
   type TableColumn,
+  type ViewMode,
 } from "@/components/ui";
+import { GLASS_SURFACE } from "@/components/ui/GlassCard";
+import { DepartmentCard } from "@/components/cards";
+import { CARD_GRID_CLASS } from "@/components/cards/card-grid";
 import type { DepartmentResponse } from "@/dtos/res/departments.res";
 import {
   useCreateDepartment,
@@ -57,9 +65,18 @@ export function DepartmentsPage({ siteId }: DepartmentsPageProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DepartmentResponse | null>(null);
+  const [search, setSearch] = useState("");
+  // Table is the default: it is the denser view and the one the column set
+  // was designed for. The choice is per-visit — it is not persisted anywhere.
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const rows = data ?? [];
   const hasData = !isLoading && !isError;
+
+  const trimmedSearch = search.trim().toLowerCase();
+  const filteredRows = trimmedSearch
+    ? rows.filter((row) => row.name.toLowerCase().includes(trimmedSearch))
+    : rows;
 
   const startEdit = (department: DepartmentResponse) => {
     setEditingId(department.id);
@@ -198,6 +215,34 @@ export function DepartmentsPage({ siteId }: DepartmentsPageProps) {
     },
   ];
 
+  // Shared by both views: the toolbar is the same strip whether it sits inside
+  // the table card or above the card grid, so the actions are built once.
+  const toolbarActions = (
+    <>
+      {isOwnSite ? (
+        <Button
+          size="sm"
+          leftIcon="lucide:plus"
+          onClick={() => setIsAdding(true)}
+          className={TABLE_HEADER_ACTION_CLASS}
+        >
+          Add department
+        </Button>
+      ) : (
+        <p className="max-w-xs text-right text8 text-ehs-muted-text">
+          {OTHER_SITE_WRITE_NOTE}
+        </p>
+      )}
+      <ViewModeToggle
+        value={viewMode}
+        onChange={setViewMode}
+        itemLabel="departments"
+      />
+    </>
+  );
+
+  const handleClearSearch = () => setSearch("");
+
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader
@@ -207,17 +252,6 @@ export function DepartmentsPage({ siteId }: DepartmentsPageProps) {
           { label: "Admin", href: adminHref },
           { label: "Departments" },
         ]}
-        actions={
-          isOwnSite ? (
-            <Button size="sm" leftIcon="lucide:plus" onClick={() => setIsAdding(true)}>
-              Add department
-            </Button>
-          ) : (
-            <p className="max-w-xs text-right text8 text-ehs-muted-text">
-              {OTHER_SITE_WRITE_NOTE}
-            </p>
-          )
-        }
       />
 
       {isAdding && isOwnSite ? (
@@ -278,7 +312,109 @@ export function DepartmentsPage({ siteId }: DepartmentsPageProps) {
       ) : null}
 
       {hasData && rows.length > 0 ? (
-        <Table columns={columns} data={rows} getRowId={(row) => String(row.id)} />
+        <ModuleSearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search departments…"
+          aria-label="Search departments"
+          resultLabel={`${filteredRows.length} ${filteredRows.length === 1 ? "department" : "departments"}`}
+        />
+      ) : null}
+
+      {hasData && rows.length > 0 && filteredRows.length === 0 ? (
+        <FeatureEmptyState
+          surface={false}
+          className="min-h-0 py-8"
+          icon="mdi:magnify-close"
+          title="No departments match this search"
+          description="No department name matches the current search."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon="mdi:filter-off-outline"
+              onClick={handleClearSearch}
+            >
+              Clear search
+            </Button>
+          }
+        />
+      ) : null}
+
+      {hasData && filteredRows.length > 0 ? (
+        viewMode === "table" ? (
+          <Table
+            toolbar={
+              <TableHeaderBar title="Departments" actions={toolbarActions} />
+            }
+            columns={columns}
+            data={filteredRows}
+            getRowId={(row) => String(row.id)}
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {/* The bar carries a bottom border to divide itself from the
+                column headers it normally sits above; standing alone over a
+                grid there is nothing to divide, so it is dropped. */}
+            <div className={[GLASS_SURFACE, "overflow-hidden"].join(" ")}>
+              <TableHeaderBar
+                title="Departments"
+                actions={toolbarActions}
+                className="border-b-0"
+              />
+            </div>
+
+            <div className={CARD_GRID_CLASS}>
+              {filteredRows.map((row) => {
+                if (editingId === row.id) {
+                  return (
+                    <DepartmentCard
+                      key={row.id}
+                      department={row}
+                      isEditing
+                      draftName={editName}
+                      onDraftNameChange={setEditName}
+                      onStartEdit={() => startEdit(row)}
+                      onCancelEdit={cancelEdit}
+                      onSaveEdit={() => void handleRename(row.id)}
+                      onDelete={() => setDeleteTarget(row)}
+                      saving={updateMutation.isPending}
+                    />
+                  );
+                }
+
+                if (!isOwnSite) {
+                  return (
+                    <DepartmentCard
+                      key={row.id}
+                      department={row}
+                      isEditing={false}
+                      draftName={row.name}
+                      onDraftNameChange={setEditName}
+                      onCancelEdit={cancelEdit}
+                      onSaveEdit={() => void handleRename(row.id)}
+                      disabledReason={OTHER_SITE_WRITE_NOTE}
+                    />
+                  );
+                }
+
+                return (
+                  <DepartmentCard
+                    key={row.id}
+                    department={row}
+                    isEditing={false}
+                    draftName={row.name}
+                    onDraftNameChange={setEditName}
+                    onStartEdit={() => startEdit(row)}
+                    onCancelEdit={cancelEdit}
+                    onSaveEdit={() => void handleRename(row.id)}
+                    onDelete={() => setDeleteTarget(row)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )
       ) : null}
 
       <ConfirmDialog

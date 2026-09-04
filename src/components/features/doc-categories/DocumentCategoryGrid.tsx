@@ -1,13 +1,28 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   FeatureEmptyState,
   FeatureErrorCard,
   FeatureLoadingGrid,
 } from "@/components/features/shared";
-import { Button, ConfirmDialog } from "@/components/ui";
+import { TextInput } from "@/components/inputs";
+import {
+  Button,
+  ConfirmDialog,
+  ModuleFilterBar,
+  ModuleSearchBar,
+  Table,
+  TableHeaderBar,
+  TableIconAction,
+  TableTextCell,
+  ViewModeToggle,
+  type TableColumn,
+  type ViewMode,
+} from "@/components/ui";
+import { GLASS_SURFACE } from "@/components/ui/GlassCard";
+import { CARD_GRID_CLASS } from "@/components/cards/card-grid";
 import {
   useDeleteDocCategory,
   useDocCategoriesBySite,
@@ -20,9 +35,6 @@ import {
   type CategoryDraft,
 } from "./DocumentCategoryCard";
 
-/** The grid recipe the catalog screens share: 3 → 2 → 1 across breakpoints. */
-const CARD_GRID_CLASS =
-  "stagger-cards grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3";
 
 /** Same reason `DocumentCategoriesPage` gates its header — see there. */
 const OTHER_SITE_WRITE_NOTE =
@@ -44,7 +56,6 @@ export function DocumentCategoryGrid({
   isOwnSite,
   onCreate,
 }: DocumentCategoryGridProps) {
-  const sectionHeadingId = useId();
   // `isPending` (not `isLoading`) so the query stays in its loading state while
   // it is still gated on a valid siteId — a disabled query reports
   // `isLoading === false` with no data, which would flash the empty state.
@@ -57,8 +68,36 @@ export function DocumentCategoryGrid({
   const [deleteTarget, setDeleteTarget] = useState<DocCategoryViewModel | null>(
     null,
   );
+  // Table is the default here even though this screen has always been cards:
+  // the register pages all open on the denser view, and a category's slug,
+  // document count and flags line up far better in columns than in tiles.
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [search, setSearch] = useState("");
+  const [requiredFilter, setRequiredFilter] = useState("");
 
-  const viewModels = categories.map(mapDocCategory);
+  const allViewModels = categories.map(mapDocCategory);
+
+  // `required` is the one genuinely exclusive flag on a category — approval and
+  // retention can both be true at once, so a single-select segment over them
+  // would claim a choice the data does not have.
+  const normalizedSearch = search.trim().toLowerCase();
+  const viewModels = allViewModels.filter((category) => {
+    if (requiredFilter === "required" && !category.required) return false;
+    if (requiredFilter === "optional" && category.required) return false;
+    if (normalizedSearch === "") return true;
+    return (
+      category.name.toLowerCase().includes(normalizedSearch) ||
+      category.description.toLowerCase().includes(normalizedSearch) ||
+      category.slug.toLowerCase().includes(normalizedSearch)
+    );
+  });
+
+  const filtersActive = normalizedSearch !== "" || requiredFilter !== "";
+
+  function clearFilters() {
+    setSearch("");
+    setRequiredFilter("");
+  }
 
   const startEdit = (category: DocCategoryViewModel) => {
     setEditingId(category.id);
@@ -104,6 +143,164 @@ export function DocumentCategoryGrid({
     }
   };
 
+  /**
+   * The table mirrors the card exactly: the same inline rename, the same two
+   * disabled reasons, the same delete. A view that could only read would make
+   * the toggle a trap — you would switch to it and lose the ability to edit.
+   */
+  function buildColumns(): TableColumn<DocCategoryViewModel>[] {
+    return [
+      {
+        id: "category",
+        header: "Category",
+        cell: (row) => {
+          if (editingId === row.id) {
+            return (
+              <div className="flex min-w-0 flex-col gap-2 py-1">
+                <TextInput
+                  label="Category name"
+                  value={draft.name}
+                  error={draft.name.trim() === "" ? "A category needs a name." : undefined}
+                  onChange={(event) =>
+                    setDraft({ ...draft, name: event.target.value })
+                  }
+                />
+                <TextInput
+                  label="Description"
+                  value={draft.description}
+                  onChange={(event) =>
+                    setDraft({ ...draft, description: event.target.value })
+                  }
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-w-0" title={`${row.name} · ${row.description}`}>
+              <p className="text4 text-ehs-darker truncate">{row.name}</p>
+              <p className="text8 text-ehs-muted-text mt-0.5 max-w-80 truncate">
+                {row.description || "No description."}
+              </p>
+            </div>
+          );
+        },
+      },
+      {
+        id: "slug",
+        header: "Slug",
+        cell: (row) => <TableTextCell>{row.slug}</TableTextCell>,
+      },
+      {
+        id: "documents",
+        header: "Documents",
+        cell: (row) => (
+          <span className="text4 text-ehs-darker tabular-nums">
+            {row.documentCount}
+          </span>
+        ),
+      },
+      {
+        id: "flags",
+        header: "Rules",
+        cell: (row) => {
+          const flags: string[] = [];
+          if (row.required) flags.push("Required");
+          if (row.requiresApproval) flags.push("Approval");
+          if (row.retentionDays != null) {
+            flags.push(`Retention ${String(row.retentionDays)}d`);
+          }
+
+          if (flags.length === 0) {
+            return <TableTextCell>—</TableTextCell>;
+          }
+
+          return (
+            <div className="flex flex-wrap gap-1">
+              {flags.map((flag) => (
+                <span
+                  key={flag}
+                  className="bg-ehs-border-ink/6 text-ehs-slate inline-flex items-center rounded-md px-2 py-0.5 text8"
+                >
+                  {flag}
+                </span>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        srOnlyHeader: true,
+        headerClassName: "w-24",
+        className: "w-24",
+        cell: (row) => {
+          if (editingId === row.id) {
+            return (
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="secondary" size="sm" onClick={cancelEdit}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={draft.name.trim() === ""}
+                  loading={updateMutation.isPending}
+                  onClick={() => void saveEdit(row.id)}
+                >
+                  Save
+                </Button>
+              </div>
+            );
+          }
+
+          // Same two reasons the cards carry: viewing another site, or the
+          // category still has documents filed under it.
+          let deleteReason: string | undefined;
+          if (!isOwnSite) {
+            deleteReason = OTHER_SITE_WRITE_NOTE;
+          } else if (!row.deletable) {
+            deleteReason = `${row.name} still has documents filed under it, so it cannot be deleted.`;
+          }
+
+          return (
+            <div className="flex items-center justify-end gap-1.5">
+              <TableIconAction
+                icon="lucide:pencil"
+                label={`Edit ${row.name}`}
+                disabled={!isOwnSite}
+                title={isOwnSite ? undefined : OTHER_SITE_WRITE_NOTE}
+                onClick={() => startEdit(row)}
+              />
+              <TableIconAction
+                icon="lucide:trash-2"
+                label={`Delete ${row.name}`}
+                disabled={Boolean(deleteReason)}
+                title={deleteReason}
+                onClick={() => setDeleteTarget(row)}
+              />
+            </div>
+          );
+        },
+      },
+    ];
+  }
+
+  const toolbarActions = (
+    <>
+      <span className="text8 text-ehs-muted-text shrink-0 tabular-nums">
+        {filtersActive
+          ? `${String(viewModels.length)} of ${String(allViewModels.length)} shown`
+          : `${String(allViewModels.length)} categor${allViewModels.length === 1 ? "y" : "ies"}`}
+      </span>
+      <ViewModeToggle
+        value={viewMode}
+        onChange={setViewMode}
+        itemLabel="categories"
+      />
+    </>
+  );
+
   let body: ReactNode;
   if (isPending) {
     body = (
@@ -126,7 +323,7 @@ export function DocumentCategoryGrid({
         }}
       />
     );
-  } else if (viewModels.length === 0) {
+  } else if (allViewModels.length === 0) {
     body = (
       <FeatureEmptyState
         icon="lucide:folder-open"
@@ -145,9 +342,50 @@ export function DocumentCategoryGrid({
         }
       />
     );
+  } else if (viewModels.length === 0) {
+    // Filtered to nothing is a different dead end from an empty catalog, and
+    // needs the way back out rather than the way to add a first category.
+    body = (
+      <FeatureEmptyState
+        icon="lucide:filter-x"
+        title="No categories match"
+        description="No category matches the current search and filter."
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon="lucide:filter-x"
+            onClick={clearFilters}
+          >
+            Clear filters
+          </Button>
+        }
+      />
+    );
+  } else if (viewMode === "table") {
+    body = (
+      <Table
+        className="min-w-0"
+        toolbar={
+          <TableHeaderBar title="All Categories" actions={toolbarActions} />
+        }
+        columns={buildColumns()}
+        data={viewModels}
+        getRowId={(row) => row.id}
+      />
+    );
   } else {
     body = (
-      <div className={CARD_GRID_CLASS}>
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className={[GLASS_SURFACE, "overflow-hidden"].join(" ")}>
+          <TableHeaderBar
+            title="All Categories"
+            actions={toolbarActions}
+            className="border-b-0"
+          />
+        </div>
+
+        <div className={CARD_GRID_CLASS}>
         {viewModels.map((category) => {
           // Editing and deleting write to the token's site; on another
           // site's view both controls stay disabled with the same reason,
@@ -178,22 +416,44 @@ export function DocumentCategoryGrid({
             />
           );
         })}
+        </div>
       </div>
     );
   }
 
   return (
-    <section aria-labelledby={sectionHeadingId} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={sectionHeadingId} className="text3 text-ehs-darker">
-          All Categories
-        </h2>
-        {!isPending && !isError && viewModels.length > 0 ? (
-          <p className="text8 text-ehs-muted-text">
-            {viewModels.length} categor{viewModels.length === 1 ? "y" : "ies"}
-          </p>
-        ) : null}
-      </div>
+    // The heading and the count used to sit here as a bare row above the
+    // cards. Both moved into `TableHeaderBar`, which carries the title, the
+    // count and the view toggle in one strip inside the card — so this section
+    // is labelled by that heading instead of one of its own.
+    <section aria-label="All Categories" className="flex flex-col gap-4">
+      {/* Only once there is something to sift — below that the controls cost
+          more room than the scanning they save. */}
+      {!isPending && !isError && allViewModels.length > 0 ? (
+        <>
+          <ModuleFilterBar
+            segments={[
+              {
+                label: "Required",
+                value: requiredFilter,
+                onChange: setRequiredFilter,
+                options: [
+                  { value: "", label: "All" },
+                  { value: "required", label: "Required" },
+                  { value: "optional", label: "Optional" },
+                ],
+              },
+            ]}
+          />
+
+          <ModuleSearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, description or slug…"
+            aria-label="Search document categories"
+          />
+        </>
+      ) : null}
 
       {body}
 

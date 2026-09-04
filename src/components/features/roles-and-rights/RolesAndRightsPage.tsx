@@ -1,15 +1,29 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { useState } from "react";
 
+import { RoleCard } from "@/components/cards";
+import { CARD_GRID_CLASS } from "@/components/cards/card-grid";
 import {
   FeatureEmptyState,
   FeatureErrorCard,
   FeatureLoadingGrid,
 } from "@/components/features/shared";
 import { PageHeader } from "@/components/layouts";
-import { Button, ConfirmDialog } from "@/components/ui";
+import {
+  Button,
+  ConfirmDialog,
+  ModuleFilterBar,
+  ModuleSearchBar,
+  TABLE_HEADER_ACTION_CLASS,
+  Table,
+  TableHeaderBar,
+  TableIconAction,
+  TableTextCell,
+  ViewModeToggle,
+  type TableColumn,
+  type ViewMode,
+} from "@/components/ui";
 import { GLASS_SURFACE, GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
@@ -17,8 +31,13 @@ import {
   useRolesWithPermissions,
 } from "@/hooks/useRolesAndRights";
 import { getRoleStats, type RoleViewModel } from "@/lib/mappers/roles.mapper";
-import { RoleCard } from "./RoleCard";
 import { useRolesAndRightsPaths } from "./useRolesAndRightsPaths";
+
+const TYPE_FILTER_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "system", label: "System" },
+  { value: "custom", label: "Custom" },
+] as const;
 
 function StatCard({
   value,
@@ -81,6 +100,94 @@ function RoleListSkeleton() {
   );
 }
 
+function buildColumns(
+  basePath: string,
+  onDelete: (role: RoleViewModel) => void,
+): TableColumn<RoleViewModel>[] {
+  return [
+    {
+      id: "role",
+      header: "Role",
+      cell: (row) => (
+        <div
+          className="max-w-80 min-w-0"
+          title={`${row.name} · ${row.description || "No description provided."}`}
+        >
+          <p className="text5 text-ehs-darker truncate">{row.name}</p>
+          <p className="text7 text-ehs-muted-text truncate">
+            {row.description || "No description provided."}
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "rights",
+      header: "Rights",
+      cell: (row) => (
+        <TableTextCell className="tabular-nums">
+          {row.permissionIds.length}
+        </TableTextCell>
+      ),
+    },
+    {
+      id: "users",
+      header: "Users",
+      cell: (row) => (
+        <TableTextCell className="tabular-nums">
+          {row.userCount}
+        </TableTextCell>
+      ),
+    },
+    {
+      id: "type",
+      header: "Type",
+      cell: (row) => (
+        <span
+          className={[
+            "text7 inline-flex items-center rounded-md px-2 py-0.5",
+            row.isSystem
+              ? "bg-blue-normal/12 text-blue-normal"
+              : "bg-ehs-border-ink/6 text-darkest",
+          ].join(" ")}
+        >
+          {row.isSystem ? "System" : "Custom"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      srOnlyHeader: true,
+      headerClassName: "w-24",
+      className: "w-24",
+      cell: (row) => (
+        // Labels name the row, not just the verb: a screen reader hitting six
+        // "Edit" buttons in a column learns nothing from the sixth.
+        <div className="flex items-center justify-end gap-1.5">
+          <TableIconAction
+            label={`View ${row.name}`}
+            icon="lucide:eye"
+            variant="primary"
+            href={`${basePath}/${row.id}`}
+          />
+          <TableIconAction
+            label={`Edit ${row.name}`}
+            icon="lucide:pencil"
+            href={`${basePath}/${row.id}/edit`}
+          />
+          {!row.isSystem ? (
+            <TableIconAction
+              label={`Delete ${row.name}`}
+              icon="lucide:trash-2"
+              onClick={() => onDelete(row)}
+            />
+          ) : null}
+        </div>
+      ),
+    },
+  ];
+}
+
 export function RolesAndRightsPage() {
   const { adminHref, basePath } = useRolesAndRightsPaths();
   // `isPending` (not `isLoading`) so the query stays in its loading state while
@@ -92,6 +199,132 @@ export function RolesAndRightsPage() {
   const [pendingDelete, setPendingDelete] = useState<RoleViewModel | null>(null);
   const removeRole = useDeleteRole();
 
+  const [typeFilter, setTypeFilter] = useState("");
+  const [search, setSearch] = useState("");
+  // Table is the default: it is the denser view and the one the column set was
+  // designed for. The choice is per-visit — it is not persisted anywhere.
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+
+  const trimmedSearch = search.trim().toLowerCase();
+
+  const filteredRoles = roles.filter((role) => {
+    let matchesType = true;
+    if (typeFilter === "system") {
+      matchesType = role.isSystem;
+    } else if (typeFilter === "custom") {
+      matchesType = !role.isSystem;
+    }
+
+    if (!matchesType) {
+      return false;
+    }
+
+    if (!trimmedSearch) {
+      return true;
+    }
+
+    return (
+      role.name.toLowerCase().includes(trimmedSearch) ||
+      role.description.toLowerCase().includes(trimmedSearch)
+    );
+  });
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setTypeFilter("");
+  };
+
+  const columns = buildColumns(basePath, setPendingDelete);
+
+  // Shared by both views: the toolbar is the same strip whether it sits inside
+  // the table card or above the card grid, so the actions are built once.
+  const toolbarActions = (
+    <>
+      <Button
+        size="sm"
+        leftIcon="lucide:plus"
+        href={`${basePath}/new`}
+        className={TABLE_HEADER_ACTION_CLASS}
+      >
+        Create Role
+      </Button>
+      <ViewModeToggle
+        value={viewMode}
+        onChange={setViewMode}
+        itemLabel="roles"
+      />
+    </>
+  );
+
+  let body = null;
+  if (roles.length === 0) {
+    body = (
+      <FeatureEmptyState
+        icon="lucide:shield-off"
+        title="No roles yet"
+        description="A role is a named set of rights. Until one exists, nobody in this organization can be given access to anything."
+        action={
+          <Button size="sm" leftIcon="lucide:plus" href={`${basePath}/new`}>
+            Create your first role
+          </Button>
+        }
+      />
+    );
+  } else if (filteredRoles.length === 0) {
+    body = (
+      <FeatureEmptyState
+        icon="mdi:shield-search-outline"
+        title="No roles match this search"
+        description="No role name or description matches the current search and type filter."
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon="mdi:filter-off-outline"
+            onClick={handleClearFilters}
+          >
+            Clear filters
+          </Button>
+        }
+      />
+    );
+  } else if (viewMode === "table") {
+    body = (
+      <Table
+        toolbar={<TableHeaderBar title="Roles" actions={toolbarActions} />}
+        columns={columns}
+        data={filteredRoles}
+        getRowId={(row) => row.id}
+      />
+    );
+  } else {
+    body = (
+      <div className="flex min-w-0 flex-col gap-4">
+        {/* The bar carries a bottom border to divide itself from the column
+            headers it normally sits above; standing alone over a grid there is
+            nothing to divide, so it is dropped. */}
+        <div className={[GLASS_SURFACE, "overflow-hidden"].join(" ")}>
+          <TableHeaderBar
+            title="Roles"
+            actions={toolbarActions}
+            className="border-b-0"
+          />
+        </div>
+
+        <div className={CARD_GRID_CLASS}>
+          {filteredRoles.map((role) => (
+            <RoleCard
+              key={role.id}
+              role={role}
+              basePath={basePath}
+              onDelete={setPendingDelete}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-w-0 flex-col gap-6 pb-4">
       <PageHeader
@@ -101,46 +334,7 @@ export function RolesAndRightsPage() {
           { label: "Admin", href: adminHref },
           { label: "Roles & Rights" },
         ]}
-        actions={
-          <Button
-            size="sm"
-            leftIcon="lucide:plus"
-            href={`${basePath}/new`}
-          >
-            Create Role
-          </Button>
-        }
       />
-
-      <div className="flex items-start gap-2.5 rounded-xl border border-blue-normal/15 bg-blue-normal/5 px-4 py-3">
-        <Icon
-          icon="mdi:information-outline"
-          className="mt-0.5 size-4 shrink-0 text-blue-normal"
-          aria-hidden="true"
-        />
-        <p className="min-w-0 text8 leading-relaxed text-ehs-slate">
-          Roles apply company-wide across every site. Changing the site switcher
-          does not change this list — a user keeps the same role wherever they
-          work in the organization.
-        </p>
-      </div>
-
-      {isPending ? (
-        <FeatureLoadingGrid
-          count={3}
-          label="Loading role statistics…"
-          className="grid grid-cols-1 gap-4 md:grid-cols-3"
-        />
-      ) : (
-        <div className="stagger-cards grid grid-cols-1 gap-4 md:grid-cols-3">
-          <StatCard value={stats.totalRoles} label="Total Roles" />
-          <StatCard
-            value={stats.totalUsersAssigned}
-            label="Total Users Assigned"
-          />
-          <StatCard value={stats.customRoles} label="Custom Roles" />
-        </div>
-      )}
 
       {isPending ? <RoleListSkeleton /> : null}
 
@@ -157,33 +351,28 @@ export function RolesAndRightsPage() {
       ) : null}
 
       {!isPending && !isError ? (
-        <div className="stagger-cards flex flex-col gap-4">
-          {roles.length === 0 ? (
-            <FeatureEmptyState
-              icon="lucide:shield-off"
-              title="No roles yet"
-              description="A role is a named set of rights. Until one exists, nobody in this organization can be given access to anything."
-              action={
-                <Button
-                  size="sm"
-                  leftIcon="lucide:plus"
-                  href={`${basePath}/new`}
-                >
-                  Create your first role
-                </Button>
-              }
-            />
-          ) : (
-            roles.map((role) => (
-              <RoleCard
-                key={role.id}
-                role={role}
-                basePath={basePath}
-                onDelete={setPendingDelete}
-              />
-            ))
-          )}
-        </div>
+        <>
+          <ModuleFilterBar
+            segments={[
+              {
+                label: "Type",
+                value: typeFilter,
+                onChange: setTypeFilter,
+                options: TYPE_FILTER_OPTIONS,
+              },
+            ]}
+          />
+
+          <ModuleSearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by role or description…"
+            aria-label="Search roles"
+            resultLabel={`${String(filteredRoles.length)} ${filteredRoles.length === 1 ? "role" : "roles"}`}
+          />
+
+          {body}
+        </>
       ) : null}
 
       <ConfirmDialog

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { DetailCard } from "@/components/features/onboarding/DetailCard";
 import {
@@ -12,7 +13,6 @@ import {
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
-  KpiSummaryCard,
   RecentActivityCard,
   type RecentActivityItem,
 } from "@/components/ui";
@@ -65,12 +65,6 @@ type SummaryStat = Readonly<{
   value: number;
   detail: string;
   icon: string;
-}>;
-
-type ModuleStat = Readonly<{
-  title: string;
-  value: number;
-  activeCount: number;
 }>;
 
 function describeAccess(access: {
@@ -146,27 +140,35 @@ export function AdminDashboardPage({
     ];
   }
 
-  let moduleStats: ModuleStat[] = [];
+  // A licence is a yes/no, and it is held by the organization — not by a site
+  // and not in any quantity. This used to render one KPI tile per module with
+  // `value: 1, activeCount: 1` hardcoded, so every tile showed a large "1" and
+  // "1 active" that counted nothing. The information here is only *which*
+  // modules are licensed, so that is all this renders.
+  let moduleNames: string[] = [];
+  // The count survives only for the case below, where the codes could not be
+  // resolved to names — then the number is genuinely all we know.
+  let unnamedModuleCount = 0;
   if (summary) {
     const moduleIds = activatedModuleCodesToIds(
       parseActivatedModuleCodes(summary.activatedModules.modules),
     );
 
     if (moduleIds.length === 0 && summary.activatedModules.moduleCount > 0) {
-      moduleStats = [
-        {
-          title: "Activated Modules",
-          value: summary.activatedModules.moduleCount,
-          activeCount: summary.activatedModules.moduleCount,
-        },
-      ];
+      unnamedModuleCount = summary.activatedModules.moduleCount;
     } else {
-      moduleStats = moduleIds.map((moduleId) => ({
-        title: getModuleLabel(moduleId),
-        value: 1,
-        activeCount: 1,
-      }));
+      moduleNames = moduleIds.map((moduleId) => getModuleLabel(moduleId));
     }
+  }
+
+  // Built here rather than inline so the JSX below holds no nested ternary.
+  let moduleSummaryLine = "";
+  if (moduleNames.length > 0) {
+    const plural = moduleNames.length === 1 ? "" : "s";
+    moduleSummaryLine = `${String(moduleNames.length)} module${plural} licensed — available to every site in this organization.`;
+  } else if (unnamedModuleCount > 0) {
+    const plural = unnamedModuleCount === 1 ? "" : "s";
+    moduleSummaryLine = `${String(unnamedModuleCount)} module${plural} licensed. The activated list could not be resolved to names.`;
   }
 
   const activityItems: RecentActivityItem[] = activity.map((item, index) => ({
@@ -250,16 +252,27 @@ export function AdminDashboardPage({
                 <p className="text4 text-gray">{describeAccess(summary.access)}</p>
               }
             >
-              {moduleStats.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {moduleStats.map((module) => (
-                    <KpiSummaryCard
-                      key={module.title}
-                      title={module.title}
-                      value={module.value}
-                      activeCount={module.activeCount}
-                    />
-                  ))}
+              {moduleNames.length > 0 || unnamedModuleCount > 0 ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text8 text-ehs-muted-text">{moduleSummaryLine}</p>
+
+                  {moduleNames.length > 0 ? (
+                    <ul className="flex flex-wrap gap-2">
+                      {moduleNames.map((name) => (
+                        <li
+                          key={name}
+                          className="border-ehs-border bg-ehs-surface/60 text-ehs-darker inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text4"
+                        >
+                          <Icon
+                            icon="lucide:check"
+                            className="text-ehs-normal-blue size-3.5 shrink-0"
+                            aria-hidden="true"
+                          />
+                          {name}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               ) : (
                 <FeatureEmptyState

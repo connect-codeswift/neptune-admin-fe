@@ -6,7 +6,7 @@ import type { RoleViewModel } from "@/lib/mappers/roles.mapper";
 
 const VISIBLE_RIGHTS_COUNT = 6;
 
-type RoleCardProps = Readonly<{
+export type RoleCardProps = Readonly<{
   role: RoleViewModel;
   basePath: string;
   /** Omitted where deletion is not offered. */
@@ -27,14 +27,20 @@ function RightTag({ label }: Readonly<{ label: string }>) {
   );
 }
 
+/**
+ * Grid-view counterpart to a row of the roles table.
+ *
+ * `h-full` with the `mt-auto` action footer keeps a row of cards level when
+ * one role's right list wraps and its neighbour's does not.
+ */
 export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
   const visibleRights = role.permissionLabels.slice(0, VISIBLE_RIGHTS_COUNT);
   const hiddenRights = role.permissionLabels.slice(VISIBLE_RIGHTS_COUNT);
   const hiddenCount = hiddenRights.length;
 
   return (
-    <GlassCard className="px-5 py-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <GlassCard className="h-full px-5 py-4">
+      <div className="flex h-full min-w-0 flex-col gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="min-w-0 truncate text3 text-darkest">{role.name}</h2>
@@ -71,7 +77,7 @@ export function RoleCard({ role, basePath, onDelete }: RoleCardProps) {
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-3 self-start lg:pt-1">
+        <div className="border-ehs-border-ink/8 mt-auto flex shrink-0 items-center justify-between gap-3 border-t pt-2.5">
           <p className="text7 font-semibold tracking-[0.5px] text-ehs-muted-text uppercase">
             {role.userCount} {role.userCount === 1 ? "User" : "Users"}
           </p>
