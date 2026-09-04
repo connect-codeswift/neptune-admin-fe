@@ -3,12 +3,18 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { SearchInput, SelectInput } from "@/components/inputs";
 import { PageHeader } from "@/components/layouts";
 import {
   Button,
+  ModuleFilterBar,
+  ModuleSearchBar,
+  TABLE_HEADER_ACTION_CLASS,
+  TABLE_HEADER_SECONDARY_ACTION_CLASS,
   Table,
+  TableHeaderBar,
   TableRoleBadge,
+  ViewModeToggle,
+  type ViewMode,
   TableRowActions,
   TableStatusBadge,
   TableTextCell,
@@ -30,6 +36,8 @@ import {
   buildOrgSiteBasePath,
   parseOrgSitePath,
 } from "@/lib/sidebar-items";
+import { UserCard } from "@/components/cards";
+import { CARD_GRID_CLASS } from "@/components/cards/card-grid";
 import { SubscriptionSeatLimitModal } from "./SubscriptionSeatLimitModal";
 import {
   FeatureEmptyState,
@@ -119,7 +127,13 @@ function ComingSoonAction({
 }: Readonly<{ icon: string; label: string; reason: string }>) {
   return (
     <span title={reason}>
-      <Button variant="secondary" size="sm" leftIcon={icon} disabled>
+      <Button
+        variant="secondary"
+        size="sm"
+        leftIcon={icon}
+        disabled
+        className={TABLE_HEADER_SECONDARY_ACTION_CLASS}
+      >
         {label}
         <span className="sr-only"> — {reason}</span>
       </Button>
@@ -213,6 +227,9 @@ export function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [siteFilter, setSiteFilter] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
+  // Table is the default: it is the denser view and the one the column set was
+  // designed for. The choice is per-visit — it is not persisted anywhere.
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const adminHref = orgSite
     ? buildOrgSitePath(orgSite.company, orgSite.site)
@@ -259,11 +276,15 @@ export function UserManagementPage() {
   // exclude everybody. The second is a dead end unless it hands back a way out.
   const filtersActive = Boolean(search.trim()) || Boolean(siteFilter);
 
-  const columns = buildColumns(
-    basePath,
-    (user) => router.push(`${basePath}/${user.id}`),
-    (user) => router.push(`${basePath}/${user.id}/edit`),
-  );
+  const handleViewUser = (user: UserListItem) => {
+    router.push(`${basePath}/${user.id}`);
+  };
+
+  const handleEditUser = (user: UserListItem) => {
+    router.push(`${basePath}/${user.id}/edit`);
+  };
+
+  const columns = buildColumns(basePath, handleViewUser, handleEditUser);
 
   const handleAddUser = () => {
     if (atSeatLimit && seatInfo) {
@@ -289,6 +310,43 @@ export function UserManagementPage() {
     setPageNumber(1);
   };
 
+  // Shared by both views: the toolbar is the same strip whether it sits inside
+  // the table card or above the card grid, so the actions are built once.
+  const toolbarActions = (
+    <>
+      {/*
+        Import and Export were wired to `toast.success("Import started.")` and
+        nothing else — the app announced that work had begun and then did none
+        of it. They are kept, visible and disabled, rather than deleted: the
+        capability is planned and this toolbar is where an admin will look for
+        it, so signposting it beats hiding it.
+      */}
+      <ComingSoonAction
+        icon="lucide:upload"
+        label="Import"
+        reason="Bulk user import is not available yet."
+      />
+      <ComingSoonAction
+        icon="lucide:download"
+        label="Export"
+        reason="Exporting the user list is not available yet."
+      />
+      <Button
+        size="sm"
+        leftIcon="lucide:plus"
+        onClick={handleAddUser}
+        className={TABLE_HEADER_ACTION_CLASS}
+      >
+        Add User
+      </Button>
+      <ViewModeToggle
+        value={viewMode}
+        onChange={setViewMode}
+        itemLabel="users"
+      />
+    </>
+  );
+
   return (
     <div className="flex min-w-0 flex-col gap-6 pb-4">
       <PageHeader
@@ -302,91 +360,30 @@ export function UserManagementPage() {
           { label: "Admin", href: adminHref },
           { label: "User Management" },
         ]}
-        actions={
-          <>
-            {/*
-              Import and Export were wired to `toast.success("Import started.")`
-              and nothing else — the app announced that work had begun and then
-              did none of it. They are kept, visible and disabled, rather than
-              deleted: the capability is planned and the page header is where an
-              admin will look for it, so signposting it beats hiding it.
-            */}
-            <ComingSoonAction
-              icon="lucide:upload"
-              label="Import"
-              reason="Bulk user import is not available yet."
-            />
-            <ComingSoonAction
-              icon="lucide:download"
-              label="Export"
-              reason="Exporting the user list is not available yet."
-            />
-            <Button
-              size="sm"
-              leftIcon="lucide:plus"
-              onClick={handleAddUser}
-            >
-              Add User
-            </Button>
-          </>
-        }
       />
 
-      {statsLoading ? (
-        <FeatureLoadingGrid
-          count={4}
-          label="Loading user statistics…"
-          className="grid grid-cols-2 gap-4 lg:grid-cols-4"
-        />
-      ) : (
-        <div className="stagger-cards grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard value={stats?.total ?? 0} label="Total Users" />
-          <StatCard value={stats?.active ?? 0} label="Active" />
-          <StatCard value={stats?.pendingSetup ?? 0} label="Pending Setup" />
-          <StatCard value={stats?.suspended ?? 0} label="Suspended" />
-        </div>
-      )}
+      {/* The module filter strip + search field the EHSS app uses on every
+          register, and ClientAccountsPage already uses here. The site filter
+          reads as pills from `xl` up and collapses to a select below it, so
+          the active site is visible without opening a dropdown. */}
+      <ModuleFilterBar
+        segments={[
+          {
+            label: "Site",
+            value: siteFilter,
+            onChange: handleSiteFilterChange,
+            options: siteOptions,
+          },
+        ]}
+      />
 
-      <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-          <SearchInput
-            label="Search"
-            placeholder="Search by name or email…"
-            value={search}
-            onChange={(event) => handleSearchChange(event.target.value)}
-          />
-          {/* A visible label rather than `label=""`: the control is a button
-              with a dropdown, so with no label it announced only its current
-              value and nothing about what it filters. */}
-          <SelectInput
-            label="Site"
-            options={siteOptions}
-            value={siteFilter}
-            onChange={handleSiteFilterChange}
-          />
-        </div>
-
-        {filtersActive ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text8 text-gray">
-              Filtered by{search.trim() ? ` “${search.trim()}”` : ""}
-              {search.trim() && siteFilter ? " and" : ""}
-              {siteFilter
-                ? ` ${siteOptions.find((option) => option.value === siteFilter)?.label ?? "a site"}`
-                : ""}
-              .
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon="mdi:filter-off-outline"
-              onClick={handleClearFilters}
-            >
-              Clear filters
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      <ModuleSearchBar
+        value={search}
+        onChange={handleSearchChange}
+        placeholder="Search by name or email…"
+        aria-label="Search users by name or email"
+        resultLabel={`${String(totalRecords)} ${totalRecords === 1 ? "user" : "users"}`}
+      />
 
       {isLoading ? <UsersTableSkeleton /> : null}
 
@@ -435,12 +432,42 @@ export function UserManagementPage() {
 
       {!isLoading && !isError && users.length > 0 ? (
         <>
-          <Table
-            className="min-w-0"
-            columns={columns}
-            data={users}
-            getRowId={(row) => row.id}
-          />
+          {viewMode === "table" ? (
+            <Table
+              className="min-w-0"
+              toolbar={
+                <TableHeaderBar title="Users" actions={toolbarActions} />
+              }
+              columns={columns}
+              data={users}
+              getRowId={(row) => row.id}
+            />
+          ) : (
+            <div className="flex min-w-0 flex-col gap-4">
+              {/* The bar carries a bottom border to divide itself from the
+                  column headers it normally sits above; standing alone over a
+                  grid there is nothing to divide, so it is dropped. */}
+              <div className={[GLASS_SURFACE, "overflow-hidden"].join(" ")}>
+                <TableHeaderBar
+                  title="Users"
+                  actions={toolbarActions}
+                  className="border-b-0"
+                />
+              </div>
+
+              <div className={CARD_GRID_CLASS}>
+                {users.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    basePath={basePath}
+                    onView={handleViewUser}
+                    onEdit={handleEditUser}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* "Page 1 of 4" never said how many rows were on screen. This is

@@ -23,6 +23,10 @@ import {
   type TableStatus,
 } from "@/components/ui";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminCompanies";
+import {
+  formatCompanyDate,
+  isAccessCurrent,
+} from "@/lib/company-status";
 import { useSetAccessWindowMutation } from "@/hooks/useClientAccountDetail";
 import {
   buildOrgDashboardPath,
@@ -176,33 +180,6 @@ function buildColumns(
   ];
 }
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
-/**
- * A company is active when it has no access window at all (permanent access) or
- * its window has not yet lapsed. `daysRemaining` is computed server-side; the
- * date comparison is a fallback for rows where only the expiry is present.
- */
-function isAccessCurrent(company: {
-  accessExpiresAt?: string | null;
-  daysRemaining?: number | null;
-}): boolean {
-  if (company.daysRemaining != null) return company.daysRemaining >= 0;
-  if (!company.accessExpiresAt) return true;
-
-  const expires = new Date(company.accessExpiresAt).getTime();
-  if (Number.isNaN(expires)) return true;
-  return expires > Date.now();
-}
-
 const STATUS_FILTERS: readonly { id: StatusFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "active", label: "Active" },
@@ -227,7 +204,7 @@ export function ClientAccountsPage() {
     id: String(company.id),
     name: company.name,
     activatedModules: company.activatedModules,
-    contractStart: formatDate(company.createdAt),
+    contractStart: formatCompanyDate(company.createdAt),
     // Access state, not headcount. A company whose trial lapsed yesterday is
     // inactive even with users; a paying company that has not onboarded
     // anyone yet is active. accessExpiresAt null means permanent access.
@@ -251,25 +228,21 @@ export function ClientAccountsPage() {
     {
       label: "Total Clients",
       value: clientAccounts.length,
-      detail: `${activeCount} active · ${inactiveCount} lapsed or inactive`,
       icon: "lucide:building-2",
     },
     {
       label: "Active Clients",
       value: activeCount,
-      detail: "Permanent access or a trial still running",
       icon: "lucide:circle-check",
     },
     {
       label: "Inactive",
       value: inactiveCount,
-      detail: "Access window lapsed — start or extend a trial to restore it",
       icon: "lucide:calendar-x",
     },
     {
       label: "Total Sites",
       value: totalSites,
-      detail: `${totalUsers} user${totalUsers === 1 ? "" : "s"} across all clients`,
       icon: "lucide:map-pin",
     },
   ];
@@ -386,14 +359,6 @@ export function ClientAccountsPage() {
         description="All organizations provisioned on Neptune EHSS"
         actions={
           <>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:refresh-cw"
-              onClick={() => void refetch()}
-            >
-              Refresh
-            </Button>
             <Button href="/super/add-a-company" leftIcon="lucide:plus" size="sm">
               New Client
             </Button>
@@ -417,7 +382,6 @@ export function ClientAccountsPage() {
               key={stat.label}
               label={stat.label}
               value={stat.value}
-              detail={stat.detail}
               icon={stat.icon}
             />
           ))}

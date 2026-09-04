@@ -35,12 +35,12 @@ export type StatCardProps = Readonly<{
 }>;
 
 export function StatCard(props: Readonly<StatCardProps>) {
-  const { label, value, detail, icon, className = "" } = props;
+  const { label, value, icon, className = "" } = props;
 
   return (
     // No `gap-*` here: `GlassCard` already sets one, and two gap utilities on
     // one element are resolved by stylesheet order rather than class order.
-    <GlassCard className={`h-full min-h-26 ${className}`.trim()}>
+    <GlassCard className={`h-full min-h-19 ${className}`.trim()}>
       <div className="flex items-center gap-3">
         {icon ? (
           <span className="bg-ehs-normal-blue/12 text-ehs-normal-blue flex size-9 shrink-0 items-center justify-center rounded-xl">
@@ -48,19 +48,14 @@ export function StatCard(props: Readonly<StatCardProps>) {
           </span>
         ) : null}
 
-        <div className="min-w-0 flex-1">
-          <p className="text8 text-ehs-gray truncate" title={label}>
+        <div className="min-w-0 flex">
+         
+          <p className="text2 text-ehs-darker tabular-nums">{value}</p>
+         <p className="text7 text-ehs-gray truncate self-end ml-2" title={label}>
             {label}
           </p>
-          <p className="text2 text-ehs-darker mt-1.5 tabular-nums">{value}</p>
         </div>
       </div>
-
-      {detail ? (
-        <p className="text8 text-ehs-muted-text mt-auto truncate" title={detail}>
-          {detail}
-        </p>
-      ) : null}
     </GlassCard>
   );
 }

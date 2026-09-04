@@ -19,21 +19,23 @@ import {
   type TableColumn,
 } from "@/components/ui";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminCompanies";
+import { formatCompanyDate, isAccessCurrent } from "@/lib/company-status";
 import {
-  PlatformOverviewList,
-  PlatformOverviewListSkeleton,
-  type PlatformOverviewStat,
-} from "./PlatformOverviewList";
+  activatedModuleCodesToIds,
+  getModuleLabel,
+  parseActivatedModuleCodes,
+} from "@/lib/ehs-modules";
 import { StatCard } from "./StatCard";
 
 type CompanyRow = {
   id: string;
   name: string;
-  activatedModules: string;
+  /** Readable module names, already resolved from the stored codes. */
+  modules: string;
+  createdAt: string;
   sites: number;
   users: number;
   status: "active" | "inactive";
-  createdAt: string;
 };
 
 function CompanyNameCell({ row }: Readonly<{ row: CompanyRow }>) {
@@ -47,34 +49,46 @@ function CompanyNameCell({ row }: Readonly<{ row: CompanyRow }>) {
   );
 }
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
 const COMPANY_COLUMNS: TableColumn<CompanyRow>[] = [
   {
     id: "company",
     header: "Company",
     cell: (row) => <CompanyNameCell row={row} />,
   },
+  // Column order mirrors the Client Accounts table — Created, then Status, then
+  // the two right-aligned figures — so the two screens listing the same
+  // companies read the same way.
+  {
+    id: "createdAt",
+    header: "Created",
+    cell: (row) => (
+      <TableTextCell className="whitespace-nowrap tabular-nums">
+        {row.createdAt}
+      </TableTextCell>
+    ),
+  },
   {
     id: "modules",
     header: "Modules",
-    // Module strings run long; the cell truncates and keeps the full list in a
+    // Module lists run long; the cell truncates and keeps the full list in a
     // tooltip rather than letting one row set the table's height.
     cell: (row) => (
       <span
         className="text4 text-ehs-muted-text block max-w-70 truncate"
-        title={row.activatedModules || undefined}
+        title={row.modules || undefined}
       >
-        {row.activatedModules || "—"}
+        {row.modules || "—"}
       </span>
+    ),
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: (row) => (
+      <TableStatusBadge
+        status={row.status}
+        label={row.status === "active" ? "Active" : "Inactive"}
+      />
     ),
   },
   {
@@ -90,25 +104,6 @@ const COMPANY_COLUMNS: TableColumn<CompanyRow>[] = [
     headerClassName: "text-right",
     className: "text-right",
     cell: (row) => <TableTextCell className="tabular-nums">{row.users}</TableTextCell>,
-  },
-  {
-    id: "created",
-    header: "Created",
-    cell: (row) => (
-      <TableTextCell muted className="whitespace-nowrap tabular-nums">
-        {formatDate(row.createdAt)}
-      </TableTextCell>
-    ),
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: (row) => (
-      <TableStatusBadge
-        status={row.status}
-        label={row.status === "active" ? "Active" : "Inactive"}
-      />
-    ),
   },
 ];
 
@@ -128,11 +123,21 @@ export function SuperAdminDashboardPage() {
   const companyRows: CompanyRow[] = companies.map((company) => ({
     id: String(company.id),
     name: company.name,
-    activatedModules: company.activatedModules,
+    // The cell used to print `company.activatedModules` raw, which is the
+    // stored code list — "HAZARD,INCIDENT,NEAR_MISS". These are the same names
+    // the Client Accounts and org dashboards show.
+    modules: activatedModuleCodesToIds(
+      parseActivatedModuleCodes(company.activatedModules),
+    )
+      .map((moduleId) => getModuleLabel(moduleId))
+      .join(", "),
+    createdAt: formatCompanyDate(company.createdAt),
     sites: company.siteCount,
     users: company.userCount,
-    status: company.userCount > 0 ? "active" : "inactive",
-    createdAt: company.createdAt,
+    // Access state, not headcount — the same rule Client Accounts uses. This
+    // used to be `userCount > 0`, so a lapsed company with users read as Active
+    // here and Inactive there.
+    status: isAccessCurrent(company) ? "active" : "inactive",
   }));
 
   const totalSites = companyRows.reduce((sum, row) => sum + row.sites, 0);
@@ -140,74 +145,26 @@ export function SuperAdminDashboardPage() {
   const activeCompanies = companyRows.filter(
     (row) => row.status === "active",
   ).length;
-  const idleCompanies = companyRows.length - activeCompanies;
-  const distinctModules = new Set(
-    companyRows.flatMap((row) =>
-      row.activatedModules
-        .split(",")
-        .map((module) => module.trim())
-        .filter(Boolean),
-    ),
-  ).size;
 
-  // Counts, not trends: `/companies` returns a flat list, so nothing here has a
-  // history to plot. Each card carries its own breakdown instead of a badge.
   const platformStats = [
     {
       label: "Companies",
       value: companyRows.length,
-      detail: `${activeCompanies} with users · ${idleCompanies} not onboarded`,
       icon: "lucide:building-2",
     },
     {
       label: "Sites",
       value: totalSites,
-      detail: `Across ${companyRows.length} compan${companyRows.length === 1 ? "y" : "ies"}`,
       icon: "lucide:map-pin",
     },
     {
       label: "Users",
       value: totalUsers,
-      detail: `${distinctModules} distinct module${distinctModules === 1 ? "" : "s"} licensed`,
       icon: "lucide:users",
     },
     {
       label: "Active Clients",
       value: activeCompanies,
-      detail: `${idleCompanies} have no users yet`,
-      icon: "lucide:circle-check",
-    },
-  ];
-
-  const overviewStats: PlatformOverviewStat[] = [
-    {
-      title: "Companies",
-      value: companyRows.length,
-      activeCount: activeCompanies,
-      icon: "lucide:building-2",
-    },
-    {
-      title: "Sites",
-      value: totalSites,
-      activeCount: totalSites,
-      icon: "lucide:map-pin",
-    },
-    {
-      title: "Users",
-      value: totalUsers,
-      activeCount: totalUsers,
-      icon: "lucide:users",
-    },
-    {
-      title: "Modules",
-      value: distinctModules,
-      activeCount: activeCompanies,
-      icon: "lucide:layout-grid",
-    },
-    {
-      title: "Active",
-      value: activeCompanies,
-      activeCount: activeCompanies,
       icon: "lucide:circle-check",
     },
   ];
@@ -223,34 +180,6 @@ export function SuperAdminDashboardPage() {
       <PageHeader
         title="Global Dashboard"
         description="Platform-wide view of all companies, users, and sites across Neptune EHSS"
-        actions={
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:user-plus"
-              onClick={() => setCreateStaffOpen(true)}
-            >
-              Add Staff Account
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:refresh-cw"
-              onClick={() => void refetch()}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="lucide:building-2"
-              href="/super/client-accounts"
-            >
-              All Companies
-            </Button>
-          </>
-        }
       />
 
       {/* The stat row is derived from the same query as the table, so it can
@@ -275,7 +204,6 @@ export function SuperAdminDashboardPage() {
               key={stat.label}
               label={stat.label}
               value={stat.value}
-              detail={stat.detail}
               icon={stat.icon}
             />
           ))}
@@ -295,11 +223,10 @@ export function SuperAdminDashboardPage() {
 
           `items-start` keeps the rail at its own height: stretched, five rows
           would float in a card as tall as a fifty-row table. */}
-      <div className="stagger-cards grid items-start gap-3.5 xl:grid-cols-13">
+      <div className="stagger-cards grid items-start gap-3.5 xl:grid-cols-12">
         <DetailCard
-          className="xl:col-span-9"
-          title="All Companies"
-          description="Every organization provisioned on the platform, newest data from the last refresh."
+          className="xl:col-span-12"
+          title="Recently Added Companies"
           action={
             <Link
               href="/super/client-accounts"
@@ -351,31 +278,6 @@ export function SuperAdminDashboardPage() {
               getRowId={(row) => row.id}
             />
           ) : null}
-        </DetailCard>
-
-        {/* "Aggregated across n companies" used to be the heading's right-hand
-            action. At rail width that wraps onto its own line anyway, so it is
-            the subtitle now — same words, one line, and the heading keeps its
-            title-then-description order. */}
-        <DetailCard
-          className="xl:col-span-4"
-          title="Platform Overview"
-          description={`Aggregated across ${companyRows.length} companies`}
-        >
-          {isLoading ? <PlatformOverviewListSkeleton /> : null}
-
-          {/* No Retry here. These totals are derived from the company list, so
-              the button on the left is the same button, and offering it twice
-              on one row of cards asks the reader which one to press. */}
-          {isError ? (
-            <FeatureErrorCard
-              surface={false}
-              title="Totals unavailable"
-              message="Platform totals are derived from the company list, which did not load."
-            />
-          ) : null}
-
-          {hasData ? <PlatformOverviewList stats={overviewStats} /> : null}
         </DetailCard>
       </div>
 

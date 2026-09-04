@@ -20,6 +20,12 @@ export type TableProps<T> = {
   getRowId: (row: T) => string;
   emptyMessage?: ReactNode;
   className?: string;
+  /**
+   * Strip rendered above the column headers, inside the card — normally a
+   * `TableHeaderBar`. It belongs here rather than as a sibling above the table
+   * because the card sets `overflow-hidden` to clip its own rounded corners.
+   */
+  toolbar?: ReactNode;
 };
 
 export function Table<T>({
@@ -28,6 +34,7 @@ export function Table<T>({
   getRowId,
   emptyMessage = "No results found.",
   className = "",
+  toolbar,
 }: Readonly<TableProps<T>>) {
   return (
     <div
@@ -35,6 +42,8 @@ export function Table<T>({
         .filter(Boolean)
         .join(" ")}
     >
+      {toolbar}
+
       <div className="overflow-x-auto">
         <table className="text4 w-full min-w-240 border-collapse text-left">
           <thead>
